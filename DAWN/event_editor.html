@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESURGIR — Editor de Eventos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0c09;
+      --panel: #0f120d;
+      --panel2: #141a11;
+      --panel3: #1a2116;
+      --line: #2a3525;
+      --line2: #3a4a30;
+      --text: #c8d4b8;
+      --muted: #6b7a5e;
+      --dim: #3d4a33;
+      --ok: #4a8a35;
+      --ok-bright: #72c44e;
+      --ok-glow: rgba(74,138,53,0.25);
+      --danger: #8a3535;
+      --danger-bright: #c44e4e;
+      --danger-glow: rgba(138,53,53,0.3);
+      --warn: #8a6a2a;
+      --warn-bright: #c4993e;
+      --accent: #4a7a6a;
+      --accent-bright: #6ab89e;
+      --amber: #b87c2a;
+      --amber-bright: #e8a83e;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-display: 'Oswald', sans-serif;
+      --font-worn: 'Special Elite', cursive;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-mono);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,20,0,0.06) 0px, rgba(0,20,0,0.06) 1px, transparent 1px, transparent 3px);
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── HEADER ── */
+    .site-header {
+      background: #060807;
+      border-bottom: 1px solid var(--line2);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .site-header .logo {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      color: var(--ok-bright);
+      text-shadow: 0 0 14px var(--ok-glow);
+    }
+
+    .site-header .subtitle {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 0.14em;
+    }
+
+    /* ── LAYOUT ── */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 14px;
+      padding: 14px 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ── PANEL ── */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      position: relative;
+    }
+
+    .panel::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 12px; height: 12px;
+      background: var(--bg);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+      pointer-events: none;
+    }
+
+    .panel-header {
+      padding: 10px 14px;
+      background: var(--panel2);
+      border-bottom: 1px solid var(--line2);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ok-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-header::before { content: '▶'; font-size: 7px; color: var(--ok); }
+    .panel-header .badge-tag {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      letter-spacing: 0.06em;
+    }
+
+    .panel-body { padding: 14px; }
+
+    /* ── FORM GRID ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .form-grid.full { grid-template-columns: 1fr; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.span2 { grid-column: span 2; }
+
+    label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    label .req { color: var(--danger-bright); margin-left: 2px; }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="url"],
+    textarea,
+    select {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--panel2);
+      border: 1px solid var(--line2);
+      color: var(--text);
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+
+    input:focus, textarea:focus, select:focus { border-color: var(--ok); }
+    input::placeholder, textarea::placeholder { color: var(--dim); }
+
+    textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+    select option { background: var(--panel2); }
+
+    /* ── SECTION DIVIDER ── */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 14px 0 10px;
+    }
+
+    .section-divider span {
+      font-size: 10px;
+      color: var(--amber-bright);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+      font-family: var(--font-display);
+    }
+
+    .section-divider::before, .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line2);
+    }
+
+    /* ── MODE TOGGLE ── */
+    .mode-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--line2);
+      overflow: hidden;
+    }
+
+    .mode-btn {
+      padding: 9px;
+      background: var(--panel2);
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: all 0.15s;
+      border-right: 1px solid var(--line2);
+    }
+
+    .mode-btn:last-child { border-right: none; }
+    .mode-btn.active { background: var(--ok-glow); color: var(--ok-bright); border-color: var(--ok); }
+    .mode-btn:hover:not(.active) { color: var(--text); background: var(--panel3); }
+
+    /* ── EFFECT BLOCK ── */
+    .effect-block {
+      border: 1px solid var(--line2);
+      border-left: 3px solid var(--amber);
+      padding: 12px;
+      background: rgba(184,124,42,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .effect-block.option-b { border-left-color: var(--accent-bright); background: rgba(106,184,158,0.04); }
+
+    .effect-block .block-title {
+      font-size: 10px;
+      color: var(--amber-bright);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-family: var(--font-display);
+      margin-bottom: 2px;
+    }
+
+    .effect-block.option-b .block-title { color: var(--accent-bright); }
+
+    .effect-rows { display: flex; flex-direction: column; gap: 6px; }
+
+    .effect-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .remove-effect-btn {
+      background: none;
+      border: 1px solid var(--line2);
+      color: var(--muted);
+      cursor: pointer;
+      padding: 6px 8px;
+      font-size: 12px;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    .remove-effect-btn:hover { border-color: var(--danger); color: var(--danger-bright); }
+
+    .add-effect-btn {
+      padding: 7px 12px;
+      background: none;
+      border: 1px dashed var(--line2);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.06em;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .add-effect-btn:hover { border-color: var(--amber); color: var(--amber-bright); background: rgba(184,124,42,0.05); }
+
+    .option-label-field {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .option-tag {
+      font-size: 10px;
+      color: var(--amber-bright);
+      background: rgba(184,124,42,0.12);
+      border: 1px solid var(--amber);
+      padding: 4px 8px;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .option-tag.b { color: var(--accent-bright); background: rgba(106,184,158,0.1); border-color: var(--accent-bright); }
+
+    /* ── IMGBB UPLOAD ── */
+    .imgbb-area {
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .imgbb-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+
+    .upload-preview {
+      width: 100%;
+      height: 120px;
+      border: 1px dashed var(--line2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: var(--panel);
+      position: relative;
+    }
+
+    .upload-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .upload-preview .placeholder {
+      color: var(--dim);
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .upload-status {
+      font-size: 11px;
+      color: var(--muted);
+      min-height: 16px;
+    }
+
+    .upload-status.ok { color: var(--ok-bright); }
+    .upload-status.err { color: var(--danger-bright); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 9px 16px;
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+      transition: all 0.15s;
+    }
+
+    .btn:hover { border-color: var(--ok); color: var(--ok-bright); background: var(--ok-glow); }
+    .btn.primary { background: var(--ok); border-color: var(--ok-bright); color: #fff; }
+    .btn.primary:hover { background: var(--ok-bright); }
+    .btn.danger { border-color: var(--danger); color: var(--danger-bright); background: var(--danger-glow); }
+    .btn.danger:hover { background: var(--danger); color: #fff; }
+    .btn.amber { border-color: var(--amber); color: var(--amber-bright); background: rgba(184,124,42,0.1); }
+    .btn.amber:hover { background: var(--amber); color: #fff; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(1); }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    /* ── PREVIEW PANEL ── */
+    .preview-event-img {
+      width: 100%;
+      height: 160px;
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .preview-event-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      filter: grayscale(30%) contrast(1.1);
+    }
+
+    .preview-event-img .no-img { color: var(--dim); font-size: 11px; }
+
+    .preview-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amber-bright);
+      margin-bottom: 6px;
+      text-shadow: 0 0 10px rgba(232,168,62,0.25);
+      min-height: 24px;
+    }
+
+    .preview-text {
+      font-family: var(--font-worn);
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--text);
+      min-height: 40px;
+      margin-bottom: 12px;
+    }
+
+    .preview-duration {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      border-left: 2px solid var(--line2);
+      padding-left: 8px;
+    }
+
+    .preview-options { display: flex; flex-direction: column; gap: 6px; }
+
+    .preview-opt-btn {
+      padding: 9px 12px;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      border: 1px solid;
+      background: none;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+      color: var(--amber-bright);
+      border-color: var(--amber);
+      min-height: 36px;
+    }
+
+    .preview-opt-btn.b { color: var(--accent-bright); border-color: var(--accent-bright); }
+
+    .preview-effects-tag {
+      font-size: 10px;
+      color: var(--ok-bright);
+      border: 1px solid var(--ok);
+      padding: 6px 10px;
+      background: var(--ok-glow);
+      line-height: 1.5;
+    }
+
+    .preview-meta {
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
+      line-height: 1.7;
+    }
+
+    /* ── EVENT LIST ── */
+    .event-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+
+    .event-list-item {
+      display: grid;
+      grid-template-columns: 60px 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--ok);
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.015);
+      transition: background 0.15s;
+    }
+
+    .event-list-item:hover { background: rgba(255,255,255,0.03); }
+
+    .event-list-thumb {
+      width: 60px;
+      height: 44px;
+      object-fit: cover;
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .event-list-thumb img { width: 100%; height: 100%; object-fit: cover; display: none; filter: grayscale(30%); }
+    .event-list-thumb .no-img-sm { font-size: 18px; }
+
+    .event-list-info {}
+    .event-list-name { font-family: var(--font-display); font-size: 14px; letter-spacing: 0.06em; color: var(--text); }
+    .event-list-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* ── EXPORT ── */
+    .export-area {
+      background: var(--panel2);
+      border: 1px solid var(--line2);
+      padding: 10px;
+      font-size: 11px;
+      color: var(--ok-bright);
+      white-space: pre;
+      overflow: auto;
+      max-height: 280px;
+      font-family: var(--font-mono);
+      line-height: 1.5;
+      display: none;
+    }
+
+    /* ── SCROLLBAR ── */
+
+    .attack-panel {
+      border: 1px solid var(--danger);
+      border-left: 3px solid var(--danger-bright);
+      background: rgba(138,53,53,0.06);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .attack-panel .block-title { font-size:10px; color:var(--danger-bright); text-transform:uppercase; letter-spacing:0.12em; font-family:var(--font-display); margin-bottom:2px; }
+    .attack-outcome-panel { grid-column: 1/-1; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: var(--panel); }
+    ::-webkit-scrollbar-thumb { background: var(--line2); }
+
+    /* ── IMGBB KEY notice ── */
+    .key-notice {
+      font-size: 10px;
+      color: var(--warn-bright);
+      background: rgba(138,106,42,0.1);
+      border: 1px solid var(--warn);
+      padding: 6px 10px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--panel2);
+      border: 1px solid var(--ok);
+      color: var(--ok-bright);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 10px 18px;
+      z-index: 9000;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.25s;
+      pointer-events: none;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    }
+
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.err { border-color: var(--danger); color: var(--danger-bright); }
+
+    @media(max-width: 900px) {
+      .workspace { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.span2 { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="site-header">
+  <div>
+    <div class="logo">RESURGIR</div>
+    <div class="subtitle">// EDITOR DE EVENTOS · v0.1 BETA · Vinx Rockatansky</div>
+  </div>
+  <div style="font-size:10px;color:var(--dim);text-align:right;">
+    <a href="index.html" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#3d4a33;text-decoration:none;border:1px solid #2a3525;padding:3px 10px;letter-spacing:0.08em;" onmouseover="this.style.color='#72c44e';this.style.borderColor='#72c44e'" onmouseout="this.style.color='#3d4a33';this.style.borderColor='#2a3525'">← INICIO</a>
+  <span><span id="eventCount">0</span> eventos en sesión</span>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- ── LEFT: FORM ── -->
+  <div style="display:flex;flex-direction:column;gap:12px;">
+
+    <!-- DATOS BÁSICOS -->
+    <div class="panel">
+      <div class="panel-header">Datos del evento <span class="badge-tag">BÁSICOS</span></div>
+      <div class="panel-body">
+
+        <div class="form-grid">
+          <div class="field">
+            <label>ID único <span class="req">*</span></label>
+            <input type="text" id="f-id" placeholder="ej: ataque_pandemia" />
+          </div>
+          <div class="field">
+            <label>Nombre del evento <span class="req">*</span></label>
+            <input type="text" id="f-name" placeholder="ej: La Pandemia" />
+          </div>
+          <div class="field">
+            <label>Tipo de evento <span class="req">*</span></label>
+            <select id="f-type" onchange="onTypeChange()">
+              <option value="city">Diario — Ciudad</option>
+              <option value="survivor">Diario — Superviviente</option>
+              <option value="weekly">Semanal fijo (cada 7 días)</option>
+              <option value="story">Historia — día exacto</option>
+              <option value="explore">Exploración (se activa al explorar)</option>
+            </select>
+          </div>
+          <div class="field" id="weekField" style="display:none;">
+            <label>Número de semana <span style="color:var(--muted)">(semana 1 = día 7, semana 2 = día 14…)</span></label>
+            <input type="number" id="f-week" value="1" min="1" max="99" />
+          </div>
+          <div class="field" id="dayField" style="display:none;">
+            <label>Día exacto <span class="req">*</span> <span style="color:var(--muted)">(aparece solo ese día)</span></label>
+            <input type="number" id="f-day" value="7" min="1" max="999" />
+          </div>
+          <div class="field" id="relatedActionField">
+            <label>Acción relacionada <span style="color:var(--muted)">(opcional — aumenta probabilidad si se usa)</span></label>
+            <select id="f-relatedAction">
+              <option value="">— Ninguna (evento genérico) —</option>
+              <option value="forraje">🌽 Forrajear</option>
+              <option value="reciclar">🔧 Reciclar</option>
+              <option value="vigilar">👁 Vigilar</option>
+              <option value="construir">🏗 Construir</option>
+              <option value="ataque">⚔ Ataque</option>
+              <option value="descansar">💤 Descansar</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Días de duración</label>
+            <input type="number" id="f-days" value="1" min="1" max="10" />
+          </div>
+          <div class="field" id="repeatableField">
+            <label>¿Repetible?</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line2);overflow:hidden;">
+              <button type="button" class="mode-btn" id="repeatNo" onclick="setRepeatable(false)" style="border-right:1px solid var(--line2);">✕ No repetir</button>
+              <button type="button" class="mode-btn" id="repeatYes" onclick="setRepeatable(true)">↺ Repetible</button>
+            </div>
+          </div>
+          <div class="field" id="weightField">
+            <label>Peso (frecuencia relativa)</label>
+            <input type="number" id="f-weight" value="8" min="1" max="99" oninput="updateWeightHint(this.value)" />
+            <div id="weightHint" style="font-size:10px;padding:5px 8px;border-left:3px solid var(--ok);background:rgba(255,255,255,0.02);line-height:1.6;"></div>
+          </div>
+          <div class="field span2">
+            <label>Historia / Texto narrativo <span class="req">*</span></label>
+            <textarea id="f-story" placeholder="Descripción del evento. Usa {survivor} para insertar un nombre aleatorio de superviviente."></textarea>
+          </div>
+        </div>
+
+        <!-- IMGBB -->
+        <div class="section-divider"><span>Imagen del evento</span></div>
+
+<div class="imgbb-area">
+          <div class="field">
+            <label>API Key ImgBB</label>
+            <input type="text" id="f-apikey" value="41a6c250c03f02564f8f2a0916e56498" />
+          </div>
+          <div class="imgbb-row">
+            <div class="field" style="gap:5px;">
+              <label>Archivo de imagen</label>
+              <input type="file" id="f-imgfile" accept="image/*" style="font-size:11px;color:var(--text);background:var(--panel2);border:1px solid var(--line2);padding:6px;" />
+            </div>
+            <div style="display:flex;flex-direction:column;justify-content:flex-end;">
+              <button class="btn amber" id="uploadBtn" style="white-space:nowrap;">⬆ Subir imagen</button>
+            </div>
+          </div>
+          <div class="upload-preview" id="uploadPreview">
+            <span class="placeholder">Sin imagen.<br>Sube una para previsualizar.</span>
+            <img id="uploadedImg" src="" alt="" />
+          </div>
+          <div class="field">
+            <label>URL resultante (o pega una URL directamente)</label>
+            <input type="url" id="f-imgurl" placeholder="https://i.ibb.co/..." />
+          </div>
+          <div class="upload-status" id="uploadStatus"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- EFECTO -->
+    <div class="panel">
+      <div class="panel-header">Forma del efecto <span class="badge-tag">MECÁNICA</span></div>
+      <div class="panel-body">
+
+        <div class="section-divider"><span>Tipo de efecto</span></div>
+        <div class="mode-toggle" style="grid-template-columns:1fr 1fr 1fr;">
+          <button class="mode-btn active" id="modeDirectBtn" onclick="setMode('direct')">⚡ Directo</button>
+          <button class="mode-btn" id="modeChoiceBtn" onclick="setMode('choice')">⚖ Elección</button>
+          <button class="mode-btn" id="modeAttackBtn" onclick="setMode('attack')">⚔ Amenaza de ataque</button>
+        </div>
+
+        <!-- DIRECTO -->
+        <div id="modeDirectPanel">
+          <div class="section-divider"><span>Efectos directos</span></div>
+          <div class="effect-block" id="directEffectBlock">
+            <div class="block-title">Efectos al activarse</div>
+            <div class="effect-rows" id="directEffectRows"></div>
+            <button class="add-effect-btn" onclick="addEffectRow('direct')">+ Añadir efecto</button>
+          </div>
+        </div>
+
+        <!-- ELECCIÓN -->
+        <div id="modeChoicePanel" class="hidden">
+
+          <!-- Opción A -->
+          <div class="section-divider"><span>Opción A</span></div>
+          <div class="effect-block" id="optionABlock">
+            <div class="option-label-field">
+              <span class="option-tag">OPCIÓN A</span>
+              <input type="text" id="f-labelA" placeholder="Texto del botón de opción A" />
+            </div>
+            <div class="block-title">Efectos al elegir A</div>
+            <div class="effect-rows" id="optionAEffectRows"></div>
+            <button class="add-effect-btn" onclick="addEffectRow('optionA')">+ Añadir efecto</button>
+          </div>
+
+          <!-- Opción B -->
+          <div class="section-divider"><span>Opción B</span></div>
+          <div class="effect-block option-b" id="optionBBlock">
+            <div class="option-label-field">
+              <span class="option-tag b">OPCIÓN B</span>
+              <input type="text" id="f-labelB" placeholder="Texto del botón de opción B" />
+            </div>
+            <div class="block-title">Efectos al elegir B</div>
+            <div class="effect-rows" id="optionBEffectRows"></div>
+            <button class="add-effect-btn" onclick="addEffectRow('optionB')">+ Añadir efecto</button>
+          </div>
+
+        </div>
+
+        <!-- AMENAZA DE ATAQUE -->
+        <div id="modeAttackPanel" class="hidden">
+          <div class="section-divider"><span>Configuración del ataque</span></div>
+          <div class="effect-block" style="border-left-color:var(--danger-bright);background:rgba(138,53,53,0.06);">
+            <div class="block-title" style="color:var(--danger-bright);">⚔ Parámetros de la amenaza</div>
+            <div class="form-grid" style="margin-bottom:8px;">
+              <div class="field">
+                <label>Fuerza del grupo hostil</label>
+                <input type="number" id="f-attackStrength" value="3" min="1" max="15" placeholder="1-15" />
+              </div>
+              <div class="field">
+                <label>Días hasta el ataque</label>
+                <select id="f-attackArrival">
+                  <option value="0">¡Inmediato!</option>
+                  <option value="1" selected>1 día</option>
+                  <option value="2">2 días</option>
+                  <option value="3">3 días</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-divider"><span>Efectos si los defensores ganan</span></div>
+          <div class="effect-block" style="border-left-color:var(--ok-bright);background:rgba(74,138,53,0.05);">
+            <div class="block-title" style="color:var(--ok-bright);">✅ Victoria</div>
+            <div class="effect-rows" id="attackVictoryRows"></div>
+            <button class="add-effect-btn" onclick="addEffectRow('attackVictory')">+ Añadir efecto de victoria</button>
+          </div>
+
+          <div class="section-divider"><span>Efectos si los defensores pierden</span></div>
+          <div class="effect-block" style="border-left-color:var(--danger-bright);background:rgba(138,53,53,0.06);">
+            <div class="block-title" style="color:var(--danger-bright);">💀 Derrota</div>
+            <div class="effect-rows" id="attackDefeatRows"></div>
+            <button class="add-effect-btn" onclick="addEffectRow('attackDefeat')">+ Añadir efecto de derrota</button>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn primary" onclick="addEvent()">✓ Añadir evento a la lista</button>
+          <button class="btn" onclick="clearForm()">↺ Limpiar formulario</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- EVENT LIST -->
+    <div class="panel">
+      <div class="panel-header">Eventos creados <span class="badge-tag" id="listCount">0 eventos</span></div>
+      <div class="panel-body">
+        <div id="eventList"><div style="color:var(--dim);font-size:12px;text-align:center;padding:20px 0;">Aún no has creado ningún evento.</div></div>
+        <div class="btn-row">
+          <button class="btn amber" onclick="document.getElementById('importFileInput').click()">⬆ Importar JSON existente</button>
+          <input type="file" id="importFileInput" accept=".json,application/json" style="display:none;" onchange="importJSON(this)" />
+          <button class="btn primary" onclick="exportJSON()">⬇ Exportar JSON</button>
+          <button class="btn" onclick="copyJSON()">⎘ Copiar al portapapeles</button>
+          <button class="btn danger" onclick="clearAll()">✕ Limpiar todo</button>
+        </div>
+        <pre class="export-area" id="exportArea"></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT: PREVIEW ── -->
+  <div style="position:sticky;top:62px;align-self:start;display:flex;flex-direction:column;gap:12px;">
+    <div class="panel">
+      <div class="panel-header">Preview en juego <span class="badge-tag">LIVE</span></div>
+      <div class="panel-body">
+        <div class="preview-event-img" id="previewImgWrap">
+          <span class="no-img">Sin imagen</span>
+          <img id="previewImg" src="" alt="" />
+        </div>
+        <div class="preview-title" id="previewTitle">Nombre del evento</div>
+        <div class="preview-duration" id="previewDuration" style="display:none;"></div>
+        <div class="preview-text" id="previewText">El texto narrativo del evento aparecerá aquí…</div>
+        <div class="preview-options" id="previewOptions">
+          <div class="preview-effects-tag" id="previewEffectsDirect" style="display:none;"></div>
+        </div>
+        <div class="preview-meta" id="previewMeta"></div>
+      </div>
+    </div>
+
+    <!-- JSON output del evento actual -->
+    <div class="panel">
+      <div class="panel-header">JSON del evento actual <span class="badge-tag">OUTPUT</span></div>
+      <div class="panel-body" style="padding:0;">
+        <pre id="currentJsonOutput" style="font-size:10px;color:var(--ok-bright);background:var(--panel2);padding:12px;overflow:auto;max-height:320px;line-height:1.5;font-family:var(--font-mono);white-space:pre-wrap;word-break:break-all;"></pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──
+let mode = 'direct';
+let events = [];
+// storyEvents merged into events (distinguished by type='story')
+let uploadedImageUrl = '';
+
+// ── BUILDINGS & RESOURCES (matching the game) ──
+const RESOURCES = ['food','materials','morale','meds','electricity'];
+const RESOURCE_LABELS = { food:'Comida', materials:'Materiales', morale:'Moral', meds:'Medicamentos', electricity:'Electricidad' };
+const BUILDINGS = ['huerto','atalaya','muros','barracones','camion','hospital','generador'];
+const BUILDING_LABELS = { huerto:'Huerto', atalaya:'Atalaya', muros:'Muros', barracones:'Barracones', camion:'Camión Raider', hospital:'Hospital', generador:'Generador' };
+
+const EFFECT_TYPES = [
+  { value: 'addResource',      label: 'Incrementar recurso' },
+  { value: 'removeResource',   label: 'Reducir recurso' },
+  { value: 'addFatigue',       label: 'Incrementar fatiga (superviviente)' },
+  { value: 'removeFatigue',    label: 'Reducir fatiga (superviviente)' },
+  { value: 'disableBuilding',  label: 'Inhabilitar edificio (X días)' },
+  { value: 'destroyBuilding',  label: 'Destruir edificio' },
+  { value: 'addSurvivor',      label: 'Añadir superviviente (por rareza)' },
+  { value: 'healSurvivor',     label: 'Curar superviviente herido' },
+  { value: 'injureSurvivor',   label: 'Herir superviviente (aleatorio)' },
+  { value: 'injureExplorer',   label: 'Herir al explorador (quien inició el evento)' },
+  { value: 'setAttackThreat',  label: 'Activar amenaza de ataque' },
+  { value: 'limitAction',      label: 'Inhabilitar acción (X días)' },
+];
+
+// ── MODE ──
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeDirectBtn').classList.toggle('active', m === 'direct');
+  document.getElementById('modeChoiceBtn').classList.toggle('active', m === 'choice');
+  document.getElementById('modeAttackBtn').classList.toggle('active', m === 'attack');
+  document.getElementById('modeDirectPanel').classList.toggle('hidden', m !== 'direct');
+  document.getElementById('modeChoicePanel').classList.toggle('hidden', m !== 'choice');
+  document.getElementById('modeAttackPanel').classList.toggle('hidden', m !== 'attack');
+  updatePreview();
+}
+
+// ── EFFECT ROWS ──
+function addEffectRow(target) {
+  // Support dynamic IDs (for legacy inline panels) as well as named targets
+  const idMap = {
+    direct: 'directEffectRows',
+    optionA: 'optionAEffectRows',
+    optionB: 'optionBEffectRows',
+    attackVictory: 'attackVictoryRows',
+    attackDefeat: 'attackDefeatRows',
+  };
+  const container = document.getElementById(idMap[target] || target);
+  const row = document.createElement('div');
+  row.className = 'effect-row';
+  row.innerHTML = buildEffectRowHTML();
+  container.appendChild(row);
+  row.querySelector('.effect-type-select').addEventListener('change', e => {
+    updateEffectRowFields(row, e.target.value);
+    updatePreview();
+  });
+  row.querySelector('.remove-effect-btn').addEventListener('click', () => {
+    if (row._attackPanel) row._attackPanel.remove();
+    row.remove();
+    updatePreview();
+  });
+  updateEffectRowFields(row, 'addResource');
+  // Listen all inputs
+  row.querySelectorAll('input,select').forEach(el => el.addEventListener('input', updatePreview));
+  updatePreview();
+}
+
+function buildEffectRowHTML() {
+  const typeOpts = EFFECT_TYPES.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
+  return `
+    <select class="effect-type-select">${typeOpts}</select>
+    <select class="effect-param1-select"></select>
+    <input type="number" class="effect-amount-input" placeholder="Cantidad" min="1" max="99" value="1" style="display:none;" />
+    <button class="remove-effect-btn" title="Eliminar">✕</button>
+  `;
+}
+
+function updateEffectRowFields(row, type) {
+  const p1 = row.querySelector('.effect-param1-select');
+  const amt = row.querySelector('.effect-amount-input');
+
+  p1.innerHTML = '';
+  p1.style.display = 'none';
+  amt.style.display = 'none';
+
+  if (type === 'addResource' || type === 'removeResource') {
+    p1.style.display = '';
+    amt.style.display = '';
+    RESOURCES.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r; o.textContent = RESOURCE_LABELS[r];
+      p1.appendChild(o);
+    });
+  } else if (type === 'addFatigue' || type === 'removeFatigue') {
+    amt.style.display = '';
+    p1.style.display = '';
+    const o = document.createElement('option');
+    o.value = 'random'; o.textContent = 'Superviviente aleatorio';
+    p1.appendChild(o);
+  } else if (type === 'disableBuilding') {
+    p1.style.display = '';
+    amt.style.display = '';
+    amt.placeholder = 'Días';
+    BUILDINGS.forEach(b => {
+      const o = document.createElement('option');
+      o.value = b; o.textContent = BUILDING_LABELS[b];
+      p1.appendChild(o);
+    });
+  } else if (type === 'destroyBuilding') {
+    p1.style.display = '';
+    BUILDINGS.forEach(b => {
+      const o = document.createElement('option');
+      o.value = b; o.textContent = BUILDING_LABELS[b];
+      p1.appendChild(o);
+    });
+  } else if (type === 'addSurvivor') {
+    p1.style.display = '';
+    [1,2,3,4].forEach(r => {
+      const o = document.createElement('option');
+      o.value = r; o.textContent = `Rareza ${r}${ r===4?' (común)':r===3?' (poco común)':r===2?' (raro)':' (legendario)'}`;
+      p1.appendChild(o);
+    });
+    p1.value = '4';
+  } else if (type === 'healSurvivor' || type === 'injureSurvivor') {
+    p1.style.display = '';
+    const oRandom = document.createElement('option');
+    oRandom.value = 'random'; oRandom.textContent = 'Superviviente aleatorio';
+    p1.appendChild(oRandom);
+  } else if (type === 'injureExplorer') {
+    // No params — always targets the survivor who triggered the explore event
+  } else if (type === 'setAttackThreat') {
+    // Show attack config panel
+    p1.style.display = '';
+    // Repurpose p1 as arrivalDays and amt as attackStrength
+    p1.innerHTML = '<option value="1">Llega en 1 día</option><option value="2">Llega en 2 días</option><option value="3">Llega en 3 días</option><option value="0">¡Inmediato!</option>';
+    amt.style.display = '';
+    amt.placeholder = 'Fuerza del ataque (1-10)';
+    amt.min = 1; amt.max = 10; amt.value = 3;
+    // Add outcome effect rows after the main row
+    if (!row.querySelector('.attack-outcome-panel')) {
+      const panel = document.createElement('div');
+      panel.className = 'attack-outcome-panel';
+      panel.style.cssText = 'grid-column:1/-1;display:flex;flex-direction:column;gap:8px;margin-top:4px;';
+      panel.innerHTML = `
+        <div class="attack-panel">
+          <div class="block-title">⚔ Efectos si los defensores GANAN</div>
+          <div class="effect-rows" id="atkVictoryRows_${Date.now()}"></div>
+          <button type="button" class="add-effect-btn" onclick="addEffectRow(this.previousElementSibling.id)">+ Añadir efecto victoria</button>
+        </div>
+        <div class="attack-panel">
+          <div class="block-title" style="color:var(--danger-bright)">💀 Efectos si los defensores PIERDEN</div>
+          <div class="effect-rows" id="atkDefeatRows_${Date.now()+1}"></div>
+          <button type="button" class="add-effect-btn" onclick="addEffectRow(this.previousElementSibling.id)">+ Añadir efecto derrota</button>
+        </div>`;
+      row.parentElement.insertBefore(panel, row.nextSibling);
+      row._attackPanel = panel;
+    }
+  } else if (type === 'limitAction') {
+    p1.style.display = '';
+    amt.style.display = '';
+    amt.placeholder = 'Días';
+    const ACTIONS = {forraje:'Forrajear', reciclar:'Reciclar', explorar:'Explorar', vigilar:'Vigilar', construir:'Construir', ataque:'Ataque', descansar:'Descansar'};
+    Object.entries(ACTIONS).forEach(([v, label]) => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = label;
+      p1.appendChild(o);
+    });
+  }
+}
+
+function readEffectRows(containerId) {
+  const rows = document.getElementById(containerId).querySelectorAll('.effect-row');
+  const effects = [];
+  rows.forEach(row => {
+    const type = row.querySelector('.effect-type-select').value;
+    const p1 = row.querySelector('.effect-param1-select');
+    const amt = row.querySelector('.effect-amount-input');
+    const effect = { type };
+    if (type === 'addResource' || type === 'removeResource') {
+      effect.resource = p1.value;
+      effect.amount = Number(amt.value) || 1;
+    } else if (type === 'addFatigue' || type === 'removeFatigue') {
+      effect.target = p1.value;
+      effect.amount = Number(amt.value) || 1;
+    } else if (type === 'disableBuilding') {
+      effect.building = p1.value;
+      effect.days = Number(amt.value) || 1;
+    } else if (type === 'destroyBuilding') {
+      effect.building = p1.value;
+    } else if (type === 'addSurvivor') {
+      effect.rarity = Number(p1.value) || 4;
+    } else if (type === 'healSurvivor' || type === 'injureSurvivor') {
+      effect.target = p1.value || 'random';
+    } else if (type === 'injureExplorer') {
+      // no extra params
+    } else if (type === 'setAttackThreat') {
+      effect.arrivalDays = Number(p1.value) || 1;
+      effect.attackStrength = Number(amt.value) || 3;
+      // Read victory/defeat effect rows from the outcome panel
+      const panel = row._attackPanel;
+      if (panel) {
+        const victoryId = panel.querySelector('.effect-rows:first-of-type')?.id;
+        const defeatId  = panel.querySelectorAll('.effect-rows')[1]?.id;
+        if (victoryId) effect.effectOnVictory = readEffectRows(victoryId);
+        if (defeatId)  effect.effectOnDefeat  = readEffectRows(defeatId);
+      }
+    } else if (type === 'limitAction') {
+      effect.action = p1.value;
+      effect.days = Number(amt.value) || 1;
+    }
+    effects.push(effect);
+  });
+  return effects;
+}
+
+function effectToString(e) {
+  if (e.type === 'addResource') return `+${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
+  if (e.type === 'removeResource') return `-${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
+  if (e.type === 'addFatigue') return `+${e.amount} fatiga (${e.target})`;
+  if (e.type === 'removeFatigue') return `-${e.amount} fatiga (${e.target})`;
+  if (e.type === 'disableBuilding') return `Inhabilitar ${BUILDING_LABELS[e.building]||e.building} ${e.days}d`;
+  if (e.type === 'destroyBuilding') return `Destruir ${BUILDING_LABELS[e.building]||e.building}`;
+  if (e.type === 'addSurvivor') return `Nuevo superviviente (rareza ${e.rarity})`;
+  if (e.type === 'healSurvivor') return `Curar superviviente herido`;
+  if (e.type === 'injureSurvivor') return `Herir superviviente (${e.target||'aleatorio'})`;
+  if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
+  if (e.type === 'setAttackThreat') return `⚔ Amenaza de ataque · Fuerza ${e.attackStrength||3} · Llega en ${e.arrivalDays||1}d`;
+  if (e.type === 'limitAction') return `🚫 Inhabilitar acción: ${e.action} (${e.days||1}d)`;
+  return e.type;
+}
+
+// ── BUILD EVENT OBJECT ──
+function buildEventObject() {
+  const id = document.getElementById('f-id').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  const story = document.getElementById('f-story').value.trim();
+  const days = Number(document.getElementById('f-days').value) || 1;
+  const weight = Number(document.getElementById('f-weight').value) || 8;
+  const imgUrl = document.getElementById('f-imgurl').value.trim() || uploadedImageUrl || '';
+
+  const type = document.getElementById('f-type').value || 'city';
+  const week = type==='weekly' ? (Number(document.getElementById('f-week').value)||1) : undefined;
+  const day  = type==='story'  ? (Number(document.getElementById('f-day').value)||1)  : undefined;
+  const relatedAction = document.getElementById('f-relatedAction')?.value || '';
+  const ev = { id, name, image: imgUrl, text: story, days, weight: (type==='weekly'||type==='story')?0:weight, type };
+  if(week!==undefined) ev.week=week;
+  if(day!==undefined)  ev.day=day;
+  if(relatedAction) ev.relatedAction=relatedAction;
+  if(isRepeatable) ev.repeatable=true;
+
+  if (mode === 'direct') {
+    ev.choiceMode = 'direct';
+    ev.effects = readEffectRows('directEffectRows');
+  } else if (mode === 'attack') {
+    ev.choiceMode = 'direct';
+    ev.effects = [{
+      type: 'setAttackThreat',
+      attackStrength: Number(document.getElementById('f-attackStrength').value) || 3,
+      arrivalDays: Number(document.getElementById('f-attackArrival').value) || 1,
+      effectOnVictory: readEffectRows('attackVictoryRows'),
+      effectOnDefeat: readEffectRows('attackDefeatRows'),
+    }];
+  } else {
+    ev.choiceMode = 'choice';
+    ev.options = {
+      A: {
+        label: document.getElementById('f-labelA').value.trim() || 'Opción A',
+        effects: readEffectRows('optionAEffectRows')
+      },
+      B: {
+        label: document.getElementById('f-labelB').value.trim() || 'Opción B',
+        effects: readEffectRows('optionBEffectRows')
+      }
+    };
+  }
+
+  return ev;
+}
+
+// ── PREVIEW ──
+function updatePreview() {
+  const ev = buildEventObject();
+
+  // Image
+  const previewImg = document.getElementById('previewImg');
+  const previewImgWrap = document.getElementById('previewImgWrap');
+  if (ev.image) {
+    previewImg.src = ev.image;
+    previewImg.style.display = 'block';
+    previewImgWrap.querySelector('.no-img') && (previewImgWrap.querySelector('.no-img').style.display = 'none');
+  } else {
+    previewImg.style.display = 'none';
+    if (previewImgWrap.querySelector('.no-img')) previewImgWrap.querySelector('.no-img').style.display = '';
+  }
+
+  document.getElementById('previewTitle').textContent = ev.name || 'Nombre del evento';
+  document.getElementById('previewText').textContent = ev.text || 'El texto narrativo del evento aparecerá aquí…';
+
+  const durEl = document.getElementById('previewDuration');
+  if (ev.days > 1) {
+    durEl.textContent = `⏱ Duración: ${ev.days} días — el efecto permanece activo`;
+    durEl.style.display = '';
+  } else {
+    durEl.style.display = 'none';
+  }
+
+  const optionsEl = document.getElementById('previewOptions');
+  const directTag = document.getElementById('previewEffectsDirect');
+
+  optionsEl.innerHTML = '';
+  optionsEl.appendChild(directTag);
+  directTag.style.display = 'none';
+
+  if (ev.choiceMode === 'direct' || mode === 'attack') {
+    if (ev.effects && ev.effects.length > 0) {
+      directTag.style.display = '';
+      directTag.textContent = (mode==='attack'?'':'⚡ ') + ev.effects.map(effectToString).join('  ·  ');
+    }
+  } else {
+    const btnA = document.createElement('button');
+    btnA.className = 'preview-opt-btn';
+    btnA.textContent = (ev.options.A.label || 'Opción A') +
+      (ev.options.A.effects.length ? '  →  ' + ev.options.A.effects.map(effectToString).join(', ') : '');
+    const btnB = document.createElement('button');
+    btnB.className = 'preview-opt-btn b';
+    btnB.textContent = (ev.options.B.label || 'Opción B') +
+      (ev.options.B.effects.length ? '  →  ' + ev.options.B.effects.map(effectToString).join(', ') : '');
+    optionsEl.appendChild(btnA);
+    optionsEl.appendChild(btnB);
+  }
+
+  const typeStr = ev.type==='story'?`📖 Historia — día ${ev.day||'?'}`:ev.type==='weekly'?`📅 Semanal — semana ${ev.week||1}`:ev.type==='explore'?'🗺 Exploración':ev.type==='survivor'?'👤 Superviviente':'🏙 Ciudad';
+  const actionStr = ev.relatedAction ? `  ·  Relacionado con: ${ev.relatedAction}` : '';
+  const repeatStr = ev.repeatable ? '  ·  ↺ Repetible' : '';
+  document.getElementById('previewMeta').textContent =
+    `ID: ${ev.id || '—'}  ·  ${typeStr}  ·  ${ev.type!=='weekly'?'Peso: '+ev.weight+'  ·  ':''}Duración: ${ev.days}d${actionStr}${repeatStr}`;
+
+  // JSON output
+  document.getElementById('currentJsonOutput').textContent = JSON.stringify(ev, null, 2);
+}
+
+// ── IMGBB UPLOAD ──
+document.getElementById('uploadBtn').addEventListener('click', async () => {
+  const apiKey = document.getElementById('f-apikey').value.trim();
+  const fileInput = document.getElementById('f-imgfile');
+  const status = document.getElementById('uploadStatus');
+
+  if (!apiKey) { showToast('Introduce tu API key de ImgBB', true); return; }
+  if (!fileInput.files.length) { showToast('Selecciona un archivo de imagen', true); return; }
+
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('image', file);
+
+  status.textContent = '⬆ Subiendo imagen…';
+  status.className = 'upload-status';
+
+  try {
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.success) {
+      uploadedImageUrl = data.data.url;
+      document.getElementById('f-imgurl').value = uploadedImageUrl;
+      document.getElementById('uploadedImg').src = uploadedImageUrl;
+      document.getElementById('uploadedImg').style.display = 'block';
+      document.getElementById('uploadPreview').querySelector('.placeholder').style.display = 'none';
+      status.textContent = '✓ Imagen subida correctamente';
+      status.className = 'upload-status ok';
+      updatePreview();
+      showToast('Imagen subida a ImgBB ✓');
+    } else {
+      throw new Error(data.error?.message || 'Error desconocido');
+    }
+  } catch (err) {
+    status.textContent = '✗ Error: ' + err.message;
+    status.className = 'upload-status err';
+    showToast('Error al subir imagen: ' + err.message, true);
+  }
+});
+
+// URL manual update triggers preview
+document.getElementById('f-imgurl').addEventListener('input', () => {
+  uploadedImageUrl = '';
+  updatePreview();
+});
+
+// ── WEIGHT HINT ──
+function updateWeightHint(v){
+  v=Number(v)||0;
+  let label,color,bar;
+  if(v<=0){label='—';color='var(--dim)';bar=0;}
+  else if(v<=3){label='Rarísimo — aparece ocasionalmente, evento especial';color='var(--accent-bright)';bar=1;}
+  else if(v<=6){label='Poco frecuente — menos común que la media';color='var(--ok-bright)';bar=2;}
+  else if(v<=10){label='Normal — aparece con regularidad';color='var(--amber-bright)';bar=3;}
+  else if(v<=15){label='Frecuente — más probable que la mayoría';color='var(--warn-bright)';bar=4;}
+  else{label='Muy frecuente — sale constantemente';color='var(--danger-bright)';bar=5;}
+  const pips=Array.from({length:5},(_,i)=>
+    `<span style="display:inline-block;width:14px;height:8px;margin-right:2px;clip-path:polygon(0 0,calc(100% - 3px) 0,100% 3px,100% 100%,0 100%);background:${i<bar?color:'var(--line2)'};"></span>`
+  ).join('');
+  const el=document.getElementById('weightHint');
+  if(el) el.innerHTML=`<span style="color:${color}">${pips} ${label}</span>`;
+}
+
+// ── REPEATABLE TOGGLE ──
+let isRepeatable = false;
+function setRepeatable(val) {
+  isRepeatable = val;
+  document.getElementById('repeatNo').classList.toggle('active', !val);
+  document.getElementById('repeatYes').classList.toggle('active', val);
+  updatePreview();
+}
+
+// ── TYPE CHANGE ──
+function onTypeChange(){
+  const t=document.getElementById('f-type').value;
+  document.getElementById('weekField').style.display=t==='weekly'?'':'none';
+  document.getElementById('dayField').style.display=t==='story'?'':'none';
+  document.getElementById('weightField').style.display=(t==='weekly'||t==='story')?'none':'';
+  document.getElementById('relatedActionField').style.display=(t==='weekly'||t==='story'||t==='explore')?'none':'';
+  document.getElementById('repeatableField').style.display=(t==='weekly'||t==='story')?'none':'';
+  updatePreview();
+}
+
+// ── ALL FORM INPUTS → PREVIEW ──
+['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-week','f-day','f-relatedAction'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updatePreview);
+});
+
+// ── ADD EVENT ──
+function addEvent() {
+  const ev = buildEventObject();
+  if (!ev.id) { showToast('El ID es obligatorio', true); return; }
+  if (!ev.name) { showToast('El nombre es obligatorio', true); return; }
+  if (!ev.text) { showToast('El texto narrativo es obligatorio', true); return; }
+
+  if (events.find(e => e.id === ev.id)) {
+    showToast(`Ya existe un evento con el ID "${ev.id}"`, true); return;
+  }
+
+  events.push(ev);
+  renderEventList();
+  showToast(`Evento "${ev.name}" añadido ✓`);
+  updateEventCount();
+}
+
+function renderEventList() {
+  const el = document.getElementById('eventList');
+  const normalEvents = events.filter(e => e.type !== 'story');
+  const storyEvts   = events.filter(e => e.type === 'story');
+  const total = events.length;
+  if (!total) {
+    el.innerHTML = '<div style="color:var(--dim);font-size:12px;text-align:center;padding:20px 0;">Aún no has creado ningún evento.</div>';
+    document.getElementById('listCount').textContent = '0 eventos';
+    return;
+  }
+  document.getElementById('listCount').textContent = `${normalEvents.length} eventos · ${storyEvts.length} historia`;
+  el.innerHTML = '';
+
+  // Normal events section
+  if (normalEvents.length) {
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;color:var(--ok-bright);letter-spacing:0.12em;text-transform:uppercase;padding:6px 0 4px;border-bottom:1px solid var(--line2);margin-bottom:6px;font-family:var(--font-display);';
+    hdr.textContent = '▶ Eventos diarios / semanales';
+    el.appendChild(hdr);
+  }
+  normalEvents.forEach((ev) => {
+    const idx = events.indexOf(ev);
+    const item = document.createElement('div');
+    item.className = 'event-list-item';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'event-list-thumb';
+    if (ev.image) {
+      const img = document.createElement('img');
+      img.src = ev.image;
+      img.style.display = 'block';
+      thumb.appendChild(img);
+    } else {
+      thumb.innerHTML = '<span class="no-img-sm">📋</span>';
+    }
+
+    const info = document.createElement('div');
+    info.className = 'event-list-info';
+    const modeTag = ev.choiceMode === 'direct' ? '⚡ Directo' : '⚖ Elección';
+    const effectCount = ev.choiceMode === 'direct'
+      ? (ev.effects?.length || 0) + ' efecto(s)'
+      : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0}`;
+    const typeTag = ev.type==='weekly' ? `📅 Semanal (semana ${ev.week||'?'})` : ev.type==='explore'?'🗺 Exploración':ev.type==='survivor'?'👤 Superviviente':'🏙 Ciudad';
+    const actionTag = ev.relatedAction ? `  ·  ⚡ ${ev.relatedAction}` : '';
+    const repeatTag = ev.repeatable ? '  ·  ↺' : '';
+    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  ${typeTag}  ·  ${modeTag}  ·  ${effectCount}  ·  ${ev.days}d${ev.type!=='weekly'?' · peso '+ev.weight:''}${actionTag}${repeatTag}</div>`;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn';
+    editBtn.style.fontSize = '11px';
+    editBtn.style.padding = '6px 10px';
+    editBtn.textContent = '✎';
+    editBtn.title = 'Cargar para editar';
+    editBtn.addEventListener('click', () => loadEventForEditing(idx));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn danger';
+    delBtn.style.fontSize = '11px';
+    delBtn.style.padding = '6px 10px';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Eliminar';
+    delBtn.addEventListener('click', () => {
+      events.splice(idx, 1);
+      renderEventList();
+      updateEventCount();
+      showToast('Evento eliminado');
+    });
+
+    item.appendChild(thumb);
+    item.appendChild(info);
+    item.appendChild(editBtn);
+    item.appendChild(delBtn);
+    el.appendChild(item);
+  });
+
+  // Story events section
+  if (storyEvts.length) {
+    const hdr2 = document.createElement('div');
+    hdr2.style.cssText = 'font-size:10px;color:var(--amber-bright);letter-spacing:0.12em;text-transform:uppercase;padding:10px 0 4px;border-bottom:1px solid var(--line2);margin-bottom:6px;font-family:var(--font-display);';
+    hdr2.textContent = '▶ Eventos de historia (día exacto)';
+    el.appendChild(hdr2);
+  }
+  storyEvts.forEach((ev) => {
+    const idx = events.indexOf(ev);
+    const item = document.createElement('div');
+    item.className = 'event-list-item';
+    item.style.borderLeftColor = 'var(--amber)';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'event-list-thumb';
+    if (ev.image) {
+      const img = document.createElement('img');
+      img.src = ev.image; img.style.display = 'block';
+      thumb.appendChild(img);
+    } else { thumb.innerHTML = '<span class="no-img-sm">📖</span>'; }
+
+    const info = document.createElement('div');
+    info.className = 'event-list-info';
+    const modeTag = ev.choiceMode === 'direct' ? '⚡ Directo' : '⚖ Elección';
+    const effectCount = ev.choiceMode === 'direct'
+      ? (ev.effects?.length || 0) + ' efecto(s)'
+      : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0}`;
+    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  📅 Día ${ev.day}  ·  ${modeTag}  ·  ${effectCount}</div>`;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn'; editBtn.style.cssText = 'font-size:11px;padding:6px 10px;';
+    editBtn.textContent = '✎'; editBtn.title = 'Cargar para editar';
+    editBtn.addEventListener('click', () => loadStoryEventForEditing(idx));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn danger'; delBtn.style.cssText = 'font-size:11px;padding:6px 10px;';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => {
+      events.splice(idx, 1);
+      renderEventList(); updateEventCount();
+      showToast('Evento de historia eliminado');
+    });
+
+    item.appendChild(thumb); item.appendChild(info);
+    item.appendChild(editBtn); item.appendChild(delBtn);
+    el.appendChild(item);
+  });
+}
+
+function loadEventForEditing(idx) {
+  const ev = events[idx];
+  document.getElementById('f-id').value = ev.id || '';
+  document.getElementById('f-name').value = ev.name || '';
+  document.getElementById('f-story').value = ev.text || '';
+  document.getElementById('f-days').value = ev.days || 1;
+  document.getElementById('f-weight').value = ev.weight || 8;
+  document.getElementById('f-imgurl').value = ev.image || '';
+  if(document.getElementById('f-type')) document.getElementById('f-type').value = ev.type || 'city';
+  if(document.getElementById('f-week')) document.getElementById('f-week').value = ev.week || 1;
+  if(document.getElementById('f-day'))  document.getElementById('f-day').value  = ev.day  || 7;
+  if(document.getElementById('f-relatedAction')) document.getElementById('f-relatedAction').value = ev.relatedAction || '';
+  setRepeatable(!!ev.repeatable);
+  onTypeChange();
+
+  // Remove from list so it can be re-added
+  events.splice(idx, 1);
+  renderEventList();
+  updateEventCount();
+
+  const hasAttackEffect = (ev.effects||[]).some(e=>e.type==='setAttackThreat');
+  if (hasAttackEffect) {
+    setMode('attack');
+    const atk = ev.effects.find(e=>e.type==='setAttackThreat');
+    if(atk) {
+      document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
+      document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
+      ['attackVictoryRows','attackDefeatRows'].forEach(id => { document.getElementById(id).innerHTML=''; });
+      (atk.effectOnVictory||[]).forEach(eff => { addEffectRow('attackVictory'); const rows=document.getElementById('attackVictoryRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
+      (atk.effectOnDefeat||[]).forEach(eff => { addEffectRow('attackDefeat'); const rows=document.getElementById('attackDefeatRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
+    }
+  } else {
+    setMode(ev.choiceMode === 'choice' ? 'choice' : 'direct');
+  }
+
+  // Clear effect rows
+  ['directEffectRows','optionAEffectRows','optionBEffectRows'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+
+  if (ev.choiceMode === 'direct' && ev.effects) {
+    ev.effects.forEach(eff => {
+      addEffectRow('direct');
+      const rows = document.getElementById('directEffectRows').querySelectorAll('.effect-row');
+      loadEffectIntoRow(rows[rows.length - 1], eff);
+    });
+  } else if (ev.choiceMode === 'choice' && ev.options) {
+    document.getElementById('f-labelA').value = ev.options.A?.label || '';
+    document.getElementById('f-labelB').value = ev.options.B?.label || '';
+    (ev.options.A?.effects || []).forEach(eff => {
+      addEffectRow('optionA');
+      const rows = document.getElementById('optionAEffectRows').querySelectorAll('.effect-row');
+      loadEffectIntoRow(rows[rows.length - 1], eff);
+    });
+    (ev.options.B?.effects || []).forEach(eff => {
+      addEffectRow('optionB');
+      const rows = document.getElementById('optionBEffectRows').querySelectorAll('.effect-row');
+      loadEffectIntoRow(rows[rows.length - 1], eff);
+    });
+  }
+
+  updatePreview();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('Evento cargado para editar');
+}
+
+function loadStoryEventForEditing(idx) {
+  const ev = events[idx];
+  events.splice(idx, 1);
+  renderEventList(); updateEventCount();
+  // Reuse loadEventForEditing logic by temporarily merging
+  document.getElementById('f-id').value = ev.id || '';
+  document.getElementById('f-name').value = ev.name || '';
+  document.getElementById('f-story').value = ev.text || '';
+  document.getElementById('f-days').value = ev.days || 1;
+  document.getElementById('f-imgurl').value = ev.image || '';
+  document.getElementById('f-type').value = 'story';
+  document.getElementById('f-day').value = ev.day || 7;
+  onTypeChange();
+  setMode(ev.choiceMode === 'choice' ? 'choice' : 'direct');
+  // rows cleared above
+  if (ev.choiceMode === 'direct' && ev.effects && !hasAttackEffect) {
+    ev.effects.forEach(eff => { addEffectRow('direct'); const rows = document.getElementById('directEffectRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1], eff); });
+  } else if (ev.choiceMode === 'choice' && ev.options) {
+    document.getElementById('f-labelA').value = ev.options.A?.label || '';
+    document.getElementById('f-labelB').value = ev.options.B?.label || '';
+    (ev.options.A?.effects||[]).forEach(eff => { addEffectRow('optionA'); const rows = document.getElementById('optionAEffectRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1], eff); });
+    (ev.options.B?.effects||[]).forEach(eff => { addEffectRow('optionB'); const rows = document.getElementById('optionBEffectRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1], eff); });
+  }
+  updatePreview();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('Evento de historia cargado para editar');
+}
+
+function loadEffectIntoRow(row, eff) {
+  const typeSelect = row.querySelector('.effect-type-select');
+  typeSelect.value = eff.type;
+  updateEffectRowFields(row, eff.type);
+  const p1 = row.querySelector('.effect-param1-select');
+  const amt = row.querySelector('.effect-amount-input');
+
+  if (eff.type === 'addResource' || eff.type === 'removeResource') {
+    p1.value = eff.resource || 'food';
+    amt.value = eff.amount || 1;
+  } else if (eff.type === 'addFatigue' || eff.type === 'removeFatigue') {
+    p1.value = eff.target || 'random';
+    amt.value = eff.amount || 1;
+  } else if (eff.type === 'disableBuilding') {
+    p1.value = eff.building || 'huerto';
+    amt.value = eff.days || 1;
+  } else if (eff.type === 'destroyBuilding') {
+    p1.value = eff.building || 'huerto';
+  } else if (eff.type === 'addSurvivor') {
+    p1.value = eff.rarity || 4;
+  } else if (eff.type === 'healSurvivor' || eff.type === 'injureSurvivor') {
+    p1.value = eff.target || 'random';
+  } else if (eff.type === 'limitAction') {
+    p1.value = eff.action || 'forraje';
+    amt.value = eff.days || 1;
+  }
+}
+
+// ── CLEAR ──
+function clearForm() {
+  ['f-id','f-name','f-story','f-labelA','f-labelB','f-imgurl'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-days').value = 1;
+  document.getElementById('f-weight').value = 8;
+  if(document.getElementById('f-day')) document.getElementById('f-day').value = 7;
+  setRepeatable(false);
+  if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
+  if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';
+  ['attackVictoryRows','attackDefeatRows'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=''; });
+  ['directEffectRows','optionAEffectRows','optionBEffectRows'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+  uploadedImageUrl = '';
+  document.getElementById('uploadedImg').style.display = 'none';
+  document.getElementById('uploadPreview').querySelector('.placeholder').style.display = '';
+  document.getElementById('uploadStatus').textContent = '';
+  setMode('direct');
+  updatePreview();
+}
+
+function importJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const incoming = Array.isArray(parsed) ? parsed : [];
+      if (!incoming.length) { showToast('El archivo no contiene eventos válidos', true); return; }
+      let added = 0, skipped = 0;
+      incoming.forEach(ev => {
+        if (!ev.id) { skipped++; return; }
+        // Normalise: some JSONs use 'title' instead of 'name'
+        if (!ev.name && ev.title) ev.name = ev.title;
+        if (!ev.name) { skipped++; return; }
+        if (events.find(x => x.id === ev.id)) { skipped++; return; }
+        events.push(ev);
+        added++;
+      });
+      renderEventList();
+      updateEventCount();
+      showToast(`Importados ${added} evento${added!==1?'s':''} · ${skipped} omitido${skipped!==1?'s':''} (ID duplicado o inválido)`);
+    } catch {
+      showToast('El archivo no es un JSON válido', true);
+    }
+    // Reset so same file can be imported again if needed
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function clearAll() {
+  if (!events.length) { showToast('No hay eventos que limpiar', true); return; }
+  if (!confirm(`¿Eliminar los ${events.length} evento(s) creados? Esta acción no se puede deshacer.`)) return;
+  events = [];
+  renderEventList();
+  updateEventCount();
+  document.getElementById('exportArea').style.display = 'none';
+  showToast('Lista vaciada');
+}
+
+// ── EXPORT ──
+function downloadJSON(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+function exportJSON() {
+  if (!events.length) { showToast('No hay eventos para exportar', true); return; }
+  downloadJSON(events, 'events.json');
+  showToast(`events.json descargado (${events.length} eventos) ✓`);
+  const area = document.getElementById('exportArea');
+  area.textContent = JSON.stringify(events, null, 2);
+  area.style.display = 'block';
+}
+
+function copyJSON() {
+  if (!events.length) { showToast('No hay eventos para copiar', true); return; }
+  navigator.clipboard.writeText(JSON.stringify(events, null, 2)).then(() => {
+    showToast('JSON copiado al portapapeles ✓');
+  });
+}
+
+// ── UTILS ──
+function updateEventCount() {
+  document.getElementById('eventCount').textContent = events.length;
+}
+
+function showToast(msg, isErr = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 2800);
+}
+
+// ── INIT ──
+updateWeightHint(8);
+setRepeatable(false);
+updatePreview();
+
+// Auto-load JSONs from /data/ on startup (works on Netlify/server)
+async function autoLoadFromServer() {
+  try {
+    const res = await fetch('./data/events.json');
+    if (!res.ok) return;
+    const incoming = await res.json();
+    if (!Array.isArray(incoming)) return;
+    let added = 0;
+    incoming.forEach(ev => {
+      if (!ev.id) return;
+      if (!ev.name && ev.title) ev.name = ev.title;
+      if (!ev.name) return;
+      if (events.find(x => x.id === ev.id)) return;
+      events.push(ev);
+      added++;
+    });
+    if (added > 0) {
+      renderEventList();
+      updateEventCount();
+      showToast(`${added} evento${added !== 1 ? 's' : ''} cargado${added !== 1 ? 's' : ''} desde /data/events.json ✓`);
+    }
+  } catch { /* not on server */ }
+}
+autoLoadFromServer();
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+[
+  {
+    "id": "survivor_vw4cahg8",
+    "name": "Alex",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "Enfermera antes del Ocaso.",
+    "image": {
+      "url": "https://i.ibb.co/BHZj0YsZ/001.png",
+      "deleteUrl": ""
+    },
+    "skill": "ninguna",
+    "rarity": 4
+  },
+  {
+    "id": "survivor_6l305iiv",
+    "name": "Kirk",
+    "fatigueCurrent": 3,
+    "fatigueMax": 5,
+    "story": "Mercenario que llegó herido al campamento.",
+    "image": {
+      "url": "https://i.ibb.co/0pszrW3w/OIG3-Jf02-KOq-Vmun-Hgtflnv-YS.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "ninguna",
+    "rarity": 4
+  },
+  {
+    "id": "survivor_e34fokvp",
+    "name": "Marie",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "Líder nata",
+    "image": {
+      "url": "https://i.ibb.co/zhpd6JSb/OIG1-BTf-Idmr-h-Kmr-Pd4-K2-Lj-N.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "ninguna",
+    "rarity": 4
+  }
+]
