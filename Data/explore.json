@@ -1,0 +1,130 @@
+[
+  {
+    "id": "explore_supplies",
+    "name": "Suministros abandonados",
+    "image": "",
+    "text": "{survivor} encuentra una pequeña reserva útil durante la exploración.",
+    "choiceMode": "one",
+    "options": {
+      "A": {
+        "label": "Recoger materiales",
+        "directEffects": [
+          { "type": "addResource", "resource": "materials", "amount": 2 }
+        ],
+        "delayedEffects": []
+      },
+      "B": {
+        "label": "Buscar comida",
+        "directEffects": [
+          { "type": "addResource", "resource": "food", "amount": 2 }
+        ],
+        "delayedEffects": []
+      }
+    },
+    "weight": 10,
+    "type": "explore"
+  },
+  {
+    "id": "explore_survivor",
+    "name": "Superviviente oculto",
+    "image": "",
+    "text": "{survivor} encuentra a alguien escondido entre ruinas.",
+    "choiceMode": "one",
+    "options": {
+      "A": {
+        "label": "Traer al asentamiento",
+        "directEffects": [
+          { "type": "addResource", "resource": "morale", "amount": 1 }
+        ],
+        "delayedEffects": [
+          { "delayDays": 1, "type": "removeResource", "resource": "food", "amount": 1 }
+        ]
+      },
+      "B": {
+        "label": "Dejarle comida",
+        "directEffects": [
+          { "type": "removeResource", "resource": "food", "amount": 1 },
+          { "type": "addResource", "resource": "morale", "amount": 1 }
+        ],
+        "delayedEffects": []
+      }
+    },
+    "weight": 8,
+    "type": "explore"
+  },
+  {
+    "id": "explore_hostiles",
+    "name": "Territorio hostil",
+    "image": "",
+    "text": "{survivor} entra en una zona controlada por un grupo hostil.",
+    "choiceMode": "one",
+    "options": {
+      "A": {
+        "label": "Retirarse",
+        "directEffects": [
+          { "type": "removeResource", "resource": "morale", "amount": 1 }
+        ],
+        "delayedEffects": []
+      },
+      "B": {
+        "label": "Marcar ubicación",
+        "directEffects": [
+          { "type": "modifyActionEffect", "action": "ataque", "modifier": 1 }
+        ],
+        "delayedEffects": []
+      }
+    },
+    "weight": 7,
+    "type": "explore"
+  },
+  {
+    "id": "explore_ruinas",
+    "name": "Edificio en ruinas",
+    "image": "",
+    "text": "{survivor} entra en un edificio semiderruido.",
+    "choiceMode": "one",
+    "options": {
+      "A": {
+        "label": "Buscar dentro",
+        "directEffects": [
+          { "type": "addResource", "resource": "materials", "amount": 1 }
+        ],
+        "delayedEffects": [
+          { "delayDays": 1, "type": "injureRandom" }
+        ]
+      },
+      "B": {
+        "label": "Evitar riesgos",
+        "directEffects": [],
+        "delayedEffects": []
+      }
+    },
+    "weight": 6,
+    "type": "explore"
+  },
+  {
+    "id": "explore_clinica",
+    "name": "Clínica abandonada",
+    "image": "",
+    "text": "{survivor} encuentra una antigua clínica.",
+    "choiceMode": "one",
+    "options": {
+      "A": {
+        "label": "Buscar medicamentos",
+        "directEffects": [
+          { "type": "addResource", "resource": "meds", "amount": 1 }
+        ],
+        "delayedEffects": []
+      },
+      "B": {
+        "label": "Desmontar equipo",
+        "directEffects": [
+          { "type": "addResource", "resource": "materials", "amount": 2 }
+        ],
+        "delayedEffects": []
+      }
+    },
+    "weight": 5,
+    "type": "explore"
+  }
+]

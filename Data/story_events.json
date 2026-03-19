@@ -1,0 +1,102 @@
+[
+  {
+    "id": "historia_7_disparos",
+    "day": 7,
+    "title": "Disparos en la distancia",
+    "type": "story",
+    "text": "Durante la noche se escuchan disparos al norte. {survivor} cree que podría haber otros supervivientes.",
+    "options": [
+      {
+        "label": "Investigar",
+        "effects": {
+          "setAttackThreat": true,
+          "morale": 1
+        }
+      },
+      {
+        "label": "Ignorar",
+        "effects": {
+          "morale": -1
+        }
+      }
+    ]
+  },
+  {
+    "id": "historia_14_refugiados",
+    "day": 14,
+    "title": "Grupo de refugiados",
+    "type": "story",
+    "text": "Un pequeño grupo llega al asentamiento pidiendo refugio. Están agotados y hambrientos.",
+    "options": [
+      {
+        "label": "Acogerlos (-2 comida)",
+        "cost": {
+          "food": 2
+        },
+        "effects": {
+          "addSurvivor": 2,
+          "morale": 1
+        },
+        "fallback": {
+          "morale": -2
+        }
+      },
+      {
+        "label": "Rechazarlos",
+        "effects": {
+          "morale": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "historia_21_radio",
+    "day": 21,
+    "title": "Señal de radio",
+    "type": "story",
+    "text": "Una vieja radio capta una señal intermitente. Parece un asentamiento cercano intentando contactar.",
+    "options": [
+      {
+        "label": "Responder",
+        "effects": {
+          "morale": 2
+        }
+      },
+      {
+        "label": "No arriesgar",
+        "effects": {
+          "morale": -1
+        }
+      }
+    ]
+  },
+  {
+    "id": "historia_28_gran_ataque",
+    "day": 28,
+    "title": "Gran ataque",
+    "type": "story",
+    "text": "Un grupo numeroso de raiders se acerca. Este no será un ataque cualquiera.",
+    "options": [
+      {
+        "label": "Prepararse para defender",
+        "effects": {
+          "setAttackThreat": true,
+          "morale": 1
+        }
+      },
+      {
+        "label": "Intentar negociar (-2 materiales)",
+        "cost": {
+          "materials": 2
+        },
+        "effects": {
+          "morale": 1
+        },
+        "fallback": {
+          "morale": -2,
+          "setAttackThreat": true
+        }
+      }
+    ]
+  }
+]

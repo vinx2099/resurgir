@@ -1,0 +1,178 @@
+[
+  {
+    "id": "ID001",
+    "name": "Un día tranquilo",
+    "image": "https://i.ibb.co/S4mNSRtG/97d2e574-7355-43c5-b487-84b16982a997.jpg",
+    "text": "Nada significativo, un día más en el yermo.",
+    "days": 1,
+    "weight": 8,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "ID002",
+    "name": "Tormenta",
+    "image": "",
+    "text": "Llueve tanto que es imposible salir ahí fuera a poder buscar comida.",
+    "days": 2,
+    "weight": 8,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "ID003",
+    "name": "Fiesta",
+    "image": "",
+    "text": "{survivor} propone reunirse en los barracones y celebrar una fiesta para liberar tensiones. Cree que hoy es su cumpleaños.",
+    "days": 1,
+    "weight": 8,
+    "type": "survivor",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Sí, celebrar la fiesta. (-2 comida +2 moral)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "morale",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "No, es mejor no malgastar la comida. (-2 moral)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "morale",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "EX001",
+    "name": "Lata de comida",
+    "image": "https://i.ibb.co/TMW5LPDb/0112.jpg",
+    "text": "No hará falta ni calentarla... el sabor inigualable de estas albóndigas en lata es todo un manjar en estos días...",
+    "days": 1,
+    "weight": 8,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "EX002",
+    "name": "torcedura de tobillo",
+    "image": "",
+    "text": "Mala suerte en la expedición. Volver con el tobillo dolorido ha sido un suplicio.",
+    "days": 1,
+    "weight": 6,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "injureExplorer"
+      }
+    ]
+  },
+  {
+    "id": "ex003",
+    "name": "¿quién anda ahí?",
+    "image": "",
+    "text": "Aparece alguien.",
+    "days": 1,
+    "weight": 6,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Invitar a que se una al grupo.",
+        "effects": [
+          {
+            "type": "addSurvivor",
+            "rarity": 4
+          }
+        ]
+      },
+      "B": {
+        "label": "Dejarle a su suerte",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "morale",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ex004",
+    "name": "hambre",
+    "image": "",
+    "text": "Alguien pide comida",
+    "days": 1,
+    "weight": 8,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Darle comida",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "morale",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Dejarle a su suerte",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "morale",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ex005",
+    "name": "Nada de nada",
+    "image": "",
+    "text": "Un paseo en balde...",
+    "days": 1,
+    "weight": 13,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": []
+  }
+]
