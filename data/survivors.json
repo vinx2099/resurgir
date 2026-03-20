@@ -5,14 +5,8 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Enfermera antes del Ocaso.",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "image": {
       "url": "https://i.ibb.co/60Cz1spg/c002.png",
-      "deleteUrl": ""
-    },
-    "imageInjured": {
-      "url": "https://i.ibb.co/cS1VF6wL/9d5d4b3c2209.png",
       "deleteUrl": ""
     },
     "skill": "ninguna",
@@ -24,14 +18,8 @@
     "fatigueCurrent": 3,
     "fatigueMax": 5,
     "story": "Mercenario que llegó herido al campamento.",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "image": {
       "url": "https://i.ibb.co/MDW8bfQ0/c003.png",
-      "deleteUrl": ""
-    },
-    "imageInjured": {
-      "url": "https://i.ibb.co/KxSHLW9Y/7c356a3f33c3.png",
       "deleteUrl": ""
     },
     "skill": "ninguna",
@@ -43,14 +31,8 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Líder nata",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "image": {
       "url": "https://i.ibb.co/0jgTcNXR/c001.png",
-      "deleteUrl": ""
-    },
-    "imageInjured": {
-      "url": "https://i.ibb.co/HyWLzqZ/1e88b6157486.png",
       "deleteUrl": ""
     },
     "skill": "ninguna",
@@ -62,17 +44,68 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Genérico",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "image": {
-      "url": "https://i.ibb.co/1f0VYsLT/c-GEN.png",
-      "deleteUrl": ""
-    },
-    "imageInjured": {
       "url": "https://i.ibb.co/1f0VYsLT/c-GEN.png",
       "deleteUrl": ""
     },
     "skill": "ninguna",
     "rarity": 4
+  },
+  {
+    "id": "survivor_8d56p6ec",
+    "name": "Sullivan",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "",
+    "moralCurrent": 2,
+    "moralMax": 2,
+    "image": {
+      "url": "https://i.ibb.co/ZpwzD3Yk/c005.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/HLbwsDdK/f1345b909bfb.png",
+      "deleteUrl": ""
+    },
+    "skill": "chatarrero",
+    "rarity": 3
+  },
+  {
+    "id": "survivor_j7kvxd2z",
+    "name": "Takeshi",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "Demasiado individualista.",
+    "moralCurrent": 1,
+    "moralMax": 2,
+    "image": {
+      "url": "https://i.ibb.co/C5Wxqn9k/c004.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/hF4qWXNJ/84c875635067.png",
+      "deleteUrl": ""
+    },
+    "skill": "precavido",
+    "rarity": 3
+  },
+  {
+    "id": "survivor_aiebwrdw",
+    "name": "Ellen",
+    "fatigueCurrent": 1,
+    "fatigueMax": 4,
+    "story": "Llega desde lejos, exhausta",
+    "moralCurrent": 2,
+    "moralMax": 2,
+    "image": {
+      "url": "https://i.ibb.co/rKjZccHV/c006.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/8DMm3tZj/2a6fb6b8062b.png",
+      "deleteUrl": ""
+    },
+    "skill": "cazador",
+    "rarity": 3
   }
 ]
