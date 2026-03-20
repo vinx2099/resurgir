@@ -1309,14 +1309,14 @@ function resolveActions(){
       state.food+=found;
       addLog(`${s.name} forrajea y consigue ${found} comida.`);
       trackActionXP(s,'forraje');
-      if(Math.random()<outsideRiskChance()) injureSurvivor(s,`Durante el forrajeo, ${s.name} resulta herido.`);
+      if(Math.random()<outsideRiskChance(s)) injureSurvivor(s,`Durante el forrajeo, ${s.name} resulta herido.`);
     }else if(type==='reciclar'){
       const value=Math.max(0,Number(gameData.config?.rules?.recycleValue??1)+getActionModifier('reciclar'));
       const chatarBonus=getSkillBonus(s,'reciclar').bonus||0;
       state.materials+=value+chatarBonus;
       addLog(`${s.name} recicla y obtiene ${value+chatarBonus} materiales.${chatarBonus?' (⛏+'+chatarBonus+')':''}`);
       trackActionXP(s,'reciclar');
-      if(Math.random()<outsideRiskChance()) injureSurvivor(s,`Reciclando fuera del asentamiento, ${s.name} resulta herido.`);
+      if(Math.random()<outsideRiskChance(s)) injureSurvivor(s,`Reciclando fuera del asentamiento, ${s.name} resulta herido.`);
     }else if(type==='vigilar'){
       addLog(`${s.name} vigila desde la Atalaya.`);
     }else if(type==='descansar'){
@@ -1444,10 +1444,18 @@ function resolveGroupAttack(){
   state.attackEffectDefeat=[];
 }
 
-function outsideRiskChance(){
+function outsideRiskChance(survivor){
   const outsideCount=state.survivors.filter(s=>['forraje','reciclar','defender','explorar'].includes(s.action?.type)).length;
   if(outsideCount<=0) return 0;
-  return Math.min(0.15+(outsideCount-1)*0.08,0.45);
+  let base=Math.min(0.05+(outsideCount-1)*0.03,0.15);
+
+  // Precavido skill: -40% of base risk for that specific survivor
+  if(survivor&&(survivor.skill||'').toLowerCase()==='precavido') base=base*0.60;
+
+  // TODO: equipment modifiers (vehicle, protection gear) — hook here next session
+  // if(survivor?._equipmentRiskMod) base=base*(1+survivor._equipmentRiskMod);
+
+  return Math.max(0, base);
 }
 
 function applyDailyIncome(){
