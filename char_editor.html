@@ -877,6 +877,7 @@ function getFormData() {
     moralCurrent: Number($('f-moraleCurrent')?.value??2),
     moralMax: Number($('f-moraleMax')?.value??2),
     image: { url: $('f-imgUrl').value.trim(), deleteUrl: '' },
+    imageInjured: { url: $('f-imgInjuredUrl')?.value.trim()||'', deleteUrl: '' },
     skill: $('f-skill').value,
     rarity: state.selectedRarity
   };

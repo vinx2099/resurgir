@@ -1049,6 +1049,8 @@ function initGame(){
     maxFatigue:Number(s.fatigueMax??s.maxFatigue??3),
     rarity:Number(s.rarity??4),
     imageUrl:s.image?.url||'',
+    imageUrlInjured:s.imageInjured?.url||s.imageUrlInjured||'',
+    imageUrlDead:'',  // always uses gravestone SVG
     story:s.story||'',
     skill:s.skill||'ninguna',
     morale:Number(s.moralCurrent??s.morale??2),
@@ -1106,7 +1108,9 @@ function renderSurvivors(){
   state.survivors.filter(s=>s.status!=='muerto').forEach(s=>{
     const canAct=s.status!=='muerto'&&(!state.pendingEvent||state.pendingEvent._multiDayPassive);
     const actions=getAvailableActions(s);
-    const avatarInner = s.imageUrl ? `<img src="${escapeAttr(s.imageUrl)}" alt="">` : '<span style="color:var(--muted);font-size:11px">Sin<br>imagen</span>';
+    const _img=getSurvivorImage(s);
+    const _filter=s.status==='muerto'?'grayscale(1) brightness(0.6)':s.status==='herido'?'grayscale(30%) sepia(30%) brightness(0.85)':'';
+    const avatarInner = _img ? `<img src="${escapeAttr(_img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;filter:${_filter}">` : '<span style="color:var(--muted);font-size:11px">Sin<br>imagen</span>';
     const card=document.createElement('div');
     card.className='survivor-card';
     const loreBtn=`<button class="lore-btn" title="Historia de ${escapeHtml(s.name)}">📖</button>`;
@@ -1493,7 +1497,7 @@ function openFoodChoicePopup(){
   survivors.forEach(s=>{
     const item=document.createElement('div');
     item.style.cssText='display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line2);cursor:pointer;background:var(--panel2);';
-    item.innerHTML=`<div style="width:40px;height:40px;overflow:hidden;border:1px solid var(--line2);flex-shrink:0;">${s.imageUrl?`<img src="${escapeAttr(s.imageUrl)}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(20%);">`:'<div style="width:40px;height:40px;background:var(--panel3);"></div>'}</div><div><div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:0.06em;">${escapeHtml(s.name)}</div><div style="font-size:10px;color:var(--muted);">${getMoraleEmoji(s)} · ${s.status}</div></div><div id="food-check-${s.id}" style="font-size:20px;color:var(--muted);">○</div>`;
+    item.innerHTML=`<div style="width:40px;height:40px;overflow:hidden;border:1px solid var(--line2);flex-shrink:0;">${getSurvivorImage(s)?`<img src="${escapeAttr(getSurvivorImage(s))}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(20%);">`:'<div style="width:40px;height:40px;background:var(--panel3);"></div>'}</div><div><div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:0.06em;">${escapeHtml(s.name)}</div><div style="font-size:10px;color:var(--muted);">${getMoraleEmoji(s)} · ${s.status}</div></div><div id="food-check-${s.id}" style="font-size:20px;color:var(--muted);">○</div>`;
     item.addEventListener('click',()=>{
       if(selected.has(s.id)){
         selected.delete(s.id);
@@ -2294,6 +2298,8 @@ function applyEffect(effect,delayed){
           maxFatigue:Number(newSurvivor.fatigueMax??newSurvivor.maxFatigue??3),
           rarity:Number(newSurvivor.rarity??4),
           imageUrl:newSurvivor.image?.url||'',
+          imageUrlInjured:newSurvivor.imageInjured?.url||newSurvivor.imageUrlInjured||'',
+          imageUrlDead:'',
           story:newSurvivor.story||'',
           skill:newSurvivor.skill||'ninguna',
           morale:Number(newSurvivor.moralCurrent??newSurvivor.morale??2),
@@ -2464,6 +2470,13 @@ function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',recicla
 function actionSummary(s){if(s.status==='muerto')return'No disponible.';if(s.status==='herido'&&!s.action)return'Está herido. Solo puede descansar.';if(s.fatigue<=0&&!s.action)return'Sin fatiga. Solo puede descansar.';if(!s.action)return'Sin acción asignada.';if(s.action.target)return`Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}`;return`Acción asignada: ${actionLabel(s.action.type)}`}
 function statusLabel(status){return({activo:'Activo',ocupado:'Ocupado',herido:'Herido',muerto:'Muerto'})[status]||status}
 
+
+function getSurvivorImage(s){
+  if(s.status==='muerto') return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230a0c09'/%3E%3Crect x='35' y='60' width='30' height='28' rx='2' fill='%23222' stroke='%23444' stroke-width='1.5'/%3E%3Crect x='40' y='65' width='20' height='4' rx='1' fill='%23444'/%3E%3Cpath d='M30 60 Q50 20 70 60 Z' fill='%23222' stroke='%23444' stroke-width='1.5'/%3E%3Ctext x='50' y='52' text-anchor='middle' font-size='14' fill='%23556' font-family='serif'%3E%E2%9C%9D%3C/text%3E%3Cpath d='M44 72 h12 M50 68 v8' stroke='%23445' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E`;
+  if(s.status==='herido'&&s.imageUrlInjured) return s.imageUrlInjured;
+  return s.imageUrl||'';
+}
+
 function getMoraleEmoji(s){
   const m=s.morale??2;
   if(m>=2) return '😊';
@@ -2519,7 +2532,8 @@ function openMedsSavePopup(){
   const {s, msg, cost, affordable}=state._pendingDeath;
   const popup=document.getElementById('medsSavePopup');
   const imgEl=document.getElementById('medsSaveImg');
-  imgEl.innerHTML=s.imageUrl?`<img src="${escapeAttr(s.imageUrl)}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(40%);">` : '';
+  const _medsImg=s.imageUrlInjured||s.imageUrl||'';
+  imgEl.innerHTML=_medsImg?`<img src="${escapeAttr(_medsImg)}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(40%);">` : '';
   document.getElementById('medsSaveName').textContent=s.name;
   document.getElementById('medsSaveText').textContent=
     affordable
@@ -2553,9 +2567,8 @@ function openCemetery(){
     list.innerHTML='<div class="cemetery-empty">// Ningún superviviente ha caído todavía.</div>';
   } else {
     list.innerHTML=state.cemetery.map(s=>{
-      const img=s.imageUrl
-        ?`<img class="cemetery-avatar" src="${escapeAttr(s.imageUrl)}" alt="">`
-        :`<div class="cemetery-avatar" style="display:flex;align-items:center;justify-content:center;font-size:28px;">†</div>`;
+      const _cImg=getSurvivorImage({...s,status:'muerto'});
+      const img=`<img class="cemetery-avatar" src="${escapeAttr(_cImg)}" alt="" style="filter:grayscale(1) brightness(0.6);">`;
       return `<div class="cemetery-card">
         ${img}
         <div>
@@ -2572,7 +2585,8 @@ function openCemetery(){
 function openLoreModal(s){
   document.getElementById('loreModalName').textContent=s.name||'';
   const img=document.getElementById('loreModalImg');
-  if(s.imageUrl){img.src=s.imageUrl;img.style.display='block';}
+  const loreImg=getSurvivorImage(s);
+  if(loreImg){img.src=loreImg;img.style.display='block';img.style.filter=s.status==='muerto'?'grayscale(1) brightness(0.6)':s.status==='herido'?'grayscale(20%) sepia(20%)':'';}
   else{img.style.display='none';}
   document.getElementById('loreModalStory').textContent=s.story||'Sin historia registrada.';
   document.getElementById('survivorLoreModal').classList.add('open');
