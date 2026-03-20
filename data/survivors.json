@@ -9,7 +9,15 @@
       "url": "https://i.ibb.co/60Cz1spg/c002.png",
       "deleteUrl": ""
     },
+    "imageInjured": {
+      "url": "",
+      "deleteUrl": ""
+    },
     "skill": "ninguna",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "rarity": 4
   },
   {
@@ -22,7 +30,15 @@
       "url": "https://i.ibb.co/MDW8bfQ0/c003.png",
       "deleteUrl": ""
     },
+    "imageInjured": {
+      "url": "",
+      "deleteUrl": ""
+    },
     "skill": "ninguna",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "rarity": 4
   },
   {
@@ -35,7 +51,15 @@
       "url": "https://i.ibb.co/0jgTcNXR/c001.png",
       "deleteUrl": ""
     },
+    "imageInjured": {
+      "url": "",
+      "deleteUrl": ""
+    },
     "skill": "ninguna",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "rarity": 4
   },
   {
@@ -48,7 +72,15 @@
       "url": "https://i.ibb.co/1f0VYsLT/c-GEN.png",
       "deleteUrl": ""
     },
+    "imageInjured": {
+      "url": "",
+      "deleteUrl": ""
+    },
     "skill": "ninguna",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "rarity": 4
   },
   {
@@ -68,6 +100,8 @@
       "deleteUrl": ""
     },
     "skill": "chatarrero",
+    "skill2": "ninguna",
+    "negativeSkill": "glotón",
     "rarity": 3
   },
   {
@@ -76,8 +110,6 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Demasiado individualista.",
-    "moralCurrent": 1,
-    "moralMax": 2,
     "image": {
       "url": "https://i.ibb.co/C5Wxqn9k/c004.png",
       "deleteUrl": ""
@@ -87,6 +119,10 @@
       "deleteUrl": ""
     },
     "skill": "precavido",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "moralCurrent": 1,
+    "moralMax": 2,
     "rarity": 3
   },
   {
@@ -95,8 +131,6 @@
     "fatigueCurrent": 1,
     "fatigueMax": 4,
     "story": "Llega desde lejos, exhausta",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "image": {
       "url": "https://i.ibb.co/rKjZccHV/c006.png",
       "deleteUrl": ""
@@ -106,6 +140,52 @@
       "deleteUrl": ""
     },
     "skill": "cazador",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "rarity": 3
+  },
+  {
+    "id": "survivor_5xlsvhiv",
+    "name": "Tom Carlish",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "Antiguo vendedor de coches",
+    "moralCurrent": 2,
+    "moralMax": 3,
+    "image": {
+      "url": "https://i.ibb.co/vCgKF2pK/c007.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/xS853Bp4/418915ee0140.png",
+      "deleteUrl": ""
+    },
+    "skill": "ingeniero",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "rarity": 2
+  },
+  {
+    "id": "survivor_y4o6r2gz",
+    "name": "Bobby",
+    "fatigueCurrent": 2,
+    "fatigueMax": 2,
+    "story": "El chaval del asentamiento",
+    "moralCurrent": 2,
+    "moralMax": 4,
+    "image": {
+      "url": "https://i.ibb.co/MDRGCQLX/c008.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/s722KP8/fbb7670bc797.png",
+      "deleteUrl": ""
+    },
+    "skill": "explorador",
+    "skill2": "ninguna",
+    "negativeSkill": "miedoso",
+    "rarity": 2
   }
 ]
