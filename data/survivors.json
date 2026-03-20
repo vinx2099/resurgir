@@ -5,8 +5,14 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Enfermera antes del Ocaso.",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "image": {
-      "url": "https://i.ibb.co/BHZj0YsZ/001.png",
+      "url": "https://i.ibb.co/60Cz1spg/c002.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/cS1VF6wL/9d5d4b3c2209.png",
       "deleteUrl": ""
     },
     "skill": "ninguna",
@@ -18,8 +24,14 @@
     "fatigueCurrent": 3,
     "fatigueMax": 5,
     "story": "Mercenario que llegó herido al campamento.",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "image": {
-      "url": "https://i.ibb.co/0pszrW3w/OIG3-Jf02-KOq-Vmun-Hgtflnv-YS.jpg",
+      "url": "https://i.ibb.co/MDW8bfQ0/c003.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/KxSHLW9Y/7c356a3f33c3.png",
       "deleteUrl": ""
     },
     "skill": "ninguna",
@@ -31,8 +43,33 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Líder nata",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "image": {
-      "url": "https://i.ibb.co/zhpd6JSb/OIG1-BTf-Idmr-h-Kmr-Pd4-K2-Lj-N.jpg",
+      "url": "https://i.ibb.co/0jgTcNXR/c001.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/HyWLzqZ/1e88b6157486.png",
+      "deleteUrl": ""
+    },
+    "skill": "ninguna",
+    "rarity": 4
+  },
+  {
+    "id": "survivor_oziii7xl",
+    "name": "Superviviente",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "Genérico",
+    "moralCurrent": 2,
+    "moralMax": 2,
+    "image": {
+      "url": "https://i.ibb.co/1f0VYsLT/c-GEN.png",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/1f0VYsLT/c-GEN.png",
       "deleteUrl": ""
     },
     "skill": "ninguna",
