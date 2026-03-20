@@ -1252,9 +1252,12 @@ function endDay(){
   if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive) return;
   // Snapshot action counts before resolving (used to weight event selection)
   state._lastDayActions={};
+  state._lastDayActionSurvivors={};  // action -> [survivorIds]
   state.survivors.forEach(s=>{
     if(s.action?.type&&s.status!=='muerto'){
       state._lastDayActions[s.action.type]=(state._lastDayActions[s.action.type]||0)+1;
+      if(!state._lastDayActionSurvivors[s.action.type]) state._lastDayActionSurvivors[s.action.type]=[];
+      state._lastDayActionSurvivors[s.action.type].push(s.id);
     }
   });
   resolveActions();
@@ -1777,7 +1780,10 @@ function triggerExploreEvent(survivor){
 
   const allParts=[...resultParts,...extraParts];
   const result=allParts.length?allParts.join(', '):'nada interesante';
-  addLog(`🗺 ${survivorName} → ${name}: ${result}.`);
+  // Show event narrative text for richness, replacing {survivor} placeholder
+  const narrative=(schema.text||'').replaceAll('{survivor}',survivorName);
+  if(narrative) addLog(`🗺 ${survivorName} → ${name}: ${narrative} [${result}]`);
+  else addLog(`🗺 ${survivorName} → ${name}: ${result}.`);
 }
 
 
@@ -2273,10 +2279,20 @@ function applyEffect(effect,delayed){
       const target=state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto');
       if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}${target.name} resulta herido durante la exploración.`);
       else {
-        // Fallback to random if not found
         const candidate=pick(state.survivors.filter(s=>s.status!=='muerto'));
         if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`);
       }
+      break;
+    }
+    case 'injureActionSurvivor':{
+      // Injure a survivor who performed the event's relatedAction this day
+      const action=effect.action||state.pendingEvent?.relatedAction;
+      const ids=action&&state._lastDayActionSurvivors?.[action];
+      const pool=ids?.length
+        ? state.survivors.filter(s=>ids.includes(s.id)&&s.status!=='muerto')
+        : state.survivors.filter(s=>s.status!=='muerto');
+      const target=pick(pool);
+      if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}🩸 ${target.name} resulta herido.`);
       break;
     }
     case 'injureRandom':

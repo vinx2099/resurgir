@@ -239,6 +239,7 @@
     }
 
     .effect-block.option-b { border-left-color: var(--accent-bright); background: rgba(106,184,158,0.04); }
+    .effect-block.option-c { border-left-color: var(--amber-bright); background: rgba(184,124,42,0.04); }
 
     .effect-block .block-title {
       font-size: 10px;
@@ -250,6 +251,7 @@
     }
 
     .effect-block.option-b .block-title { color: var(--accent-bright); }
+    .effect-block.option-c .block-title { color: var(--amber-bright); }
 
     .effect-rows { display: flex; flex-direction: column; gap: 6px; }
 
@@ -750,6 +752,18 @@
             <button class="add-effect-btn" onclick="addEffectRow('optionB')">+ Añadir efecto</button>
           </div>
 
+          <!-- Opción C (opcional) -->
+          <div class="section-divider"><span>Opción C <span style="color:var(--muted);font-size:10px;font-weight:400;">— opcional</span></span></div>
+          <div class="effect-block option-c" id="optionCBlock">
+            <div class="option-label-field">
+              <span class="option-tag c">OPCIÓN C</span>
+              <input type="text" id="f-labelC" placeholder="Dejar vacío si no se usa opción C" />
+            </div>
+            <div class="block-title">Efectos al elegir C</div>
+            <div class="effect-rows" id="optionCEffectRows"></div>
+            <button class="add-effect-btn" onclick="addEffectRow('optionC')">+ Añadir efecto</button>
+          </div>
+
         </div>
 
         <!-- AMENAZA DE ATAQUE -->
@@ -871,6 +885,7 @@ const EFFECT_TYPES = [
   { value: 'healSurvivor',     label: 'Curar superviviente herido' },
   { value: 'injureSurvivor',   label: 'Herir superviviente (aleatorio)' },
   { value: 'injureExplorer',   label: 'Herir al explorador (quien inició el evento)' },
+  { value: 'injureActionSurvivor', label: '🩸 Herir a quien realizó la acción relacionada' },
   { value: 'setAttackThreat',  label: 'Activar amenaza de ataque' },
   { value: 'limitAction',      label: 'Inhabilitar acción (X días)' },
   { value: 'moraleAll',        label: '😊 Moral a todos los supervivientes (+/-)' },
@@ -983,6 +998,8 @@ function updateEffectRowFields(row, type) {
     p1.appendChild(oRandom);
   } else if (type === 'injureExplorer') {
     // No params — always targets the survivor who triggered the explore event
+  } else if (type === 'injureActionSurvivor') {
+    // No params — targets a survivor who did the relatedAction this day
   } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
     amt.style.display = '';
     amt.placeholder = type === 'stabilityChange' ? 'Cantidad (+/-)' : 'Moral +/- (ej: 1 o -1)';
@@ -1053,6 +1070,8 @@ function readEffectRows(containerId) {
       effect.target = p1.value || 'random';
     } else if (type === 'injureExplorer') {
       // no extra params
+    } else if (type === 'injureActionSurvivor') {
+      // no extra params
     } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
       effect.amount = Number(amt.value) || 1;
     } else if (type === 'setAttackThreat') {
@@ -1086,6 +1105,7 @@ function effectToString(e) {
   if (e.type === 'healSurvivor') return `Curar superviviente herido`;
   if (e.type === 'injureSurvivor') return `Herir superviviente (${e.target||'aleatorio'})`;
   if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
+  if (e.type === 'injureActionSurvivor') return `🩸 Herir a quien realizó la acción relacionada`;
   if (e.type === 'setAttackThreat') return `⚔ Amenaza de ataque · Fuerza ${e.attackStrength||3} · Llega en ${e.arrivalDays||1}d`;
   if (e.type === 'limitAction') return `🚫 Inhabilitar acción: ${e.action} (${e.days||1}d)`;
   if (e.type === 'moraleAll') return `${e.amount>0?'😊':'😞'} Moral todos ${e.amount>0?'+':''}${e.amount}`;
@@ -1127,6 +1147,7 @@ function buildEventObject() {
     }];
   } else {
     ev.choiceMode = 'choice';
+    const labelC = document.getElementById('f-labelC').value.trim();
     ev.options = {
       A: {
         label: document.getElementById('f-labelA').value.trim() || 'Opción A',
@@ -1135,7 +1156,8 @@ function buildEventObject() {
       B: {
         label: document.getElementById('f-labelB').value.trim() || 'Opción B',
         effects: readEffectRows('optionBEffectRows')
-      }
+      },
+      ...(labelC ? { C: { label: labelC, effects: readEffectRows('optionCEffectRows') } } : {})
     };
   }
 
@@ -1290,7 +1312,7 @@ function onTypeChange(){
 }
 
 // ── ALL FORM INPUTS → PREVIEW ──
-['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-week','f-day','f-relatedAction'].forEach(id => {
+['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-week','f-day','f-relatedAction'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', updatePreview);
 });
@@ -1472,7 +1494,7 @@ function loadEventForEditing(idx) {
   }
 
   // Clear effect rows
-  ['directEffectRows','optionAEffectRows','optionBEffectRows'].forEach(id => {
+  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
 
@@ -1493,6 +1515,12 @@ function loadEventForEditing(idx) {
     (ev.options.B?.effects || []).forEach(eff => {
       addEffectRow('optionB');
       const rows = document.getElementById('optionBEffectRows').querySelectorAll('.effect-row');
+      loadEffectIntoRow(rows[rows.length - 1], eff);
+    });
+    document.getElementById('f-labelC').value = ev.options.C?.label || '';
+    (ev.options.C?.effects || []).forEach(eff => {
+      addEffectRow('optionC');
+      const rows = document.getElementById('optionCEffectRows').querySelectorAll('.effect-row');
       loadEffectIntoRow(rows[rows.length - 1], eff);
     });
   }
@@ -1562,7 +1590,7 @@ function loadEffectIntoRow(row, eff) {
 
 // ── CLEAR ──
 function clearForm() {
-  ['f-id','f-name','f-story','f-labelA','f-labelB','f-imgurl'].forEach(id => {
+  ['f-id','f-name','f-story','f-labelA','f-labelB','f-labelC','f-imgurl'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1573,7 +1601,7 @@ function clearForm() {
   if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
   if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';
   ['attackVictoryRows','attackDefeatRows'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=''; });
-  ['directEffectRows','optionAEffectRows','optionBEffectRows'].forEach(id => {
+  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
   uploadedImageUrl = '';
