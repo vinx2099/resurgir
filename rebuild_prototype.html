@@ -501,7 +501,7 @@
       background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.8));
     }
 
-    .event-image img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(40%) contrast(1.1); }
+    .event-image img { width: 100%; height: 160px; object-fit: cover; display: block; filter: grayscale(30%) contrast(1.1); }
 
     .event-title {
       font-family: var(--font-display);
@@ -832,9 +832,14 @@
         <div class="panel-header" style="justify-content:space-between;"><span>Instalación</span><button id="closeBuildingDetail" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;">✕</button></div>
         <div class="panel-body"><div class="detail-grid" id="detailBox"></div></div>
       </div>
-      <div class="panel-header">Efectos activos</div>
+      <div class="panel-header">Eventos</div>
       <div class="panel-body">
-        <div id="activeEventsList"><div class="no-active-events">// Sin efectos activos.</div></div>
+        <div class="event-image" id="eventImage"></div>
+        <div class="event-title" id="eventTitle" style="margin-top:10px">Sin evento</div>
+        <div id="eventSubtitle" style="display:none;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;"></div>
+        <div id="eventDurationBar" style="display:none;margin:6px 0 4px;"></div>
+        <div class="event-text" id="eventText">Asigna acciones y pulsa Finalizar día.</div>
+        <div class="event-options" id="eventOptions"></div>
       </div>
     </section>
   </div>
@@ -887,22 +892,6 @@
     </div>
   </div>
 
-  <!-- Event popup -->
-  <div class="event-popup-overlay" id="eventPopupOverlay">
-    <div class="event-popup">
-      <div class="event-popup-img" id="popupImg"></div>
-      <div class="event-popup-body">
-        <div class="event-popup-subtitle" id="popupSubtitle"></div>
-        <div class="event-popup-title" id="popupTitle">Evento</div>
-        <div class="event-popup-duration" id="popupDuration">
-          <span id="popupDurationText"></span>
-          <div class="dur-pips" id="popupDurationPips"></div>
-        </div>
-        <div class="event-popup-text" id="popupText"></div>
-        <div class="event-popup-options" id="popupOptions"></div>
-      </div>
-    </div>
-  </div>
 
   <div class="gameover" id="gameOverWrap"><div class="gameover-box"><h1>Derrota</h1><p id="gameOverText"></p><button onclick="location.reload()">Reiniciar partida</button></div></div>
 <script>
@@ -1064,7 +1053,6 @@ function render(){
   renderSurvivors();
   renderBuildings();
   renderLog();
-  renderActiveEvents();
   checkGameOver();
 }
 
@@ -2187,55 +2175,61 @@ function setEvent(ev){
   const days=Number(ev.days||1);
   state.eventTotalDays=days;
   if(!ev._continuing) state.eventDaysLeft=days;
+  renderEventDurationBar();
 
-  // ── Populate popup ──
-  const imgWrap=document.getElementById('popupImg');
-  if(ev.image){ imgWrap.innerHTML=`<img src="${escapeAttr(ev.image)}" alt="">`; imgWrap.classList.add('has-img'); }
-  else { imgWrap.innerHTML=''; imgWrap.classList.remove('has-img'); }
+  // Image
+  const eventImage=document.getElementById('eventImage');
+  eventImage.innerHTML=ev.image?`<img src="${escapeAttr(ev.image)}" alt="">`:'';
+
+  // Title
+  document.getElementById('eventTitle').textContent=ev.title||'Evento';
 
   // Subtitle (explorer name)
-  const subEl=document.getElementById('popupSubtitle');
+  const subEl=document.getElementById('eventSubtitle');
   if(ev._explorerName||(ev._explorerId&&state.survivors.find(s=>s.id===ev._explorerId))){
     const name=ev._explorerName||(state.survivors.find(s=>s.id===ev._explorerId)?.name)||'';
     subEl.textContent=`Exploración de ${name}`; subEl.style.display='';
   } else { subEl.style.display='none'; }
 
-  document.getElementById('popupTitle').textContent=ev.title||'Evento';
-  document.getElementById('popupText').innerHTML=escapeHtml(ev.text||'').replace(/\n/g,'<br>');
-
-  // Duration bar
-  const durEl=document.getElementById('popupDuration');
-  if(days>1){
-    const left=state.eventDaysLeft;
-    document.getElementById('popupDurationText').textContent=`⏱ ${left} día${left!==1?'s':''} restante${left!==1?'s':''}`;
-    document.getElementById('popupDurationPips').innerHTML=Array.from({length:days},(_,i)=>`<div class="dur-pip${i>=left?' empty':''}"></div>`).join('');
-    durEl.classList.add('active');
-  } else { durEl.classList.remove('active'); }
+  // Text
+  document.getElementById('eventText').innerHTML=escapeHtml(ev.text||'').replace(/\n/g,'<br>');
 
   // Options
-  const optsEl=document.getElementById('popupOptions');
-  optsEl.innerHTML='';
+  const eventOptions=document.getElementById('eventOptions');
+  eventOptions.innerHTML='';
   (ev.options||[]).forEach(opt=>{
     const btn=document.createElement('button');
-    btn.className='opt-btn '+(opt.className==='secondary'?'secondary':'');
+    btn.className=opt.className||'primary';
     btn.textContent=opt.label;
     btn.addEventListener('click',()=>{opt.action();render()});
-    optsEl.appendChild(btn);
+    eventOptions.appendChild(btn);
   });
-
-  // Open popup
-  document.getElementById('eventPopupOverlay').classList.add('open');
 }
 
-// renderEventDurationBar replaced by popup duration display
+function renderEventDurationBar(){
+  const bar=document.getElementById('eventDurationBar');
+  if(!state.pendingEvent||state.eventTotalDays<=1){bar.style.display='none';return;}
+  const left=state.eventDaysLeft;
+  const total=state.eventTotalDays;
+  const pips=Array.from({length:total},(_,i)=>
+    `<div class="dur-pip${i>=left?' empty':''}"></div>`
+  ).join('');
+  bar.innerHTML=`<span>⏱ DURACIÓN: ${left} día${left!==1?'s':''} restante${left!==1?'s':''}</span><div class="dur-pips">${pips}</div>`;
+  bar.style.display='flex';
+}
 
 
 function closeEvent(){
   state.pendingEvent=null;
   state.eventDaysLeft=0;
   state.eventTotalDays=1;
-  document.getElementById('eventPopupOverlay').classList.remove('open');
-  renderActiveEvents();
+  const eventImage=document.getElementById('eventImage');
+  if(eventImage) eventImage.innerHTML='';
+  const t=document.getElementById('eventTitle'); if(t) t.textContent='Sin evento';
+  const tx=document.getElementById('eventText'); if(tx) tx.innerHTML='Asigna acciones y pulsa Finalizar día.';
+  const eo=document.getElementById('eventOptions'); if(eo) eo.innerHTML='';
+  const bar=document.getElementById('eventDurationBar'); if(bar) bar.style.display='none';
+  const sub=document.getElementById('eventSubtitle'); if(sub) sub.style.display='none';
 }
 
 function renderActiveEvents(){
