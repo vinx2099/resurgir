@@ -635,8 +635,9 @@
           </div>
         </div>
 
-        <!-- Image upload -->
-        <div style="border:1px solid var(--line2);background:var(--panel2);padding:10px;margin-bottom:10px;">
+        <!-- Image upload — Normal -->
+        <div style="border:1px solid var(--line2);background:var(--panel2);padding:10px;margin-bottom:6px;">
+          <div style="font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Imagen normal</div>
           <div class="field" style="margin-bottom:8px;">
             <label>Archivo de imagen</label>
             <input id="f-imgFile" type="file" accept="image/*" />
@@ -651,6 +652,25 @@
             </div>
           </div>
           <div class="status-bar" id="uploadStatus"></div>
+        </div>
+
+        <!-- Image upload — Injured (obligatoria) -->
+        <div style="border:1px solid var(--warn);background:rgba(138,106,42,0.06);padding:10px;margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--warn-bright);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">🩸 Imagen herido <span style="color:var(--danger-bright);">· OBLIGATORIA</span></div>
+          <div class="field" style="margin-bottom:8px;">
+            <label>Archivo de imagen</label>
+            <input id="f-imgInjuredFile" type="file" accept="image/*" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;">
+            <div class="field" style="margin:0;">
+              <label>URL resultante (o pega directamente)</label>
+              <input id="f-imgInjuredUrl" type="url" placeholder="https://i.ibb.co/..." />
+            </div>
+            <div style="display:flex;align-items:flex-end;">
+              <button class="btn amber" id="uploadInjuredBtn">⬆ Subir</button>
+            </div>
+          </div>
+          <div class="status-bar" id="uploadInjuredStatus"></div>
         </div>
 
         <div class="btn-row" style="margin-bottom:8px;">
@@ -811,6 +831,35 @@ function updateImgPreview(url) {
 
 $('f-imgUrl').addEventListener('input', e => updateImgPreview(e.target.value.trim()));
 
+$('uploadInjuredBtn').addEventListener('click', async () => {
+  const file = $('f-imgInjuredFile').files?.[0];
+  const status = $('uploadInjuredStatus');
+  if (!file) { status.textContent = 'Selecciona un archivo primero.'; return; }
+  status.textContent = 'Subiendo...';
+  try {
+    const b64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const fd = new FormData();
+    fd.append('key', IMGBB_KEY);
+    fd.append('image', b64);
+    const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (data.success) {
+      $('f-imgInjuredUrl').value = data.data.url;
+      status.textContent = '✓ Subida correcta.';
+      status.style.color = 'var(--ok-bright)';
+    } else {
+      status.textContent = 'Error al subir.';
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+  }
+});
+
 // ── IMGBB UPLOAD ──
 $('uploadBtn').addEventListener('click', async () => {
   const file = $('f-imgFile').files?.[0];
@@ -898,6 +947,9 @@ function resetForm() {
   $('f-story').value = '';
   $('f-imgFile').value = '';
   $('f-imgUrl').value = '';
+  $('f-imgInjuredFile').value = '';
+  $('f-imgInjuredUrl').value = '';
+  $('uploadInjuredStatus').textContent = '';
   $('f-skill').value = state.skills[0] || 'ninguna';
   setRarity(4);
   setMoraleInit(2);
@@ -915,6 +967,7 @@ function fillForm(s) {
   $('f-fatigueMax').value = s.fatigueMax ?? 3;
   $('f-story').value = s.story || '';
   $('f-imgUrl').value = s.image?.url || '';
+  $('f-imgInjuredUrl').value = s.imageInjured?.url || s.imageUrlInjured || '';
   $('f-skill').value = s.skill || 'ninguna';
   setRarity(s.rarity ?? 4);
   setMoraleInit(s.moralCurrent??s.morale??2);
