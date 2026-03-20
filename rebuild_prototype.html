@@ -937,6 +937,42 @@
   </div>
 
 
+  <!-- Intro screen -->
+  <div id="introOverlay" style="
+    position:fixed;inset:0;z-index:999;
+    background:#000;
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:32px;
+  ">
+    <div id="introText" style="
+      font-family:'Special Elite',cursive;
+      font-size:clamp(18px,3vw,28px);
+      color:#c8b89a;
+      max-width:640px;
+      text-align:center;
+      line-height:1.8;
+      padding:0 24px;
+      min-height:2em;
+      text-shadow:0 0 30px rgba(200,184,154,0.3);
+    "></div>
+    <button id="introContinueBtn" style="
+      display:none;
+      font-family:'Oswald',sans-serif;
+      font-size:13px;
+      letter-spacing:0.2em;
+      text-transform:uppercase;
+      background:none;
+      border:1px solid rgba(200,184,154,0.4);
+      color:rgba(200,184,154,0.7);
+      padding:10px 28px;
+      cursor:pointer;
+      transition:all 0.3s;
+    " onmouseover="this.style.borderColor='rgba(200,184,154,0.9)';this.style.color='rgba(200,184,154,1)'"
+       onmouseout="this.style.borderColor='rgba(200,184,154,0.4)';this.style.color='rgba(200,184,154,0.7)'">
+      // COMENZAR
+    </button>
+  </div>
+
   <div class="gameover" id="gameOverWrap"><div class="gameover-box"><h1>Derrota</h1><p id="gameOverText"></p><button onclick="location.reload()">Reiniciar partida</button></div></div>
 <script>
 
@@ -1078,6 +1114,8 @@ function initGame(){
     imageUrlDead:'',  // always uses gravestone SVG
     story:s.story||'',
     skill:s.skill||'ninguna',
+    skill2:s.skill2||'ninguna',
+    negativeSkill:s.negativeSkill||'ninguna',
     morale:Number(s.moralCurrent??s.morale??2),
     maxMorale:Number(s.moralMax??2),
     fed:true,
@@ -1167,7 +1205,8 @@ function renderSurvivors(){
         </div>
         <div class="mini" style="margin-bottom:2px"><span style="color:var(--ok)">⚡</span> Fatiga: ${s.fatigue}/${s.maxFatigue}</div>
         <div class="mini" style="margin-bottom:3px">${getMoraleEmoji(s)} Moral: ${s.morale??2}/${s.maxMorale??2}</div>
-        ${s.skill&&s.skill!=='ninguna'?`<div class="mini" style="color:var(--amber-bright);margin-bottom:2px">${escapeHtml(getSurvivorSkillLabel(s))}</div>`:''}
+        ${getSurvivorSkills(s).filter(sk=>sk&&sk!=='ninguna').map(sk=>`<div class="mini" style="color:var(--amber-bright);margin-bottom:1px">✦ ${escapeHtml(getSurvivorSkillLabel({skill:sk}))}</div>`).join('')}
+        ${s.negativeSkill&&s.negativeSkill!=='ninguna'?`<div class="mini" style="color:var(--danger-bright);margin-bottom:2px">✗ ${escapeHtml(s.negativeSkill)}</div>`:''}
         <div class="mini" style="color:var(--accent-bright)">${actionSummary(s)}</div>
         <div class="actions">
           <select ${!canAct||s.status==='ocupado'?'disabled':''}>
@@ -1239,6 +1278,9 @@ function assignAction(id,type){
   if(!type) return;
   const s=state.survivors.find(x=>x.id===id);
   if(!s||s.status==='muerto'||s.status==='ocupado') return;
+  const neg2=(s.negativeSkill||'').toLowerCase().trim();
+  if(type==='explorar'&&neg2==='miedoso'){addLog(`${s.name} tiene miedo de salir a explorar.`);render();return}
+  if(type==='defender'&&neg2==='cobarde'){addLog(`${s.name} es cobarde y no puede defender.`);render();return}
   if(s.status==='herido'&&type!=='descansar'){
     // Can spend 1 med to act while injured
     if(state.meds>0&&state.unlocked.meds){
@@ -1569,7 +1611,9 @@ function outsideRiskChance(survivor){
   let base=Math.min(0.05+(outsideCount-1)*0.03,0.15);
 
   // Precavido skill: -40% of base risk for that specific survivor
-  if(survivor&&(survivor.skill||'').toLowerCase()==='precavido') base=base*0.60;
+  if(survivor&&getSurvivorSkills(survivor).includes('precavido')) base=base*0.60;
+  // Torpe negative trait: +10% injury chance
+  if(survivor&&(survivor.negativeSkill||'').toLowerCase()==='torpe') base=Math.min(0.95, base+0.10);
 
   // TODO: equipment modifiers (vehicle, protection gear) — hook here next session
   // if(survivor?._equipmentRiskMod) base=base*(1+survivor._equipmentRiskMod);
@@ -1588,7 +1632,10 @@ function applyFoodConsumption(){
   const alive=aliveSurvivors();
   const foodPer=Number(gameData.config?.rules?.foodPerSurvivor??1);
   const pozoReduction=state.buildings.pozo?.built&&state.buildings.pozo?.active?state.buildings.pozo.level:0;
-  const needed=Math.max(0,alive.length*foodPer - pozoReduction);
+  // Glotón: counts as 2 food portions
+  const glutonCount=alive.filter(s=>(s.negativeSkill||'').toLowerCase()==='glotón').length;
+  const neededBase=alive.length*foodPer + glutonCount; // gluton counts double
+  const needed=Math.max(0,neededBase - pozoReduction);
   if(pozoReduction>0) addLog(`💧 El Pozo de Agua reduce el consumo en ${pozoReduction} comida.`);
 
   if(state.food<=0){
@@ -1950,10 +1997,12 @@ function maxSkillsForRarity(rarity){
 }
 
 function getSurvivorSkills(s){
-  // Skills stored as array in s.skills, or legacy single s.skill
-  if(Array.isArray(s.skills)) return s.skills;
-  if(s.skill&&s.skill!=='ninguna') return [s.skill];
-  return [];
+  // Skills stored as array in s.skills, or individual skill/skill2 fields
+  if(Array.isArray(s.skills)&&s.skills.length) return s.skills;
+  const skills=[];
+  if(s.skill&&s.skill!=='ninguna') skills.push(s.skill);
+  if(s.skill2&&s.skill2!=='ninguna') skills.push(s.skill2);
+  return skills;
 }
 
 function trackActionXP(survivor, actionType){
@@ -2687,10 +2736,12 @@ function resetAssignments(){
 function getAvailableActions(s){
   if(s.status==='muerto') return [];
   if(s.status==='herido'||s.fatigue<=0) return ['descansar'];
-  const arr=['forraje','reciclar','construir','explorar'];
+  const neg=(s.negativeSkill||'').toLowerCase().trim();
+  const arr=['forraje','reciclar','construir'];
+  if(neg!=='miedoso') arr.push('explorar');
   if(state.buildings.atalaya?.built&&state.buildings.atalaya?.active) arr.unshift('vigilar');
   if(state.buildings.hospital?.built&&state.buildings.hospital?.active) arr.push('investigar');
-  if(state.attackThreat) arr.push('defender');
+  if(state.attackThreat&&neg!=='cobarde') arr.push('defender');
   arr.push('descansar');
   return arr.filter(a=>!isActionLimited(a));
 }
@@ -2882,10 +2933,6 @@ function showAlmacenDetail(){
 function joinSurvivor(s){
   const cap=barracksCapacity();
   const current=aliveSurvivors().length;
-  if(cap>0&&current>=cap){
-    state.stability=Math.max(0,state.stability-1);
-    addLog('⚠ Los barracones están llenos. '+s.name+' se queda en condiciones precarias. -1 estabilidad.');
-  }
   state.survivors.push({
     id:s.id||('s_'+Date.now()),
     name:s.name,
@@ -2897,12 +2944,25 @@ function joinSurvivor(s){
     imageUrlDead:'',
     story:s.story||'',
     skill:s.skill||'ninguna',
+    skill2:s.skill2||'ninguna',
+    negativeSkill:s.negativeSkill||'ninguna',
     skills:s.skills||[],
     morale:Number(s.moralCurrent??s.morale??2),
     maxMorale:Number(s.moralMax??2),
     fed:true, status:'activo', action:null
   });
   addLog('✅ '+s.name+' se une al asentamiento.');
+  // Desconfiado: -1 moral for each survivor with that trait
+  aliveSurvivors().forEach(existing=>{
+    if((existing.negativeSkill||'').toLowerCase()==='desconfiado'){
+      existing.morale=Math.max(0,existing.morale-1);
+      addLog('😟 '+existing.name+' (Desconfiado) pierde 1 de moral con el nuevo integrante.');
+    }
+  });
+  if(cap>0&&current>=cap){
+    state.stability=Math.max(0,state.stability-1);
+    addLog('⚠ Los barracones están llenos. '+s.name+' se queda en condiciones precarias. -1 estabilidad.');
+  }
   state._pendingSurvivor=null;
 }
 
@@ -2953,7 +3013,75 @@ function openLoreModal(s){
 
 loadDefaults();
 // Try to load from /data/ (works on Netlify/server). Falls back to embedded data if not found.
+
+// ── INTRO ──
+const INTRO_LINES = [
+  'War...',
+  'War never changes.',
+];
+
+function startIntro(){
+  const overlay=document.getElementById('introOverlay');
+  const textEl=document.getElementById('introText');
+  const btn=document.getElementById('introContinueBtn');
+  if(!overlay) return;
+
+  let lineIdx=0;
+  let charIdx=0;
+  let fullText='';
+  let typing=true;
+
+  // Click anywhere to skip to end
+  overlay.addEventListener('click', ()=>{
+    if(typing){
+      typing=false;
+      textEl.textContent=INTRO_LINES.join('\n\n');
+      showIntroBtn();
+    }
+  }, {once:false});
+
+  function showIntroBtn(){
+    btn.style.display='block';
+    btn.style.opacity='0';
+    btn.style.transition='opacity 1s';
+    setTimeout(()=>{ btn.style.opacity='1'; }, 50);
+  }
+
+  function typeNextChar(){
+    if(!typing) return;
+    const currentLine=INTRO_LINES[lineIdx];
+    if(charIdx<currentLine.length){
+      fullText+=currentLine[charIdx];
+      textEl.textContent=fullText;
+      charIdx++;
+      const delay=currentLine[charIdx-1]==='.'?400:currentLine[charIdx-1]===','?250:60;
+      setTimeout(typeNextChar, delay);
+    } else {
+      // Line done
+      lineIdx++;
+      if(lineIdx<INTRO_LINES.length){
+        fullText+='\n\n';
+        textEl.style.whiteSpace='pre';
+        charIdx=0;
+        setTimeout(typeNextChar, 800);
+      } else {
+        typing=false;
+        showIntroBtn();
+      }
+    }
+  }
+
+  setTimeout(typeNextChar, 600);
+
+  btn.addEventListener('click', ()=>{
+    overlay.style.transition='opacity 0.8s';
+    overlay.style.opacity='0';
+    setTimeout(()=>{ overlay.style.display='none'; }, 800);
+  });
+}
+
 loadFromFiles().then(() => initGame()).catch(() => initGame());
+startIntro();
 document.getElementById('closeBuildingDetail').addEventListener('click',()=>{
   document.getElementById('buildingDetailPanel').style.display='none';
   state.currentDetail=null;

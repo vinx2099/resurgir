@@ -601,12 +601,8 @@
           </div>
           <div class="field">
             <label>Moral inicial <span style="color:var(--muted);font-size:9px;">(0=😞 1=😐 2=😊)</span></label>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--line2);overflow:hidden;" id="moraleSelector">
-              <button type="button" class="mode-btn" data-morale="0" onclick="setMoraleInit(0)" style="font-size:18px;padding:8px;">😞</button>
-              <button type="button" class="mode-btn" data-morale="1" onclick="setMoraleInit(1)" style="font-size:18px;padding:8px;border-left:1px solid var(--line2);border-right:1px solid var(--line2);">😐</button>
-              <button type="button" class="mode-btn active" data-morale="2" onclick="setMoraleInit(2)" style="font-size:18px;padding:8px;">😊</button>
-            </div>
-            <input type="hidden" id="f-moraleCurrent" value="2" />
+            <input type="number" id="f-moraleCurrent" value="2" min="0" max="2" step="1" />
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">0 = 😞 &nbsp; 1 = 😐 &nbsp; 2 = 😊</div>
           </div>
           <div class="field">
             <label>Moral máxima</label>
@@ -618,9 +614,17 @@
             <textarea id="f-story" placeholder="Historia del personaje…"></textarea>
           </div>
 
-          <div class="field full">
-            <label>Habilidad</label>
+          <div class="field">
+            <label>Habilidad 1 <span style="color:var(--ok-bright);font-size:9px;">positiva</span></label>
             <select id="f-skill"></select>
+          </div>
+          <div class="field" id="skill2Field">
+            <label>Habilidad 2 <span style="color:var(--ok-bright);font-size:9px;">positiva · solo R1/R2/R3</span></label>
+            <select id="f-skill2"></select>
+          </div>
+          <div class="field full">
+            <label>Rasgo negativo <span style="color:var(--danger-bright);font-size:9px;">opcional</span></label>
+            <select id="f-negskill"></select>
           </div>
         </div>
 
@@ -760,9 +764,19 @@ const defaultSkills = [
   'chatarrero',   // +1 material al reciclar
 ];
 
+const defaultNegativeSkills = [
+  'ninguna',
+  'miedoso',      // no puede explorar
+  'torpe',        // +10% probabilidad de heridas en exteriores
+  'desconfiado',  // -1 moral al unirse nuevo superviviente
+  'glotón',       // consume 2 comida en lugar de 1
+  'cobarde',      // no puede defender
+];
+
 const state = {
   survivors: [],
   skills: [...defaultSkills],
+  negativeSkills: [...defaultNegativeSkills],
   editingId: null,
   selectedRarity: 4
 };
@@ -797,13 +811,6 @@ function setUploadStatus(msg, type='') {
 }
 
 // ── RARITY ──
-function setMoraleInit(v){
-  document.getElementById('f-moraleCurrent').value=v;
-  document.querySelectorAll('#moraleSelector .mode-btn').forEach(btn=>{
-    btn.classList.toggle('active', Number(btn.dataset.morale)===v);
-  });
-}
-
 function setRarity(r) {
   state.selectedRarity = Number(r);
   document.querySelectorAll('.rarity-opt').forEach(btn => {
@@ -885,8 +892,20 @@ $('uploadBtn').addEventListener('click', async () => {
 function renderSkills() {
   // Select
   const current = $('f-skill').value;
+  const current2 = $('f-skill2')?.value;
+  const currentNeg = $('f-negskill')?.value;
   $('f-skill').innerHTML = state.skills.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
   if (state.skills.includes(current)) $('f-skill').value = current;
+  if($('f-skill2')){
+    $('f-skill2').innerHTML = state.skills.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (state.skills.includes(current2)) $('f-skill2').value = current2;
+  }
+  if($('f-negskill')){
+    $('f-negskill').innerHTML = state.negativeSkills.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (state.negativeSkills.includes(currentNeg)) $('f-negskill').value = currentNeg;
+  }
+  // Show/hide skill2 based on rarity
+  updateSkill2Visibility();
 
   // Chips
   $('skillChips').innerHTML = state.skills
@@ -928,6 +947,8 @@ function getFormData() {
     image: { url: $('f-imgUrl').value.trim(), deleteUrl: '' },
     imageInjured: { url: $('f-imgInjuredUrl')?.value.trim()||'', deleteUrl: '' },
     skill: $('f-skill').value,
+    skill2: $('f-skill2')?.value||'ninguna',
+    negativeSkill: $('f-negskill')?.value||'ninguna',
     rarity: state.selectedRarity
   };
 }
@@ -951,8 +972,10 @@ function resetForm() {
   $('f-imgInjuredUrl').value = '';
   $('uploadInjuredStatus').textContent = '';
   $('f-skill').value = state.skills[0] || 'ninguna';
+  if($('f-skill2')) $('f-skill2').value = 'ninguna';
+  if($('f-negskill')) $('f-negskill').value = 'ninguna';
   setRarity(4);
-  setMoraleInit(2);
+  if($('f-moraleCurrent')) $('f-moraleCurrent').value=2;
   if($('f-moraleMax')) $('f-moraleMax').value=2;
   setFormStatus('');
   updateImgPreview('');
@@ -969,8 +992,10 @@ function fillForm(s) {
   $('f-imgUrl').value = s.image?.url || '';
   $('f-imgInjuredUrl').value = s.imageInjured?.url || s.imageUrlInjured || '';
   $('f-skill').value = s.skill || 'ninguna';
+  if($('f-skill2')) $('f-skill2').value = s.skill2 || 'ninguna';
+  if($('f-negskill')) $('f-negskill').value = s.negativeSkill || 'ninguna';
   setRarity(s.rarity ?? 4);
-  setMoraleInit(s.moralCurrent??s.morale??2);
+  if($('f-moraleCurrent')) $('f-moraleCurrent').value=s.moralCurrent??s.morale??2;
   if($('f-moraleMax')) $('f-moraleMax').value=s.moralMax??2;
   updateImgPreview(s.image?.url || '');
   setFormStatus('');
