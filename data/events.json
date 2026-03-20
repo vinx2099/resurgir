@@ -175,4 +175,30 @@
     "choiceMode": "direct",
     "effects": []
   }
+  {
+  "id": "HOS001",
+  "name": "El Almacén de Medicinas",
+  "type": "story",
+  "day": 10,
+  "weight": 0,
+  "days": 1,
+  "repeatable": false,
+  "text": "Los exploradores han localizado un viejo almacén sanitario al norte. Está custodiado por un grupo de hostiles, pero contiene suministros suficientes para montar un hospital. Es arriesgado, pero podría cambiar las cosas.",
+  "choiceMode": "attack",
+  "effects": [
+    {
+      "type": "setAttackThreat",
+      "attackStrength": 4,
+      "arrivalDays": 1,
+      "effectOnVictory": [
+        { "type": "unlockBuilding", "building": "hospital" },
+        { "type": "addResource", "resource": "meds", "amount": 2 },
+        { "type": "stabilityChange", "amount": 2 }
+      ],
+      "effectOnDefeat": [
+        { "type": "stabilityChange", "amount": -1 }
+      ]
+    }
+  ]
+}
 ]

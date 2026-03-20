@@ -114,10 +114,10 @@
     .stat:hover { border-color: var(--line2); background: var(--panel2); }
 
     .stat .label {
-      font-size: 9px;
+      font-size: 11px;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.10em;
       margin-bottom: 3px;
       font-family: var(--font-mono);
     }
@@ -210,12 +210,12 @@
     .survivor-card {
       display: grid;
       grid-template-columns: 72px 1fr;
-      gap: 10px;
-      padding: 10px;
+      gap: 12px;
+      padding: 12px;
       border: 1px solid var(--line);
       border-left: 3px solid var(--ok);
       background: rgba(255,255,255,0.015);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       position: relative;
       transition: border-color 0.2s, background 0.2s;
     }
@@ -271,7 +271,7 @@
     .badge.herido { border-color: var(--warn); color: var(--warn-bright); background: rgba(138,106,42,0.15); }
     .badge.muerto { border-color: var(--danger); color: var(--danger-bright); background: var(--danger-glow); }
 
-    .mini { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .mini { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
 
     /* ACTION AREA */
     .actions { display: grid; gap: 6px; margin-top: 6px; }
@@ -379,20 +379,21 @@
       color: var(--text);
       cursor: pointer;
       padding: 6px 8px;
-      font-size: 11px;
+      font-size: 12px;
       font-family: var(--font-mono);
       text-align: center;
       letter-spacing: 0.04em;
-      line-height: 1.3;
+      line-height: 1.4;
       transition: all 0.2s;
       backdrop-filter: blur(2px);
     }
 
     .building:hover {
-      background: rgba(74,138,53,0.25);
+      background: rgba(74,138,53,0.35);
       border-color: var(--ok-bright);
+      border-width: 2px;
       color: var(--ok-bright);
-      box-shadow: 0 0 12px var(--ok-glow), inset 0 0 8px var(--ok-glow);
+      box-shadow: 0 0 16px var(--ok-glow), inset 0 0 10px var(--ok-glow);
       z-index: 3;
     }
 
@@ -460,21 +461,21 @@
     .metric b { color: var(--text); font-weight: normal; }
 
     .log {
-      max-height: 180px;
+      max-height: 240px;
       overflow: auto;
       border: 1px solid var(--line);
-      padding: 8px;
+      padding: 10px;
       background: rgba(0,0,0,0.3);
       scrollbar-width: thin;
       scrollbar-color: var(--line2) transparent;
     }
 
     .log-entry {
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      font-size: 11px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 13px;
       color: var(--muted);
-      line-height: 1.4;
+      line-height: 1.5;
     }
 
     .log-entry:first-child { color: var(--text); }
@@ -505,7 +506,7 @@
 
     .event-title {
       font-family: var(--font-display);
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 700;
       margin: 10px 0 6px;
       letter-spacing: 0.08em;
@@ -515,8 +516,8 @@
     }
 
     .event-text {
-      line-height: 1.55;
-      font-size: 12px;
+      line-height: 1.6;
+      font-size: 13px;
       color: var(--text);
       font-family: var(--font-worn);
       letter-spacing: 0.02em;
@@ -840,6 +841,7 @@
         <div id="eventDurationBar" style="display:none;margin:6px 0 4px;"></div>
         <div class="event-text" id="eventText">Asigna acciones y pulsa Finalizar día.</div>
         <div class="event-options" id="eventOptions"></div>
+        <div id="persistentEventPanel" style="display:none;margin-top:14px;border-top:1px solid var(--line2);padding-top:12px;"></div>
       </div>
     </section>
   </div>
@@ -864,6 +866,26 @@
   </div>
   
   
+  <!-- Meds save popup -->
+  <div class="overlay" id="medsSavePopup">
+    <div class="modal" style="width:min(480px,100%);background:var(--panel);">
+      <div class="modal-header" style="color:var(--ok-bright);background:#080f08;border-bottom:1px solid #1a3a1a;">
+        💊 Situación crítica
+      </div>
+      <div class="modal-body" style="padding:16px;display:grid;grid-template-columns:80px 1fr;gap:14px;align-items:center;">
+        <div id="medsSaveImg" style="width:80px;height:80px;overflow:hidden;border:1px solid var(--line2);background:var(--panel2);"></div>
+        <div>
+          <div id="medsSaveName" style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;letter-spacing:0.06em;color:var(--danger-bright);margin-bottom:6px;"></div>
+          <div id="medsSaveText" style="font-size:12px;color:var(--text);line-height:1.6;"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="gap:8px;">
+        <button class="btn primary" id="medsSaveYes">💊 Usar medicamentos</button>
+        <button class="btn danger" id="medsSaveNo">✕ Dejar morir</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Cemetery modal -->
   <div class="overlay" id="cemeteryModal">
     <div class="modal" style="width:min(700px,100%);background:var(--panel);">
@@ -897,7 +919,7 @@
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null};
-const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},attackThreat:false,attackStrength:3,attackEffectVictory:[],attackEffectDefeat:[],pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},survivors:[],buildings:{},delayedQueue:[],log:[],currentDetail:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,_hos001:{active:false,attempts:0},attackThreat:false,attackStrength:3,attackEffectVictory:[],attackEffectDefeat:[],pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},survivors:[],buildings:{},delayedQueue:[],log:[],currentDetail:null};
 
 const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
 
@@ -983,7 +1005,7 @@ function loadDefaults(){
   gameData.story_events=[];
   // Survivors, buildings, config keep embedded defaults as fallback
   const realSurvivors=[{"id": "survivor_vw4cahg8", "name": "Alex", "fatigueCurrent": 3, "fatigueMax": 3, "story": "Joven", "image": {"url": "https://i.ibb.co/bMKgdyhp/chick4.jpg", "deleteUrl": ""}, "skill": "ninguna", "rarity": 4}, {"id": "survivor_6l305iiv", "name": "Kirk", "fatigueCurrent": 3, "fatigueMax": 5, "story": "Mercenario que llegó herido al campamento.", "image": {"url": "https://i.ibb.co/0pszrW3w/OIG3-Jf02-KOq-Vmun-Hgtflnv-YS.jpg", "deleteUrl": ""}, "skill": "ninguna", "rarity": 4}, {"id": "survivor_e34fokvp", "name": "Marie", "fatigueCurrent": 3, "fatigueMax": 3, "story": "Líder nata", "image": {"url": "https://i.ibb.co/zhpd6JSb/OIG1-BTf-Idmr-h-Kmr-Pd4-K2-Lj-N.jpg", "deleteUrl": ""}, "skill": "ninguna", "rarity": 4}];
-  const realBuildings=[{"id": "huerto", "name": "Huerto", "cost": 3, "effect": "+1 comida por día", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "atalaya", "name": "Atalaya", "cost": 4, "effect": "+1 defensa si se usa Vigilar", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "muros", "name": "Muros", "cost": 5, "effect": "+1 defensa pasiva", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "barracones", "name": "Barracones", "cost": 4, "effect": "4 espacios", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "camion", "name": "Camión Raider", "cost": 5, "effect": "+1 material por día", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "hospital", "name": "Hospital", "cost": 0, "effect": "Desbloquea medicamentos", "initial": false, "constructible": false, "maxLevel": 5}, {"id": "generador", "name": "Generador", "cost": 0, "effect": "Desbloquea electricidad", "initial": false, "constructible": false, "maxLevel": 5}];
+  const realBuildings=[{"id": "huerto", "name": "Huerto", "cost": 3, "effect": "+1 comida por día", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "atalaya", "name": "Atalaya", "cost": 4, "effect": "+1 defensa si se usa Vigilar", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "muros", "name": "Muros", "cost": 5, "effect": "+1 defensa pasiva", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "barracones", "name": "Barracones", "cost": 4, "effect": "4 espacios", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "camion", "name": "Camión Raider", "cost": 5, "effect": "+1 material por día", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "hospital", "name": "Hospital", "cost": 5, "effect": "Desbloquea medicamentos e Investigar. Requiere 2⚡", "initial": false, "constructible": false, "maxLevel": 5}, {"id": "generador", "name": "Generador", "cost": 4, "effect": "Produce electricidad (3/4/5 por nivel)", "initial": false, "constructible": false, "maxLevel": 3}];
   const realConfig={"starting": {"food": 5, "materials": 5, "survivors": 3, "morale": 5}, "rules": {"foodPerSurvivor": 1, "barracksCapacity": 4, "recycleValue": 1}};
   gameData.survivors=deepClone(realSurvivors);
   gameData.buildings=deepClone(realBuildings);
@@ -998,6 +1020,10 @@ function initGame(){
   state.meds=Number(gameData.config?.starting?.meds??0);
   state.electricity=Number(gameData.config?.starting?.electricity??0);
   state.unlocked=deepClone(gameData.config?.rules?.resources||{meds:false,electricity:false});
+  state.electricityCapacity=0;
+  state.electricityUsed=0;
+  state.hospitalUnlocked=false;
+  state._hos001={active:false,attempts:0};
   state.attackThreat=false;
   state.attackStrength=3;
   state.attackEffectVictory=[];
@@ -1053,6 +1079,7 @@ function render(){
   renderSurvivors();
   renderBuildings();
   renderLog();
+  renderPersistentEvent();
   checkGameOver();
 }
 
@@ -1063,7 +1090,12 @@ function renderTopbar(){
     ['Materiales','🔧',state.materials,false],
     ['Estabilidad','🏛',state.stability,false],
     ['Medicamentos','💊',state.unlocked.meds?state.meds:'--',!state.unlocked.meds],
-    ['Electricidad','⚡',state.unlocked.electricity?state.electricity:'--',!state.unlocked.electricity],
+    (()=>{
+      const cap=getElectricityCapacity();
+      const used=getElectricityUsed();
+      const label=cap>0?`${used}/${cap}  ⚡`:'--';
+      return ['Electricidad','⚡',cap>0?label:'--',cap<=0];
+    })(),
     ['Supervivientes','👥',aliveSurvivors().length,false]
   ];
   topbar.innerHTML=cards.map(([label,icon,value,locked])=>`<div class="stat ${locked?'locked':''}"><div class="label"><span style="margin-right:3px;font-size:13px">${icon}</span>${label}</div><div class="value">${value}</div></div>`).join('');
@@ -1072,7 +1104,7 @@ function renderTopbar(){
 function renderSurvivors(){
   survivorList.innerHTML='';
   state.survivors.filter(s=>s.status!=='muerto').forEach(s=>{
-    const canAct=s.status!=='muerto'&&!state.pendingEvent;
+    const canAct=s.status!=='muerto'&&(!state.pendingEvent||state.pendingEvent._multiDayPassive);
     const actions=getAvailableActions(s);
     const avatarInner = s.imageUrl ? `<img src="${escapeAttr(s.imageUrl)}" alt="">` : '<span style="color:var(--muted);font-size:11px">Sin<br>imagen</span>';
     const card=document.createElement('div');
@@ -1158,30 +1190,50 @@ function openBuildModal(survivorId){
   buildOptions.innerHTML='';
   (gameData.buildings||[]).forEach(def=>{
     const current=state.buildings[def.id];
-    const constructible=def.constructible!==false;
+    // Constructible: check base flag + special unlock conditions
+    let constructible=current?.constructible===true;
+    // Hospital requires hospitalUnlocked
+    if(def.id==='hospital'&&!state.hospitalUnlocked) constructible=false;
+    // Generador requires barracones level >= 2
+    if(def.id==='generador'&&(state.buildings.barracones?.level||0)<2) constructible=false;
+
     const maxLevel=Number(def.maxLevel||5);
     const currentLevel=current?.level||0;
     const atCap=currentLevel>=maxLevel;
     const buildCost=getBuildingCost(def.id);
-    const label=!constructible?`${def.name} (bloqueado)`:current?.built?`Mejorar ${def.name}`:`Construir ${def.name}`;
+
+    // Electricity requirement check
+    const elecReq=BUILDING_ELECTRICITY_COST[def.id]||0;
+    const hasElec=elecReq===0||(getElectricityFree()>=elecReq)||current?.built;
+    const elecLabel=elecReq>0&&!current?.built?` · Requiere ${elecReq}⚡ (libre: ${getElectricityFree()})` : elecReq>0&&current?.built?` · Usando ${elecReq}⚡`:'';
+
+    const blocked=!constructible;
+    const blockReason=def.id==='hospital'&&!state.hospitalUnlocked?'Requiere completar evento HOS001':
+                      def.id==='generador'&&(state.buildings.barracones?.level||0)<2?'Requiere Barracones nivel 2':'';
+
+    const label=blocked?`${def.name} (bloqueado)`:current?.built?`Mejorar ${def.name}`:`Construir ${def.name}`;
     const box=document.createElement('div');
     box.className='build-option';
-    box.innerHTML=`<div><div><b>${escapeHtml(label)}</b></div><div class="mini">${constructible?`Coste: ${buildCost} materiales · `:''}${escapeHtml(def.effect||'')} · Nivel máx. ${maxLevel}</div></div><button ${!constructible||atCap||state.materials<buildCost?'disabled':''}>${atCap?'Máximo':'Elegir'}</button>`;
+    box.innerHTML=`<div><div><b>${escapeHtml(label)}</b></div><div class="mini">${!blocked?`Coste: ${buildCost} 🔧${elecLabel} · `:''}${blockReason||escapeHtml(def.effect||'')} · Nivel máx. ${maxLevel}</div></div><button ${blocked||atCap||state.materials<buildCost||!hasElec?'disabled':''}>${atCap?'Máximo':'Elegir'}</button>`;
     box.querySelector('button').addEventListener('click',()=>{
-      if(!constructible||atCap) return;
+      if(blocked||atCap) return;
       const cost=getBuildingCost(def.id);
-      // Ingeniero skill: reduce cost by 1 if the builder has that skill
       const ingenieroBonus=getSkillBonus(s,'build');
       const finalCost=Math.max(1,cost-(ingenieroBonus.costReduction||0));
       if(state.materials<finalCost) return;
+      if(elecReq>0&&getElectricityFree()<elecReq){ addLog('No hay suficiente electricidad libre.'); return; }
       state.materials-=finalCost;
       if(ingenieroBonus.costReduction) addLog(`⚙ ${s.name} (Ingeniero) reduce el coste en ${ingenieroBonus.costReduction} material.`);
       state.buildings[def.id].built=true;
       state.buildings[def.id].level+=1;
       state.buildings[def.id].active=true;
+      // Post-build unlocks
+      checkBuildingUnlocks(def.id);
+      if(def.id==='hospital'){ state.unlocked.meds=true; addLog('🏥 Hospital construido. Medicamentos desbloqueados.'); }
+      if(def.id==='generador'){ state.electricityCapacity=getElectricityCapacity(); addLog(`⚡ Generador activo. ${state.electricityCapacity} de electricidad disponible.`); }
       s.action={type:'construir',target:def.id};
       s.status='ocupado';
-      addLog(`${s.name} trabaja en ${state.buildings[def.id].name}. -${cost} materiales.`);
+      addLog(`${s.name} trabaja en ${state.buildings[def.id].name}. -${finalCost} materiales.`);
       buildModalWrap.classList.remove('open');
       render();
     });
@@ -1191,7 +1243,8 @@ function openBuildModal(survivorId){
 }
 
 function endDay(){
-  if(state.pendingEvent) return;
+  // Only block if there's a pending event that requires player choice
+  if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive) return;
   // Snapshot action counts before resolving (used to weight event selection)
   state._lastDayActions={};
   state.survivors.forEach(s=>{
@@ -1222,8 +1275,10 @@ function endDay(){
       state.eventDaysLeft=carried._daysLeft;
       state.eventTotalDays=carried._totalDays;
       carried._continuing=true;
+      carried._multiDayPassive=true;  // doesn't block endDay
+      // Always show a new daily event on top
       if(!checkWeeklyEvent()&&!checkStoryEvent()) chooseEvent();
-      // Re-show the multi-day event on top if no new event came
+      // If no new event, re-show the carried one
       if(!state.pendingEvent){
         setEvent(carried);
       }
@@ -1278,6 +1333,20 @@ function resolveActions(){
     }else if(type==='explorar'){
       trackActionXP(s,'explorar');
       triggerExploreEvent(s);  // auto-resolves and logs result
+    }else if(type==='investigar'){
+      // 2-day research: first day sets flag, second day yields +1 med
+      if(s._investigatingDay&&s._investigatingDay===state.day-1){
+        // Second day complete
+        state.meds+=1;
+        s._investigatingDay=null;
+        addLog(`💊 ${s.name} completa la investigación en el Hospital. +1 medicamento.`);
+      } else {
+        // First day
+        s._investigatingDay=state.day;
+        addLog(`🔬 ${s.name} comienza a investigar en el Hospital (1/2 días).`);
+        // Keep occupied next day too
+        s._keepInvestigating=true;
+      }
     }
   });
   // Collective attack resolution after all individual actions
@@ -1322,12 +1391,19 @@ function resolveGroupAttack(){
   } else {
     // ── DERROTA ──
     addLog(`❌ El asentamiento no pudo resistir el ataque (${totalDef} vs ${totalAtk}). Diferencia: ${diff}.`);
+    // Track HOS001 attempts
+    if(state._hos001.active&&!state.hospitalUnlocked){
+      state._hos001.attempts++;
+      addLog(`📋 HOS001: intento ${state._hos001.attempts}. El grupo se reagrupará.`);
+    }
 
     // Casualties: probability scales with margin of defeat
     // diff 1-2: low injury chance, no death
     // diff 3-4: moderate injury, tiny death chance
     // diff 5+:  high injury + real death chance
-    const injureChance=Math.min(0.3+diff*0.12, 0.9);
+    const hosBoost=state._hos001?.higherInjury?0.2:0;
+    state._hos001 && (state._hos001.higherInjury=false);  // reset flag
+    const injureChance=Math.min(0.3+diff*0.12+hosBoost, 0.95);
     const deathChance=diff>=5 ? Math.min((diff-4)*0.12, 0.5) : diff>=3 ? 0.05 : 0;
 
     const candidates=[...alive]; // any survivor can be affected
@@ -1493,7 +1569,37 @@ function processDelayedEffects(){
 }
 
 function checkStoryEvent(){
-  const ev=(gameData.story_events||[]).find(x=>Number(x.day)===state.day);
+  // If HOS001 is active and hospital not yet unlocked, always show it
+  if(state._hos001.active&&!state.hospitalUnlocked){
+    const hos=( gameData.events||[]).find(e=>e.id==='HOS001')||
+               (gameData.story_events||[]).find(e=>e.id==='HOS001');
+    if(hos){
+      const schema=deepClone(hos);
+      // Escalate on each attempt: alternate +1 strength or +15% injury chance
+      if(state._hos001.attempts>0){
+        const alt=state._hos001.attempts%2;
+        if(alt===0){
+          // +1 strength per 2 attempts
+          const extra=Math.floor(state._hos001.attempts/2);
+          if(schema.effects) schema.effects=schema.effects.map(e=>e.type==='setAttackThreat'?{...e,attackStrength:(e.attackStrength||4)+extra}:e);
+          addLog(`⚔ El grupo hostil se ha reforzado. Fuerza: ${4+extra}.`);
+        } else {
+          // More injury probability — stored as flag for resolveGroupAttack
+          state._hos001.higherInjury=true;
+          addLog(`⚠ El grupo hostil está preparado. Mayor riesgo de heridas.`);
+        }
+      }
+      setEvent(buildEventFromSchema(schema));
+      return true;
+    }
+  }
+  // Check for HOS001 triggering on day 10 (first time)
+  if(state.day===10&&!state._hos001.active&&!state.hospitalUnlocked){
+    const hos=(gameData.events||[]).find(e=>e.id==='HOS001')||
+               (gameData.story_events||[]).find(e=>e.id==='HOS001');
+    if(hos){ state._hos001.active=true; setEvent(buildEventFromSchema(hos)); return true; }
+  }
+  const ev=(gameData.story_events||[]).find(x=>Number(x.day)===state.day&&x.id!=='HOS001');
   if(!ev) return false;
   setEvent(buildEventFromSchema(ev));
   return true;
@@ -1542,6 +1648,7 @@ function chooseEvent(){
   const exploradoresCount=aliveSurvivors().filter(s=>s.action?.type&&(s.skill||'').toLowerCase()==='explorador').length;
   const precavidosCount=aliveSurvivors().filter(s=>s.action?.type&&(s.skill||'').toLowerCase()==='precavido').length;
 
+  const hosActive=state._hos001?.active&&!state.hospitalUnlocked;
   const boostedPool=activePool.map(ev=>{
     let w=Number(ev.weight||1);
     // Action-related boost
@@ -1549,8 +1656,9 @@ function chooseEvent(){
       const boost=Math.min(actionCounts[ev.relatedAction],4)*0.5;
       w=Math.round(w*(1+boost));
     }
+    // HOS001 active: boost sabotaje moderately (x1.8 — noticeable but not overwhelming)
+    if(hosActive&&ev.id==='sabotaje') w=Math.round(w*1.8);
     // Positive/negative event skill modifiers
-    // Positive: morale+, food+, materials+, hallazgo, nada
     const isPositive=['hallazgo','nada','lluvia'].includes(ev.id)||(ev.effects&&Object.entries(ev.effects||{}).some(([k,v])=>['food','materials','morale'].includes(k)&&v>0));
     const isNegative=['sabotaje','plaga','incendio','accidente'].includes(ev.id)||(ev.effects&&Object.entries(ev.effects||{}).some(([k,v])=>['food','materials','morale'].includes(k)&&v<0));
     if(isPositive&&exploradoresCount>0) w=Math.round(w*(1+exploradoresCount*0.10));
@@ -1715,6 +1823,46 @@ function trackActionXP(survivor, actionType){
   addLog(`★ ${survivor.name} ha aprendido: ${getSurvivorSkillLabel({skill:newSkill})}!`);
 }
 
+
+// ── ELECTRICITY SYSTEM ──
+const BUILDING_ELECTRICITY_COST = { hospital: 2 };
+
+function getElectricityCapacity(){
+  const gen=state.buildings.generador;
+  if(!gen?.built||!gen?.active) return 0;
+  const lvl=gen.level||1;
+  if(lvl>=3) return 5;
+  if(lvl===2) return 4;
+  return 3;
+}
+
+function getElectricityUsed(){
+  let used=0;
+  Object.entries(BUILDING_ELECTRICITY_COST).forEach(([id,cost])=>{
+    if(state.buildings[id]?.built&&state.buildings[id]?.active) used+=cost;
+  });
+  return used;
+}
+
+function getElectricityFree(){
+  return Math.max(0, getElectricityCapacity()-getElectricityUsed());
+}
+
+// Called whenever barracones or generador levels up
+function checkBuildingUnlocks(buildingId){
+  // Generador unlocks when Barracones reaches level 2
+  if(buildingId==='barracones'){
+    const lvl=state.buildings.barracones?.level||0;
+    if(lvl>=2&&!state.buildings.generador?.built){
+      state.buildings.generador.constructible=true;
+      addLog('⚡ Los Barracones han alcanzado nivel 2. El Generador ya puede construirse.');
+    }
+  }
+  // Update electricity capacity display
+  state.electricityCapacity=getElectricityCapacity();
+  state.electricityUsed=getElectricityUsed();
+}
+
 // ── SKILL SYSTEM ──
 // Returns a bonus object depending on the survivor's skill and context
 // context: 'build' | 'explore' | 'event_positive' | 'event_negative' | 'explore_survivor' | 'explore_food' | 'explore_resource'
@@ -1877,6 +2025,7 @@ function normaliseEffects(raw){
     else if(k==='setAttackThreat'&&v)   out.push({type:'setAttackThreat'});
     else if(k==='addSurvivor')          out.push({type:'addSurvivorByRarity',count:Number(v)||1});
     else if(k==='forageMax')            out.push({type:'modifyActionEffect',action:'forraje',modifier:Number(v)||1});
+    else if(k==='unlockBuilding')         out.push({type:'unlockBuilding',building:v});
   });
   return out;
 }
@@ -2058,6 +2207,16 @@ function applyEffect(effect,delayed){
       addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad ${amt>0?'+':''}${amt}.`);
       break;
     }
+    case 'unlockBuilding':{
+      const bid=effect.building;
+      if(bid==='hospital'){
+        state.hospitalUnlocked=true;
+        state._hos001.active=false;  // HOS001 won — stop showing it
+        if(state.buildings.hospital) state.buildings.hospital.constructible=true;
+        addLog('🏥 ¡El almacén conquistado! El Hospital ya puede construirse.');
+      }
+      break;
+    }
     case 'healInjured':{
       const injured=state.survivors.find(s=>s.status==='herido');
       if(injured){injured.status='activo';addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de sus heridas.`)}
@@ -2162,7 +2321,16 @@ function applyEffect(effect,delayed){
 
 function resetForNewDay(){
   window.tempActionLimits={};window.tempActionMods={};
-  state.survivors.forEach(s=>{if(s.status==='ocupado')s.status='activo';if(s.status!=='muerto')s.action=null});
+  state.survivors.forEach(s=>{
+    if(s._keepInvestigating&&s.status!=='muerto'){
+      s._keepInvestigating=false;
+      s.action={type:'investigar'};
+      s.status='ocupado';
+    } else {
+      if(s.status==='ocupado') s.status='activo';
+      if(s.status!=='muerto') s.action=null;
+    }
+  });
   Object.values(state.buildings).forEach(b=>{if(b.built&&!b.active)b.active=true});
 }
 
@@ -2232,6 +2400,30 @@ function closeEvent(){
   const sub=document.getElementById('eventSubtitle'); if(sub) sub.style.display='none';
 }
 
+
+function renderPersistentEvent(){
+  const panel=document.getElementById('persistentEventPanel');
+  if(!panel) return;
+  const ev=state._activeMultiDayEvent;
+  const hosActive2=state._hos001?.active&&!state.hospitalUnlocked;
+  // Show if there's a multi-day event OR HOS001 is active
+  const showPanel=!!(ev&&ev._daysLeft>0&&!(state.pendingEvent&&state.pendingEvent===ev))||hosActive2;
+  if(!showPanel){ panel.style.display='none'; return; }
+  const left=ev._daysLeft;
+  const total=ev._totalDays||1;
+  const pips=Array.from({length:total},(_,i)=>`<div class="dur-pip${i>=left?' empty':''}"></div>`).join('');
+  panel.style.display='block';
+  panel.innerHTML=`
+    <div style="font-size:10px;color:var(--amber-bright);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--font-display);margin-bottom:8px;">⏱ Efecto activo</div>
+    <div style="border:1px solid var(--amber);border-left:3px solid var(--amber-bright);padding:10px 12px;background:rgba(184,124,42,0.06);">
+      <div style="font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:0.06em;color:var(--amber-bright);margin-bottom:4px;">${escapeHtml(ev.title||'Evento activo')}</div>
+      <div style="font-family:var(--font-worn);font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px;">${escapeHtml(ev.text||'')}</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--amber);">
+        <div class="dur-pips">${pips}</div>
+        <span>${left} día${left!==1?'s':''} restante${left!==1?'s':''}</span>
+      </div>
+    </div>`;
+}
 function renderActiveEvents(){
   const list=document.getElementById('activeEventsList');
   if(!list) return;
@@ -2260,6 +2452,7 @@ function getAvailableActions(s){
   if(s.status==='herido'||s.fatigue<=0) return ['descansar'];
   const arr=['forraje','reciclar','construir','explorar'];
   if(state.buildings.atalaya?.built&&state.buildings.atalaya?.active) arr.unshift('vigilar');
+  if(state.buildings.hospital?.built&&state.buildings.hospital?.active) arr.push('investigar');
   if(state.attackThreat) arr.push('defender');
   arr.push('descansar');
   return arr.filter(a=>!isActionLimited(a));
@@ -2267,7 +2460,7 @@ function getAvailableActions(s){
 
 function isActionLimited(action){return !!(window.tempActionLimits&&window.tempActionLimits[action])}
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
-function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar'})[type]||type}
+function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar'})[type]||type}
 function actionSummary(s){if(s.status==='muerto')return'No disponible.';if(s.status==='herido'&&!s.action)return'Está herido. Solo puede descansar.';if(s.fatigue<=0&&!s.action)return'Sin fatiga. Solo puede descansar.';if(!s.action)return'Sin acción asignada.';if(s.action.target)return`Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}`;return`Acción asignada: ${actionLabel(s.action.type)}`}
 function statusLabel(status){return({activo:'Activo',ocupado:'Ocupado',herido:'Herido',muerto:'Muerto'})[status]||status}
 
@@ -2282,10 +2475,22 @@ function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
 function injureSurvivor(s,msg){if(s.status!=='muerto')s.status='herido';addLog(msg)}
 
-function killSurvivor(s,msg){
+function killSurvivor(s,msg,skipMedsCheck){
   if(s.status==='muerto') return;
+  // Intercept with meds if available
+  if(!skipMedsCheck&&state.meds>0){
+    const cost=Math.random()<0.5?1:2; // random 1 or 2
+    const affordable=state.meds>=cost;
+    // Show save popup
+    state._pendingDeath={s, msg:msg||`${s.name} ha muerto.`, cost, affordable};
+    openMedsSavePopup();
+    return;
+  }
+  _doKill(s, msg);
+}
+
+function _doKill(s, msg){
   s.status='muerto';
-  // Move to cemetery
   state.cemetery.push({
     id:s.id,
     name:s.name,
@@ -2308,6 +2513,39 @@ function pick(arr){return arr.length?arr[Math.floor(Math.random()*arr.length)]:n
 function escapeHtml(str){return String(str??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function escapeAttr(str){return escapeHtml(str)}
 
+
+
+function openMedsSavePopup(){
+  const {s, msg, cost, affordable}=state._pendingDeath;
+  const popup=document.getElementById('medsSavePopup');
+  const imgEl=document.getElementById('medsSaveImg');
+  imgEl.innerHTML=s.imageUrl?`<img src="${escapeAttr(s.imageUrl)}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(40%);">` : '';
+  document.getElementById('medsSaveName').textContent=s.name;
+  document.getElementById('medsSaveText').textContent=
+    affordable
+      ? `Va a morir. Puedes gastar ${cost} medicamento${cost>1?'s':''} para salvarle. Quedarán ${state.meds-cost} medicamento${state.meds-cost!==1?'s':''}.`
+      : `Va a morir. Necesitarías ${cost} medicamento${cost>1?'s':''} pero solo tienes ${state.meds}. No puedes salvarle.`;
+  document.getElementById('medsSaveYes').disabled=!affordable;
+  popup.classList.add('open');
+}
+
+document.getElementById('medsSaveYes').addEventListener('click',()=>{
+  const {s, cost}=state._pendingDeath;
+  state.meds-=cost;
+  s.status='herido';  // saved but injured
+  addLog(`💊 ${s.name} salvado gracias a ${cost} medicamento${cost>1?'s':''}. Queda herido.`);
+  state._pendingDeath=null;
+  document.getElementById('medsSavePopup').classList.remove('open');
+  render();
+});
+
+document.getElementById('medsSaveNo').addEventListener('click',()=>{
+  const {s, msg}=state._pendingDeath;
+  _doKill(s, msg);
+  state._pendingDeath=null;
+  document.getElementById('medsSavePopup').classList.remove('open');
+  render();
+});
 
 function openCemetery(){
   const list=document.getElementById('cemeteryList');
