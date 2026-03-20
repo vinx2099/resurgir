@@ -7,3 +7,45 @@ Habilidades que mejoran las acciones, fatiga o combate
 
 tras crear un nuevo superviviente no me deja hacer accion (no sé si es por ser el mismo)
 No repetir supervivientes!
+
+
+- subir estabilidad cada día que todos estén de moral llena puede ser demasiado. También hay que ver para que sirve Estabilidad además de condición de derrota si llega a 0.
+
+- aparece lo del ataque, dice que es dentro de 2 dias.  Mirar esto y que pasa si se cumple y llegan.
+
+
+- Hacer una tabla para explorar. 
+1- Peligro
+2- Nada
+3- Hallazgo leve (t1)
+4- Nada
+5- Hallazgo interesante (t2)
+6- Gran hallazgo (t3)
+
+Los eventos de explorar darán mejor recompensa dependiendo de T1, T2, T3
+
+- Hacer eventos personajes, que tirarán de la ID de uno de los supervivientes activos y lo enlazará con alguno de los eventos personales. Mirar para hacer relaciones que mejoren entre ellos o crean rencillas.
+
+- Ataques fallidos que afecten a la estabilidad de la base, no a moral de jugadores. Igual con éxito
+
+- cuando se mira lo que hace la instalación, que actualice el efecto si está en nivel superior. (Huerto N2 es +2 comida por día)
+
+- El hospital no tiene el coste de materiales, aparece 0
+
+- Sabotaje sale mucho
+
+- ver el tema "herido/herida"
+
+- lluvia ácida no permanece activa. ver el tema de los eventos con duración.
+
+- A la hora de dar de comer, hay que seguir estos pasos:
+1. Comprobar si hay comida para alimentar a todos
+2. en caso contrario, elegir quién se alimenta
+3. si se alimenta, moral+1
+4. si no se alimenta, moral -1
+
+- la habilidad cazador debe dar siempre +1 comida si el superviviente explora.
+
+- opción de gastar 1 medicamento para actuar aunque esté herido el superviviente
+
+- abandonar el asentamiento por falta de moral no debe mostrar al superviviente en el cementerio. solo para los que están muertos.

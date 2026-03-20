@@ -30,16 +30,16 @@
     "id": "barracones",
     "name": "Barracones",
     "cost": 4,
-    "effect": "4 espacios",
+    "effect": "4 espacios por nivel para supervivientes",
     "initial": true,
     "constructible": true,
     "maxLevel": 5
   },
   {
-    "id": "camion",
-    "name": "Camión Raider",
+    "id": "taller",
+    "name": "Taller",
     "cost": 5,
-    "effect": "+1 material por día",
+    "effect": "+1 material por día. Permite fabricar objetos y mejoras",
     "initial": false,
     "constructible": true,
     "maxLevel": 5
@@ -47,8 +47,8 @@
   {
     "id": "hospital",
     "name": "Hospital",
-    "cost": 0,
-    "effect": "Desbloquea medicamentos",
+    "cost": 5,
+    "effect": "Desbloquea medicamentos e Investigar. Requiere 2 electricidad",
     "initial": false,
     "constructible": false,
     "maxLevel": 5
@@ -56,10 +56,28 @@
   {
     "id": "generador",
     "name": "Generador",
-    "cost": 0,
-    "effect": "Desbloquea electricidad",
+    "cost": 3,
+    "effect": "Produce electricidad: nivel 1=3, nivel 2=4, nivel 3=5",
     "initial": false,
     "constructible": false,
-    "maxLevel": 5
+    "maxLevel": 3
+  },
+  {
+    "id": "pozo",
+    "name": "Pozo de Agua",
+    "cost": 2,
+    "effect": "Reduce el consumo de comida en 1 por nivel por día",
+    "initial": false,
+    "constructible": true,
+    "maxLevel": 3
+  },
+  {
+    "id": "almacen",
+    "name": "Almacén",
+    "cost": 3,
+    "effect": "Guarda hasta 4 objetos fabricados en el Taller",
+    "initial": false,
+    "constructible": true,
+    "maxLevel": 1
   }
 ]
