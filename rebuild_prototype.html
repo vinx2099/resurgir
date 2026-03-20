@@ -209,7 +209,7 @@
     /* SURVIVOR CARDS */
     .survivor-card {
       display: grid;
-      grid-template-columns: 72px 1fr;
+      grid-template-columns: 88px 1fr;
       gap: 12px;
       padding: 12px;
       border: 1px solid var(--line);
@@ -223,8 +223,8 @@
     .survivor-card:hover { background: rgba(255,255,255,0.03); border-color: var(--line2); border-left-color: var(--ok-bright); }
 
     .avatar {
-      width: 72px;
-      height: 72px;
+      width: 88px;
+      height: 88px;
       border: 1px solid var(--line2);
       background: var(--panel2);
       display: flex;
@@ -1124,7 +1124,8 @@ function renderSurvivors(){
           <div class="survivor-name">${escapeHtml(s.name)}</div>
           <div class="badge ${s.status}">${statusLabel(s.status)}</div>
         </div>
-        <div class="mini" style="margin-bottom:3px"><span style="color:var(--ok)">⚡</span> Fatiga: ${s.fatigue}/${s.maxFatigue} &nbsp; ${getMoraleEmoji(s)} Moral: ${s.morale??2}/${s.maxMorale??2}</div>
+        <div class="mini" style="margin-bottom:2px"><span style="color:var(--ok)">⚡</span> Fatiga: ${s.fatigue}/${s.maxFatigue}</div>
+        <div class="mini" style="margin-bottom:3px">${getMoraleEmoji(s)} Moral: ${s.morale??2}/${s.maxMorale??2}</div>
         ${s.skill&&s.skill!=='ninguna'?`<div class="mini" style="color:var(--amber-bright);margin-bottom:2px">${escapeHtml(getSurvivorSkillLabel(s))}</div>`:''}
         <div class="mini" style="color:var(--accent-bright)">${actionSummary(s)}</div>
         <div class="actions">
