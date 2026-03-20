@@ -2041,10 +2041,12 @@ function normaliseOptions(schema, survivor){
 
   // Editor format: object with A/B keys, effects array
   if(!Array.isArray(raw) && (raw.A||raw.B)){
-    return [
+    const opts=[
       {label:raw.A?.label||'Opción A', className:'primary',  effects:normaliseEffects(raw.A?.effects||raw.A?.directEffects||[]), delayed:raw.A?.delayedEffects||[]},
       {label:raw.B?.label||'Opción B', className:'secondary', effects:normaliseEffects(raw.B?.effects||raw.B?.directEffects||[]), delayed:raw.B?.delayedEffects||[]},
     ];
+    if(raw.C?.label) opts.push({label:raw.C.label, className:'secondary', effects:normaliseEffects(raw.C?.effects||raw.C?.directEffects||[]), delayed:raw.C?.delayedEffects||[]});
+    return opts;
   }
 
   // Legacy format: array of {label, cost:{}, effects:{}, fallback:{}}
@@ -2096,10 +2098,41 @@ function buildEventFromSchema(schema,forcedSurvivor){
     image:schema.image||'',
     days,
     relatedAction:schema.relatedAction||null,
-    _explorerId:survivor.id||null,  // track which survivor generated this event
+    _explorerId:survivor.id||null,
     _explorerName:survivor.name||null,
     options:[]
   };
+
+  // ── Attack mode: generate Atacar / Retirarse buttons from setAttackThreat effect ──
+  if(choiceMode==='attack'){
+    const atkEffect=(Array.isArray(schema.effects)?schema.effects:[]).find(e=>e.type==='setAttackThreat');
+    if(atkEffect){
+      ev.options=[
+        {
+          label:'⚔ Atacar el almacén',
+          className:'primary',
+          action:()=>{
+            // Apply setAttackThreat — sets up the battle for resolveGroupAttack
+            applyEffect(atkEffect);
+            closeEvent();
+          }
+        },
+        {
+          label:'🚪 Retirarse por ahora',
+          className:'secondary',
+          action:()=>{
+            // Apply defeat effects directly — no battle
+            applyEffectList(atkEffect.effectOnDefeat||[]);
+            addLog(`El grupo decide no atacar el almacén.`);
+            closeEvent();
+          }
+        }
+      ];
+    } else {
+      ev.options=[{label:'Continuar',className:'primary',action:()=>closeEvent()}];
+    }
+    return ev;
+  }
 
   if(choiceMode==='direct'||normOpts.length===0){
     // Auto-resolve: apply effects and close. Show a single "Continuar" button.
