@@ -844,7 +844,7 @@ $('uploadInjuredBtn').addEventListener('click', async () => {
       r.readAsDataURL(file);
     });
     const fd = new FormData();
-    fd.append('key', IMGBB_KEY);
+    fd.append('key', IMGBB_API_KEY);
     fd.append('image', b64);
     const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
     const data = await resp.json();
