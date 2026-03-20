@@ -709,6 +709,8 @@
         ▶ Personal del asentamiento
       </div>
       <div class="btn-row">
+        <button class="btn" id="importJsonBtn">⬆ Importar JSON</button>
+        <input type="file" id="importJsonFile" accept=".json" style="display:none">
         <button class="btn primary" id="downloadBtn">⬇ Descargar survivors.json</button>
         <button class="btn" id="importBtn">⬆ Importar JSON</button>
         <input id="importFile" type="file" accept="application/json" class="hidden" />
@@ -1111,6 +1113,43 @@ $('closeStoryBtn').addEventListener('click', () => $('storyModal').classList.rem
 $('storyModal').addEventListener('click', e => { if(e.target === $('storyModal')) $('storyModal').classList.remove('open'); });
 
 // ── DOWNLOAD ──
+$('importJsonBtn').addEventListener('click', () => $('importJsonFile').click());
+$('importJsonFile').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed)) { showToast('JSON inválido — debe ser un array', true); return; }
+    let added=0, updated=0;
+    parsed.forEach(item => {
+      const norm = {
+        id: item.id || uid(),
+        name: item.name || '',
+        fatigueCurrent: Number(item.fatigueCurrent ?? item.fatigue ?? 3),
+        fatigueMax: Number(item.fatigueMax ?? item.maxFatigue ?? 3),
+        story: item.story || '',
+        image: { url: item.image?.url || '', deleteUrl: '' },
+        imageInjured: { url: item.imageInjured?.url || item.imageUrlInjured || '', deleteUrl: '' },
+        skill: item.skill || 'ninguna',
+        skill2: item.skill2 || 'ninguna',
+        negativeSkill: item.negativeSkill || 'ninguna',
+        moralCurrent: Number(item.moralCurrent ?? item.morale ?? 2),
+        moralMax: Number(item.moralMax ?? 2),
+        rarity: Number(item.rarity ?? 4)
+      };
+      const idx = state.survivors.findIndex(s => s.id === norm.id);
+      if (idx >= 0) { state.survivors[idx] = norm; updated++; }
+      else { state.survivors.push(norm); added++; }
+    });
+    render();
+    showToast(`${added+updated} superviviente${added+updated!==1?'s':''} importado${added+updated!==1?'s':''} ✓`);
+  } catch(err) {
+    showToast('Error: ' + err.message, true);
+  }
+  e.target.value = '';
+});
+
 $('downloadBtn').addEventListener('click', () => {
   if (!state.survivors.length) { showToast('No hay supervivientes para exportar', true); return; }
   const blob = new Blob([JSON.stringify(state.survivors, null, 2)], { type:'application/json' });
@@ -1177,7 +1216,12 @@ async function autoLoadFromServer() {
         fatigueMax: Number(item.fatigueMax ?? item.maxFatigue ?? 3),
         story: item.story || '',
         image: { url: item.image?.url || '', deleteUrl: '' },
+        imageInjured: { url: item.imageInjured?.url || item.imageUrlInjured || '', deleteUrl: '' },
         skill: item.skill || 'ninguna',
+        skill2: item.skill2 || 'ninguna',
+        negativeSkill: item.negativeSkill || 'ninguna',
+        moralCurrent: Number(item.moralCurrent ?? item.morale ?? 2),
+        moralMax: Number(item.moralMax ?? 2),
         rarity: Number(item.rarity ?? 4)
       };
       const idx = state.survivors.findIndex(s => s.id === norm.id);
@@ -1186,7 +1230,10 @@ async function autoLoadFromServer() {
     });
     render();
     showToast(`${added + updated} superviviente${added+updated!==1?'s':''} cargado${added+updated!==1?'s':''} desde /data/ ✓`);
-  } catch { /* not on server, skip */ }
+  } catch(e) {
+    console.warn('No se pudo cargar survivors.json:', e.message);
+    showToast('No se pudo cargar survivors.json — trabajando en local', true);
+  }
 }
 autoLoadFromServer();
 </script>
