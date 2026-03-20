@@ -162,5 +162,40 @@
   </div>
 
   <div class="footer">Un juego diseñado por Vinx Rockatansky a través de Claude.</div>
+
+  <audio id="bgMusic" loop preload="auto">
+    <source src="./data/music/wasteland.mp3" type="audio/mpeg">
+  </audio>
+  <div style="
+    position:fixed;bottom:16px;right:16px;z-index:100;
+    display:flex;align-items:center;gap:10px;
+    background:rgba(5,8,4,0.85);border:1px solid rgba(255,255,255,0.08);
+    padding:8px 12px;backdrop-filter:blur(4px);
+  ">
+    <button id="musicBtn" title="Música" style="
+      background:none;border:none;
+      color:rgba(255,255,255,0.4);font-size:18px;
+      cursor:pointer;padding:0;line-height:1;
+    ">🔊</button>
+    <div style="font-size:9px;color:rgba(255,255,255,0.25);font-family:monospace;line-height:1.7;text-align:right;">
+      Música de <a href="https://swarajthegreat.itch.io/post-apocalyptic-soundscapes" target="_blank" style="color:rgba(255,255,255,0.35);text-decoration:none;">swarajthegreat.itch.io</a><br>
+      Pulsa <b style="color:rgba(255,255,255,0.4);">F11</b> para jugar a pantalla completa y disfrutar por completo de Resurgir
+    </div>
+  </div>
+  <script>
+    const bgMusic = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicBtn');
+    let muted = false;
+    bgMusic.volume = 0.18;
+    // Autoplay on first interaction
+    document.addEventListener('click', () => bgMusic.play().catch(()=>{}), {once:true});
+    bgMusic.play().catch(()=>{});
+    musicBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      muted = !muted;
+      bgMusic.muted = muted;
+      musicBtn.textContent = muted ? '🔇' : '🔊';
+    });
+  </script>
 </body>
 </html>

@@ -764,6 +764,7 @@ const defaultSkills = [
   'recolector',   // +1 recurso al explorar
   'cazador',      // +1 comida al explorar
   'chatarrero',   // +1 material al reciclar
+  'combatiente',  // +1 en ataque preventivo
 ];
 
 const defaultNegativeSkills = [
@@ -1007,9 +1008,11 @@ function fillForm(s) {
 }
 
 function saveSurvivor() {
+  // Fix: assign stable ID before getFormData to avoid uid() generating different IDs
+  if (!state.editingId) state.editingId = uid();
   const s = getFormData();
   const err = validateSurvivor(s);
-  if (err) { setFormStatus(err, 'err'); return; }
+  if (err) { state.editingId = null; setFormStatus(err, 'err'); return; }
   const idx = state.survivors.findIndex(x => x.id === s.id);
   if (idx >= 0) {
     state.survivors[idx] = s;
