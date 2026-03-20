@@ -4,3 +4,6 @@ PROPUESTAS
 
 Líder y efecto
 Habilidades que mejoran las acciones, fatiga o combate
+
+tras crear un nuevo superviviente no me deja hacer accion (no sé si es por ser el mismo)
+No repetir supervivientes!

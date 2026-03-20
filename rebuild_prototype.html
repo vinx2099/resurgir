@@ -479,6 +479,10 @@
 
     .log-entry:first-child { color: var(--text); }
     .log-entry:last-child { border-bottom: 0; }
+    .log-entry.log-herido  { color: var(--warn-bright) !important; }
+    .log-entry.log-muerto  { color: var(--danger-bright) !important; }
+    .log-entry.log-explore { color: var(--accent-bright) !important; }
+    .log-entry.log-skill   { color: var(--amber-bright) !important; letter-spacing:0.03em; }
 
     /* EVENTS */
     .event-image {
@@ -828,14 +832,9 @@
         <div class="panel-header" style="justify-content:space-between;"><span>Instalación</span><button id="closeBuildingDetail" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;">✕</button></div>
         <div class="panel-body"><div class="detail-grid" id="detailBox"></div></div>
       </div>
-      <div class="panel-header">Eventos</div>
+      <div class="panel-header">Efectos activos</div>
       <div class="panel-body">
-        <div class="event-image" id="eventImage"></div>
-        <div class="event-title" id="eventTitle" style="margin-top:10px">Sin evento</div>
-        <div id="eventSubtitle" style="display:none;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;"></div>
-        <div id="eventDurationBar" style="display:none;margin:6px 0 4px;"></div>
-        <div class="event-text" id="eventText">Asigna acciones y pulsa Finalizar día.</div>
-        <div class="event-options" id="eventOptions"></div>
+        <div id="activeEventsList"><div class="no-active-events">// Sin efectos activos.</div></div>
       </div>
     </section>
   </div>
@@ -872,37 +871,44 @@
     </div>
   </div>
 
+  <!-- Food choice popup -->
+  <div class="overlay" id="foodChoicePopup">
+    <div class="modal" style="width:min(520px,100%);background:var(--panel);">
+      <div class="modal-header" style="color:var(--warn-bright);background:#0f0d08;border-bottom:1px solid #3a2a10;">
+        🍽 Escasez de alimentos
+      </div>
+      <div class="modal-body" style="padding:14px;">
+        <p id="foodChoiceText" style="font-size:12px;color:var(--text);margin-bottom:12px;line-height:1.6;"></p>
+        <div id="foodChoiceList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div style="margin-top:14px;">
+          <button class="btn primary" id="foodChoiceConfirm">✓ Confirmar elección</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event popup -->
+  <div class="event-popup-overlay" id="eventPopupOverlay">
+    <div class="event-popup">
+      <div class="event-popup-img" id="popupImg"></div>
+      <div class="event-popup-body">
+        <div class="event-popup-subtitle" id="popupSubtitle"></div>
+        <div class="event-popup-title" id="popupTitle">Evento</div>
+        <div class="event-popup-duration" id="popupDuration">
+          <span id="popupDurationText"></span>
+          <div class="dur-pips" id="popupDurationPips"></div>
+        </div>
+        <div class="event-popup-text" id="popupText"></div>
+        <div class="event-popup-options" id="popupOptions"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="gameover" id="gameOverWrap"><div class="gameover-box"><h1>Derrota</h1><p id="gameOverText"></p><button onclick="location.reload()">Reiniciar partida</button></div></div>
 <script>
-const defaults={
-  explore:[
-    {id:"explore_supplies",name:"Suministros abandonados",image:"",text:"{survivor} encuentra una pequeña reserva útil durante la exploración.",choiceMode:"one",options:{A:{label:"Recoger",directEffects:[{type:"addResource",resource:"materials",amount:1}],delayedEffects:[]},B:{label:"Seguir buscando",directEffects:[{type:"addResource",resource:"food",amount:1}],delayedEffects:[]}},weight:10,type:"explore"},
-    {id:"explore_survivor",name:"Superviviente escondido",image:"",text:"{survivor} encuentra a alguien escondido entre ruinas.",choiceMode:"one",options:{A:{label:"Traer al asentamiento",directEffects:[{type:"addSurvivorByRarity"}],delayedEffects:[{delayDays:1,type:"removeResource",resource:"food",amount:1}]},B:{label:"Dejar suministros",directEffects:[{type:"removeResource",resource:"food",amount:1},{type:"addResource",resource:"morale",amount:1}],delayedEffects:[]}},weight:8,type:"explore"},
-    {id:"explore_hostiles",name:"Territorio hostil",image:"",text:"{survivor} entra en una zona controlada por un grupo hostil.",choiceMode:"one",options:{A:{label:"Retirarse",directEffects:[{type:"removeResource",resource:"morale",amount:1}],delayedEffects:[]},B:{label:"Marcar la zona",directEffects:[{type:"modifyActionEffect",action:"ataque",modifier:1}],delayedEffects:[]}},weight:7,type:"explore"}
-  ],
-  events:[
-    {id:"cumpleanos",name:"Cumpleaños",image:"",text:"{survivor} propone celebrar un cumpleaños.",choiceMode:"one",options:{A:{label:"Sí",directEffects:[{type:"removeResource",resource:"food",amount:2},{type:"addResource",resource:"morale",amount:1}],delayedEffects:[]},B:{label:"No",directEffects:[{type:"removeResource",resource:"morale",amount:1}],delayedEffects:[]}},weight:8,type:"survivor"}
-  ],
-  story_events:[],
-  survivors:[
-    {id:"survivor_a",name:"Alex",fatigueCurrent:3,fatigueMax:3,story:"Joven",image:{url:"",deleteUrl:""},skill:"ninguna",rarity:4},
-    {id:"survivor_b",name:"Kirk",fatigueCurrent:3,fatigueMax:5,story:"Mercenario que llegó herido al campamento.",image:{url:"",deleteUrl:""},skill:"ninguna",rarity:4},
-    {id:"survivor_c",name:"Marie",fatigueCurrent:3,fatigueMax:3,story:"Líder nata",image:{url:"",deleteUrl:""},skill:"ninguna",rarity:4}
-  ],
-  buildings:[
-    {id:"huerto",name:"Huerto",cost:3,effect:"+1 comida por día",initial:true,constructible:true,maxLevel:5},
-    {id:"atalaya",name:"Atalaya",cost:4,effect:"+1 defensa si se usa Vigilar",initial:false,constructible:true,maxLevel:5},
-    {id:"muros",name:"Muros",cost:5,effect:"+1 defensa pasiva",initial:true,constructible:true,maxLevel:5},
-    {id:"barracones",name:"Barracones",cost:4,effect:"4 espacios",initial:true,constructible:true,maxLevel:5},
-    {id:"camion",name:"Camión Raider",cost:5,effect:"+1 material por día",initial:false,constructible:true,maxLevel:5},
-    {id:"hospital",name:"Hospital",cost:0,effect:"Desbloquea medicamentos",initial:false,constructible:false,maxLevel:5},
-    {id:"generador",name:"Generador",cost:0,effect:"Desbloquea electricidad",initial:false,constructible:false,maxLevel:5}
-  ],
-  config:{starting:{food:5,materials:5,survivors:3,morale:5,meds:0,electricity:0},rules:{foodPerSurvivor:1,barracksCapacity:4,recycleValue:1,resources:{meds:false,electricity:false}}}
-};
 
-const gameData={events:[],story_events:[],explore:[],survivors:[],buildings:[],config:null};
-const state={day:1,food:0,materials:0,morale:0,meds:0,electricity:0,unlocked:{meds:false,electricity:false},attackThreat:false,attackStrength:3,attackEffectVictory:[],attackEffectDefeat:[],pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],survivors:[],buildings:{},delayedQueue:[],log:[],currentDetail:null};
+const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},attackThreat:false,attackStrength:3,attackEffectVictory:[],attackEffectDefeat:[],pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},survivors:[],buildings:{},delayedQueue:[],log:[],currentDetail:null};
 
 const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
 
@@ -970,12 +976,11 @@ async function loadFromFiles(){
 function applyPastedJson(){
   try{
     const parsed=JSON.parse(document.getElementById('jsonPasteArea').value);
-    gameData.events=deepClone(parsed.events||defaults.events);
+    gameData.events=deepClone(parsed.events||[]);
     gameData.story_events=deepClone(parsed.story_events||[]);
-    gameData.explore=deepClone(parsed.explore||defaults.explore);
-    gameData.survivors=deepClone(parsed.survivors||defaults.survivors);
-    gameData.buildings=deepClone(parsed.buildings||defaults.buildings);
-    gameData.config=deepClone(parsed.config||defaults.config);
+    gameData.survivors=deepClone(parsed.survivors||[]);
+    gameData.buildings=deepClone(parsed.buildings||[]);
+    gameData.config=deepClone(parsed.config||{});
     jsonModalWrap.classList.remove('open');
     initGame();
   }catch{
@@ -984,17 +989,13 @@ function applyPastedJson(){
 }
 
 function loadDefaults(){
-  // All data embedded directly from the project JSONs
-  const realEvents=[{"id": "sabotaje", "title": "Sabotaje", "type": "city", "weight": 10, "effects": {"materials": -2, "morale": -1, "disableRandomBuilding": true}}, {"id": "lluvia", "title": "Lluvia", "type": "city", "weight": 10, "effects": {"forageMax": 1}}, {"id": "nada", "title": "Nada", "type": "city", "weight": 8, "effects": {"morale": 1}}, {"id": "hallazgo", "title": "Hallazgo", "type": "city", "weight": 8, "randomEffects": [{"food": 2}, {"materials": 2}]}, {"id": "cumpleanos", "title": "Cumpleaños", "type": "survivor", "weight": 8, "text": "{survivor} propone celebrar un cumpleaños.", "options": [{"label": "Sí (-2 comida, +1 moral)", "cost": {"food": 2}, "effects": {"morale": 1}, "fallback": {"morale": -1}}, {"label": "No (0 comida, -1 moral)", "effects": {"morale": -1}}]}, {"id": "accidente", "title": "Accidente", "type": "city", "weight": 9, "effects": {"injureRandom": true}}, {"id": "forastero", "title": "Forastero", "type": "city", "weight": 9, "options": [{"label": "Aceptar (+1 superviviente, -1 comida)", "effects": {"addSurvivor": 1}, "cost": {"food": 1}, "fallback": {"morale": -1}}, {"label": "Rechazar (0 comida, -1 moral)", "effects": {"morale": -1}}]}, {"id": "plaga", "title": "Plaga", "type": "city", "weight": 8, "effects": {"food": -2}}, {"id": "incendio", "title": "Incendio", "type": "city", "weight": 8, "effects": {"materials": -1, "disableRandomBuilding": true}}, {"id": "discusion", "title": "Discusión", "type": "survivor", "weight": 8, "text": "{survivor} pide intervenir en una discusión.", "options": [{"label": "Intervenir (-1 material)", "cost": {"materials": 1}, "fallback": {"morale": -1}}, {"label": "Ignorar (-2 moral)", "effects": {"morale": -2}}]}, {"id": "ataque", "title": "Raiders cerca", "type": "city", "weight": 12, "effects": {"setAttackThreat": true}, "condition": "noAttackThreat"}, {"id": "explore_supplies", "name": "Suministros abandonados", "type": "explore", "weight": 10, "repeatable": false, "text": "{survivor} encuentra una pequeña reserva útil.", "choiceMode": "choice", "options": {"A": {"label": "Recoger materiales", "effects": [{"type": "addResource", "resource": "materials", "amount": 2}]}, "B": {"label": "Buscar comida", "effects": [{"type": "addResource", "resource": "food", "amount": 2}]}}}, {"id": "explore_survivor", "name": "Superviviente oculto", "type": "explore", "weight": 8, "repeatable": false, "text": "{survivor} encuentra a alguien escondido entre ruinas.", "choiceMode": "choice", "options": {"A": {"label": "Traer al asentamiento", "effects": [{"type": "addSurvivorByRarity"}], "delayedEffects": [{"delayDays": 1, "type": "removeResource", "resource": "food", "amount": 1}]}, "B": {"label": "Dejarle comida", "effects": [{"type": "removeResource", "resource": "food", "amount": 1}, {"type": "addResource", "resource": "morale", "amount": 1}]}}}, {"id": "explore_hostiles", "name": "Territorio hostil", "type": "explore", "weight": 7, "repeatable": false, "text": "{survivor} entra en una zona controlada por un grupo hostil.", "choiceMode": "choice", "options": {"A": {"label": "Retirarse", "effects": [{"type": "removeResource", "resource": "morale", "amount": 1}]}, "B": {"label": "Marcar la zona", "effects": [{"type": "modifyActionEffect", "action": "defender", "modifier": 1}]}}}, {"id": "explore_ruinas", "name": "Edificio en ruinas", "type": "explore", "weight": 6, "repeatable": false, "text": "{survivor} entra en un edificio semiderruido.", "choiceMode": "choice", "options": {"A": {"label": "Buscar dentro", "effects": [{"type": "addResource", "resource": "materials", "amount": 1}], "delayedEffects": [{"delayDays": 1, "type": "injureExplorer"}]}, "B": {"label": "Evitar riesgos", "effects": []}}}, {"id": "explore_clinica", "name": "Clínica abandonada", "type": "explore", "weight": 5, "repeatable": false, "text": "{survivor} encuentra una antigua clínica.", "choiceMode": "choice", "options": {"A": {"label": "Buscar medicamentos", "effects": [{"type": "addResource", "resource": "meds", "amount": 1}]}, "B": {"label": "Desmontar equipo", "effects": [{"type": "addResource", "resource": "materials", "amount": 2}]}}}, {"id": "explore_nothing", "name": "Sin novedad", "type": "explore", "weight": 8, "repeatable": true, "text": "{survivor} no ha encontrado nada interesante.", "choiceMode": "direct", "effects": []}];
-  const realStory=[{"id": "historia_7_disparos", "day": 7, "title": "Disparos en la distancia", "type": "story", "text": "Durante la noche se escuchan disparos al norte. {survivor} cree que podría haber otros supervivientes.", "options": [{"label": "Investigar", "effects": {"setAttackThreat": true, "morale": 1}}, {"label": "Ignorar", "effects": {"morale": -1}}]}, {"id": "historia_14_refugiados", "day": 14, "title": "Grupo de refugiados", "type": "story", "text": "Un pequeño grupo llega al asentamiento pidiendo refugio. Están agotados y hambrientos.", "options": [{"label": "Acogerlos (-2 comida)", "cost": {"food": 2}, "effects": {"addSurvivor": 2, "morale": 1}, "fallback": {"morale": -2}}, {"label": "Rechazarlos", "effects": {"morale": -2}}]}, {"id": "historia_21_radio", "day": 21, "title": "Señal de radio", "type": "story", "text": "Una vieja radio capta una señal intermitente. Parece un asentamiento cercano intentando contactar.", "options": [{"label": "Responder", "effects": {"morale": 2}}, {"label": "No arriesgar", "effects": {"morale": -1}}]}, {"id": "historia_28_gran_ataque", "day": 28, "title": "Gran ataque", "type": "story", "text": "Un grupo numeroso de raiders se acerca. Este no será un ataque cualquiera.", "options": [{"label": "Prepararse para defender", "effects": {"setAttackThreat": true, "morale": 1}}, {"label": "Intentar negociar (-2 materiales)", "cost": {"materials": 2}, "effects": {"morale": 1}, "fallback": {"morale": -2, "setAttackThreat": true}}]}];
-  const realExplore=[{"id": "explore_supplies", "name": "Suministros abandonados", "image": "", "text": "{survivor} encuentra una pequeña reserva útil durante la exploración.", "choiceMode": "one", "options": {"A": {"label": "Recoger materiales", "directEffects": [{"type": "addResource", "resource": "materials", "amount": 2}], "delayedEffects": []}, "B": {"label": "Buscar comida", "directEffects": [{"type": "addResource", "resource": "food", "amount": 2}], "delayedEffects": []}}, "weight": 10, "type": "explore"}, {"id": "explore_survivor", "name": "Superviviente oculto", "image": "", "text": "{survivor} encuentra a alguien escondido entre ruinas.", "choiceMode": "one", "options": {"A": {"label": "Traer al asentamiento", "directEffects": [{"type": "addResource", "resource": "morale", "amount": 1}], "delayedEffects": [{"delayDays": 1, "type": "removeResource", "resource": "food", "amount": 1}]}, "B": {"label": "Dejarle comida", "directEffects": [{"type": "removeResource", "resource": "food", "amount": 1}, {"type": "addResource", "resource": "morale", "amount": 1}], "delayedEffects": []}}, "weight": 8, "type": "explore"}, {"id": "explore_hostiles", "name": "Territorio hostil", "image": "", "text": "{survivor} entra en una zona controlada por un grupo hostil.", "choiceMode": "one", "options": {"A": {"label": "Retirarse", "directEffects": [{"type": "removeResource", "resource": "morale", "amount": 1}], "delayedEffects": []}, "B": {"label": "Marcar ubicación", "directEffects": [{"type": "modifyActionEffect", "action": "ataque", "modifier": 1}], "delayedEffects": []}}, "weight": 7, "type": "explore"}, {"id": "explore_ruinas", "name": "Edificio en ruinas", "image": "", "text": "{survivor} entra en un edificio semiderruido.", "choiceMode": "one", "options": {"A": {"label": "Buscar dentro", "directEffects": [{"type": "addResource", "resource": "materials", "amount": 1}], "delayedEffects": [{"delayDays": 1, "type": "injureRandom"}]}, "B": {"label": "Evitar riesgos", "directEffects": [], "delayedEffects": []}}, "weight": 6, "type": "explore"}, {"id": "explore_clinica", "name": "Clínica abandonada", "image": "", "text": "{survivor} encuentra una antigua clínica.", "choiceMode": "one", "options": {"A": {"label": "Buscar medicamentos", "directEffects": [{"type": "addResource", "resource": "meds", "amount": 1}], "delayedEffects": []}, "B": {"label": "Desmontar equipo", "directEffects": [{"type": "addResource", "resource": "materials", "amount": 2}], "delayedEffects": []}}, "weight": 5, "type": "explore"}];
+  // No embedded events — everything must come from /data/events.json
+  gameData.events=[];
+  gameData.story_events=[];
+  // Survivors, buildings, config keep embedded defaults as fallback
   const realSurvivors=[{"id": "survivor_vw4cahg8", "name": "Alex", "fatigueCurrent": 3, "fatigueMax": 3, "story": "Joven", "image": {"url": "https://i.ibb.co/bMKgdyhp/chick4.jpg", "deleteUrl": ""}, "skill": "ninguna", "rarity": 4}, {"id": "survivor_6l305iiv", "name": "Kirk", "fatigueCurrent": 3, "fatigueMax": 5, "story": "Mercenario que llegó herido al campamento.", "image": {"url": "https://i.ibb.co/0pszrW3w/OIG3-Jf02-KOq-Vmun-Hgtflnv-YS.jpg", "deleteUrl": ""}, "skill": "ninguna", "rarity": 4}, {"id": "survivor_e34fokvp", "name": "Marie", "fatigueCurrent": 3, "fatigueMax": 3, "story": "Líder nata", "image": {"url": "https://i.ibb.co/zhpd6JSb/OIG1-BTf-Idmr-h-Kmr-Pd4-K2-Lj-N.jpg", "deleteUrl": ""}, "skill": "ninguna", "rarity": 4}];
   const realBuildings=[{"id": "huerto", "name": "Huerto", "cost": 3, "effect": "+1 comida por día", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "atalaya", "name": "Atalaya", "cost": 4, "effect": "+1 defensa si se usa Vigilar", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "muros", "name": "Muros", "cost": 5, "effect": "+1 defensa pasiva", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "barracones", "name": "Barracones", "cost": 4, "effect": "4 espacios", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "camion", "name": "Camión Raider", "cost": 5, "effect": "+1 material por día", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "hospital", "name": "Hospital", "cost": 0, "effect": "Desbloquea medicamentos", "initial": false, "constructible": false, "maxLevel": 5}, {"id": "generador", "name": "Generador", "cost": 0, "effect": "Desbloquea electricidad", "initial": false, "constructible": false, "maxLevel": 5}];
   const realConfig={"starting": {"food": 5, "materials": 5, "survivors": 3, "morale": 5}, "rules": {"foodPerSurvivor": 1, "barracksCapacity": 4, "recycleValue": 1}};
-  // Split realEvents: story type goes to story_events, rest to events
-  gameData.story_events=[...deepClone(realStory),...deepClone(realEvents).filter(e=>e.type==='story')];
-  gameData.events=deepClone(realEvents).filter(e=>e.type!=='story');
-  gameData.explore=deepClone(realExplore);
   gameData.survivors=deepClone(realSurvivors);
   gameData.buildings=deepClone(realBuildings);
   gameData.config=deepClone(realConfig);
@@ -1004,7 +1005,7 @@ function initGame(){
   state.day=1;
   state.food=Number(gameData.config?.starting?.food??5);
   state.materials=Number(gameData.config?.starting?.materials??5);
-  state.morale=Number(gameData.config?.starting?.morale??5);
+  state.stability=Number(gameData.config?.starting?.morale??gameData.config?.starting?.stability??5);
   state.meds=Number(gameData.config?.starting?.meds??0);
   state.electricity=Number(gameData.config?.starting?.electricity??0);
   state.unlocked=deepClone(gameData.config?.rules?.resources||{meds:false,electricity:false});
@@ -1018,6 +1019,7 @@ function initGame(){
   state._activeMultiDayEvent=null;
   state.seenEvents=new Set();
   state.cemetery=[];
+  state.actionXP={};
   state._seenExplore=new Set();
   state.delayedQueue=[];
   state.log=[];
@@ -1034,6 +1036,9 @@ function initGame(){
     imageUrl:s.image?.url||'',
     story:s.story||'',
     skill:s.skill||'ninguna',
+    morale:Number(s.moralCurrent??s.morale??2),
+    maxMorale:Number(s.moralMax??2),
+    fed:true,
     status:'activo',
     action:null
   }));
@@ -1059,6 +1064,7 @@ function render(){
   renderSurvivors();
   renderBuildings();
   renderLog();
+  renderActiveEvents();
   checkGameOver();
 }
 
@@ -1067,7 +1073,7 @@ function renderTopbar(){
     ['Día','📅',state.day,false],
     ['Comida','🌽',state.food,false],
     ['Materiales','🔧',state.materials,false],
-    ['Moral','❤️',state.morale,false],
+    ['Estabilidad','🏛',state.stability,false],
     ['Medicamentos','💊',state.unlocked.meds?state.meds:'--',!state.unlocked.meds],
     ['Electricidad','⚡',state.unlocked.electricity?state.electricity:'--',!state.unlocked.electricity],
     ['Supervivientes','👥',aliveSurvivors().length,false]
@@ -1094,7 +1100,8 @@ function renderSurvivors(){
           <div class="survivor-name">${escapeHtml(s.name)}</div>
           <div class="badge ${s.status}">${statusLabel(s.status)}</div>
         </div>
-        <div class="mini" style="margin-bottom:3px"><span style="color:var(--ok)">⚡</span> Fatiga: ${s.fatigue}/${s.maxFatigue}</div>
+        <div class="mini" style="margin-bottom:3px"><span style="color:var(--ok)">⚡</span> Fatiga: ${s.fatigue}/${s.maxFatigue} &nbsp; ${getMoraleEmoji(s)} Moral: ${s.morale??2}/${s.maxMorale??2}</div>
+        ${s.skill&&s.skill!=='ninguna'?`<div class="mini" style="color:var(--amber-bright);margin-bottom:2px">${escapeHtml(getSurvivorSkillLabel(s))}</div>`:''}
         <div class="mini" style="color:var(--accent-bright)">${actionSummary(s)}</div>
         <div class="actions">
           <select ${!canAct||s.status==='ocupado'?'disabled':''}>
@@ -1128,6 +1135,7 @@ function renderLog(){
     const t=x.toLowerCase();
     if(x.includes('💀')||t.includes('muere')||t.includes('muerto')||t.includes('fallece')) cls+=' log-muerto';
     else if(x.includes('🩸')||t.includes('herido')) cls+=' log-herido';
+    else if(x.startsWith('★')) cls+=' log-skill';
     else if(x.includes('🗺')) cls+=' log-explore';
     return `<div class="${cls}">${escapeHtml(x)}</div>`;
   }).join('');
@@ -1174,8 +1182,12 @@ function openBuildModal(survivorId){
     box.querySelector('button').addEventListener('click',()=>{
       if(!constructible||atCap) return;
       const cost=getBuildingCost(def.id);
-      if(state.materials<cost) return;
-      state.materials-=cost;
+      // Ingeniero skill: reduce cost by 1 if the builder has that skill
+      const ingenieroBonus=getSkillBonus(s,'build');
+      const finalCost=Math.max(1,cost-(ingenieroBonus.costReduction||0));
+      if(state.materials<finalCost) return;
+      state.materials-=finalCost;
+      if(ingenieroBonus.costReduction) addLog(`⚙ ${s.name} (Ingeniero) reduce el coste en ${ingenieroBonus.costReduction} material.`);
       state.buildings[def.id].built=true;
       state.buildings[def.id].level+=1;
       state.buildings[def.id].active=true;
@@ -1203,7 +1215,14 @@ function endDay(){
   applyDailyIncome();
   applyFoodConsumption();
   applyBarracksPenalty();
+  applyDailyMoraleDecay();
   processDelayedEffects();
+  // Handle food shortage choice popup if needed
+  if(state._pendingFoodChoice){
+    openFoodChoicePopup();
+    return; // pause endDay — resumes after food choice
+  }
+  checkLowMorale();
   state.day+=1;
   resetForNewDay();
   // Handle multi-day active event persistence
@@ -1241,23 +1260,35 @@ function resolveActions(){
       const found=Math.max(0,1+getActionModifier('forraje'));
       state.food+=found;
       addLog(`${s.name} forrajea y consigue ${found} comida.`);
+      trackActionXP(s,'forraje');
       if(Math.random()<outsideRiskChance()) injureSurvivor(s,`Durante el forrajeo, ${s.name} resulta herido.`);
     }else if(type==='reciclar'){
       const value=Math.max(0,Number(gameData.config?.rules?.recycleValue??1)+getActionModifier('reciclar'));
-      state.materials+=value;
-      addLog(`${s.name} recicla y obtiene ${value} materiales.`);
+      const chatarBonus=getSkillBonus(s,'reciclar').bonus||0;
+      state.materials+=value+chatarBonus;
+      addLog(`${s.name} recicla y obtiene ${value+chatarBonus} materiales.${chatarBonus?' (⛏+'+chatarBonus+')':''}`);
+      trackActionXP(s,'reciclar');
       if(Math.random()<outsideRiskChance()) injureSurvivor(s,`Reciclando fuera del asentamiento, ${s.name} resulta herido.`);
     }else if(type==='vigilar'){
       addLog(`${s.name} vigila desde la Atalaya.`);
     }else if(type==='descansar'){
       s.fatigue=s.maxFatigue;
       if(s.status==='herido') s.status='activo';
-      addLog(`${s.name} descansa y recupera toda la fatiga.`);
+      // Resting with food restores morale
+      if(state.food>0&&s.morale<(s.maxMorale??2)){
+        s.morale=Math.min(s.maxMorale??2, s.morale+1);
+        state.food=Math.max(0,state.food-1);
+        addLog(`${s.name} descansa, come bien y recupera moral (${getMoraleEmoji(s)}).`);
+      } else {
+        addLog(`${s.name} descansa y recupera toda la fatiga.`);
+      }
     }else if(type==='construir'){
       addLog(`${s.name} termina su trabajo de construcción.`);
+      trackActionXP(s,'construir');
     }else if(type==='defender'){
       // resolved collectively after all actions
     }else if(type==='explorar'){
+      trackActionXP(s,'explorar');
       triggerExploreEvent(s);  // auto-resolves and logs result
     }
   });
@@ -1297,7 +1328,7 @@ function resolveGroupAttack(){
   if(totalDef>=totalAtk){
     // ── VICTORIA ──
     state.attackThreat=false;
-    state.morale=Math.min(10,state.morale+1);
+    state.stability=Math.min(10,state.stability+1);
     addLog(`✅ ¡Ataque repelido! (${totalDef} vs ${totalAtk}). +1 moral.`);
     applyEffectList(state.attackEffectVictory||[]);
   } else {
@@ -1332,7 +1363,7 @@ function resolveGroupAttack(){
 
     // Moral penalty scales with margin
     const moralPenalty=Math.min(diff,4);
-    state.morale=Math.max(0,state.morale-moralPenalty);
+    state.stability=Math.max(0,state.stability-moralPenalty);
     addLog(`-${moralPenalty} moral por el ataque.`);
 
     applyEffectList(state.attackEffectDefeat||[]);
@@ -1356,20 +1387,115 @@ function applyDailyIncome(){
 }
 
 function applyFoodConsumption(){
-  const alive=aliveSurvivors().length;
+  const alive=aliveSurvivors();
   const foodPer=Number(gameData.config?.rules?.foodPerSurvivor??1);
-  state.food-=alive*foodPer;
-  if(state.food<0){
-    const lacking=Math.abs(state.food);
-    state.food=0;
-    state.morale=Math.max(0,state.morale-lacking);
-    addLog(`No hay comida suficiente. -${lacking} moral por hambre.`);
-  }else addLog(`El grupo consume ${alive*foodPer} comida.`);
+  const needed=alive.length*foodPer;
+
+  if(state.food<=0){
+    // Nobody eats — everyone loses morale, stability drops
+    alive.forEach(s=>{
+      s.fed=false;
+      s.morale=Math.max(0,s.morale-1);
+    });
+    state.stability=Math.max(0,state.stability-1);
+    addLog(`🍽 Sin comida. Todos los supervivientes pasan hambre. -1 moral individual, -1 estabilidad.`);
+  } else if(state.food<needed){
+    // Shortage — need to choose who eats
+    const canFeed=Math.floor(state.food/foodPer);
+    state.food=Math.max(0,state.food-canFeed*foodPer);
+    // For now auto-feed first N survivors; popup handled separately via state._pendingFoodChoice
+    state._pendingFoodChoice={canFeed,survivors:[...alive]};
+    addLog(`🍽 Solo hay ${canFeed} ración${canFeed!==1?'es':''} para ${alive.length} supervivientes.`);
+  } else {
+    // Everyone eats
+    state.food-=needed;
+    alive.forEach(s=>{ s.fed=true; });
+    addLog(`🍽 El grupo consume ${needed} comida.`);
+  }
+}
+
+
+function openFoodChoicePopup(){
+  const {canFeed,survivors}=state._pendingFoodChoice;
+  const popup=document.getElementById('foodChoicePopup');
+  const text=document.getElementById('foodChoiceText');
+  const list=document.getElementById('foodChoiceList');
+
+  text.textContent=`Solo hay ${canFeed} ración${canFeed!==1?'es':''} para ${survivors.length} supervivientes. Elige quién come (máx. ${canFeed}):`;
+
+  list.innerHTML='';
+  const selected=new Set();
+
+  survivors.forEach(s=>{
+    const item=document.createElement('div');
+    item.style.cssText='display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line2);cursor:pointer;background:var(--panel2);';
+    item.innerHTML=`<div style="width:40px;height:40px;overflow:hidden;border:1px solid var(--line2);flex-shrink:0;">${s.imageUrl?`<img src="${escapeAttr(s.imageUrl)}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(20%);">`:'<div style="width:40px;height:40px;background:var(--panel3);"></div>'}</div><div><div style="font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:0.06em;">${escapeHtml(s.name)}</div><div style="font-size:10px;color:var(--muted);">${getMoraleEmoji(s)} · ${s.status}</div></div><div id="food-check-${s.id}" style="font-size:20px;color:var(--muted);">○</div>`;
+    item.addEventListener('click',()=>{
+      if(selected.has(s.id)){
+        selected.delete(s.id);
+        item.style.borderColor='var(--line2)';
+        item.style.background='var(--panel2)';
+        document.getElementById('food-check-'+s.id).textContent='○';
+        document.getElementById('food-check-'+s.id).style.color='var(--muted)';
+      } else if(selected.size<canFeed){
+        selected.add(s.id);
+        item.style.borderColor='var(--ok)';
+        item.style.background='var(--ok-glow)';
+        document.getElementById('food-check-'+s.id).textContent='●';
+        document.getElementById('food-check-'+s.id).style.color='var(--ok-bright)';
+      }
+    });
+    list.appendChild(item);
+  });
+
+  popup.classList.add('open');
+
+  document.getElementById('foodChoiceConfirm').onclick=()=>{
+    popup.classList.remove('open');
+    resolveFoodChoice([...selected]);
+    // Continue endDay
+    checkLowMorale();
+    state.day+=1;
+    resetForNewDay();
+    if(state._activeMultiDayEvent){
+      state._activeMultiDayEvent._daysLeft-=1;
+      if(state._activeMultiDayEvent._daysLeft>0){
+        const carried=state._activeMultiDayEvent;
+        state.eventDaysLeft=carried._daysLeft;
+        state.eventTotalDays=carried._totalDays;
+        carried._continuing=true;
+        if(!checkWeeklyEvent()&&!checkStoryEvent()) chooseEvent();
+        if(!state.pendingEvent) setEvent(carried);
+      } else {
+        state._activeMultiDayEvent=null;
+        if(!checkWeeklyEvent()&&!checkStoryEvent()) chooseEvent();
+      }
+    } else {
+      if(!checkWeeklyEvent()&&!checkStoryEvent()) chooseEvent();
+    }
+    render();
+  };
+}
+function resolveFoodChoice(fedIds){
+  // Called after player chooses who eats
+  const alive=aliveSurvivors();
+  alive.forEach(s=>{
+    if(fedIds.includes(s.id)){
+      s.fed=true;
+    } else {
+      s.fed=false;
+      s.morale=Math.max(0,s.morale-1);
+      addLog(`😟 ${s.name} no ha comido hoy. -1 moral.`);
+    }
+  });
+  state._pendingFoodChoice=null;
+  checkLowMorale();
+  render();
 }
 
 function applyBarracksPenalty(){
   const overflow=Math.max(0,aliveSurvivors().length-barracksCapacity());
-  if(overflow>0){state.morale=Math.max(0,state.morale-overflow);addLog(`Los barracones están saturados. -${overflow} moral.`)}
+  if(overflow>0){state.stability=Math.max(0,state.stability-overflow);addLog(`Los barracones están saturados. -${overflow} estabilidad.`)}
 }
 
 function processDelayedEffects(){
@@ -1424,14 +1550,24 @@ function chooseEvent(){
   if(!activePool.length){closeEvent();return}
   // Build weighted pool: boost events whose relatedAction was used today
   const actionCounts=state._lastDayActions||{};
+  // Skill bonuses: Explorador boosts positive events, Precavido reduces negative ones
+  const exploradoresCount=aliveSurvivors().filter(s=>s.action?.type&&(s.skill||'').toLowerCase()==='explorador').length;
+  const precavidosCount=aliveSurvivors().filter(s=>s.action?.type&&(s.skill||'').toLowerCase()==='precavido').length;
+
   const boostedPool=activePool.map(ev=>{
     let w=Number(ev.weight||1);
+    // Action-related boost
     if(ev.relatedAction&&actionCounts[ev.relatedAction]){
-      // Each survivor doing that action adds +50% weight, up to 3x base
       const boost=Math.min(actionCounts[ev.relatedAction],4)*0.5;
       w=Math.round(w*(1+boost));
     }
-    return{...ev,_effectiveWeight:w};
+    // Positive/negative event skill modifiers
+    // Positive: morale+, food+, materials+, hallazgo, nada
+    const isPositive=['hallazgo','nada','lluvia'].includes(ev.id)||(ev.effects&&Object.entries(ev.effects||{}).some(([k,v])=>['food','materials','morale'].includes(k)&&v>0));
+    const isNegative=['sabotaje','plaga','incendio','accidente'].includes(ev.id)||(ev.effects&&Object.entries(ev.effects||{}).some(([k,v])=>['food','materials','morale'].includes(k)&&v<0));
+    if(isPositive&&exploradoresCount>0) w=Math.round(w*(1+exploradoresCount*0.10));
+    if(isNegative&&precavidosCount>0)  w=Math.round(w*(1-precavidosCount*0.10));
+    return{...ev,_effectiveWeight:Math.max(1,w)};
   });
   // weightedPick using _effectiveWeight
   const picked=weightedPickField(boostedPool,'_effectiveWeight');
@@ -1448,7 +1584,7 @@ function weightedPickField(items,field){
 }
 
 function triggerExploreEvent(survivor){
-  // Pull explore events from events.json type='explore'
+  // Pull explore events from events.json type='explore' only
   const pool=(gameData.events||[]).filter(e=>e&&e.type==='explore');
 
   // Exclude already seen unless repeatable, cycle when exhausted
@@ -1463,7 +1599,19 @@ function triggerExploreEvent(survivor){
   if(!finalPool.length){
     schema={id:'explore_nothing',name:'Sin novedad',type:'explore',effects:[],repeatable:true};
   } else {
-    schema=weightedPick(finalPool);
+    // Rastreador: boost survivor-finding events
+    const rastreadorBonus=getSkillBonus(survivor,'explore_survivor');
+    const weightedFinalPool=finalPool.map(ev=>{
+      let w=Number(ev.weight||1);
+      const hasSurvivorEffect=(ev.effects||[]).some&&[...(Array.isArray(ev.effects)?ev.effects:[])].some(e=>e.type==='addSurvivorByRarity');
+      if(rastreadorBonus.weightMult&&hasSurvivorEffect) w=Math.round(w*rastreadorBonus.weightMult);
+      return{...ev,_w:w};
+    });
+    // Use _w as weight for pick
+    const total=weightedFinalPool.reduce((s,e)=>s+e._w,0);
+    let r=Math.random()*total;
+    schema=weightedFinalPool[0];
+    for(const e of weightedFinalPool){r-=e._w;if(r<=0){schema=e;break;}}
     if(schema.id&&!schema.repeatable){
       if(!state._seenExplore) state._seenExplore=new Set();
       state._seenExplore.add(schema.id);
@@ -1504,8 +1652,224 @@ function triggerExploreEvent(survivor){
   applyEffectList(effects);
   handleLegacyFlags(schema.effects||{});
 
-  const result=resultParts.length?resultParts.join(', '):'nada interesante';
+  // Skill bonuses on top of normal effects
+  const extraParts=[];
+  const cazadorBonus=getSkillBonus(survivor,'explore_food');
+  if(cazadorBonus.bonus&&effects.length>0){
+    state.food+=cazadorBonus.bonus;
+    extraParts.push(`+${cazadorBonus.bonus} comida (Cazador)`);
+  }
+  const recolectorBonus=getSkillBonus(survivor,'explore_resource');
+  if(recolectorBonus.bonus&&effects.some(e=>e.type==='addResource'&&e.resource!=='morale')){
+    // +1 to the first non-morale resource found
+    const firstResource=effects.find(e=>e.type==='addResource'&&e.resource!=='morale');
+    if(firstResource){ state[firstResource.resource]=(state[firstResource.resource]||0)+recolectorBonus.bonus; extraParts.push(`+${recolectorBonus.bonus} ${resourceLabel(firstResource.resource)} (Recolector)`); }
+  }
+
+  const allParts=[...resultParts,...extraParts];
+  const result=allParts.length?allParts.join(', '):'nada interesante';
   addLog(`🗺 ${survivorName} → ${name}: ${result}.`);
+}
+
+
+
+// ── EXPERIENCE & SKILL UNLOCK SYSTEM ──
+const ACTION_SKILL_MAP = {
+  explorar:  ['cazador','rastreador'],
+  construir: ['ingeniero'],
+  forraje:   ['recolector'],
+  reciclar:  ['chatarrero'],
+};
+
+// Max skills by rarity
+function maxSkillsForRarity(rarity){
+  const r=Number(rarity||4);
+  if(r<=1) return 2;  // t1: 2 (1 exclusive handled separately)
+  if(r===2) return 2; // t2: 2
+  if(r===3) return 2; // t3: 1-2 (start with 1, can earn 1 more)
+  return 1;           // t4: 0-1
+}
+
+function getSurvivorSkills(s){
+  // Skills stored as array in s.skills, or legacy single s.skill
+  if(Array.isArray(s.skills)) return s.skills;
+  if(s.skill&&s.skill!=='ninguna') return [s.skill];
+  return [];
+}
+
+function trackActionXP(survivor, actionType){
+  const possible=ACTION_SKILL_MAP[actionType];
+  if(!possible) return;
+
+  const key=`${survivor.id}_${actionType}`;
+  if(!state.actionXP[key]) state.actionXP[key]=0;
+  state.actionXP[key]++;
+
+  // Every 10 uses: 1 chance to unlock a skill
+  if(state.actionXP[key]%10!==0) return;
+
+  const currentSkills=getSurvivorSkills(survivor);
+  const maxSkills=maxSkillsForRarity(survivor.rarity);
+
+  if(currentSkills.length>=maxSkills) return; // already at cap
+
+  // Pick a skill from the possible ones not already owned
+  const candidates=possible.filter(sk=>!currentSkills.includes(sk));
+  if(!candidates.length) return;
+
+  const newSkill=candidates[Math.floor(Math.random()*candidates.length)];
+
+  // Add to skills array
+  if(!Array.isArray(survivor.skills)) survivor.skills=[...currentSkills];
+  survivor.skills.push(newSkill);
+  survivor.skill=survivor.skills[0]; // keep legacy field in sync
+
+  addLog(`★ ${survivor.name} ha aprendido: ${getSurvivorSkillLabel({skill:newSkill})}!`);
+}
+
+// ── SKILL SYSTEM ──
+// Returns a bonus object depending on the survivor's skill and context
+// context: 'build' | 'explore' | 'event_positive' | 'event_negative' | 'explore_survivor' | 'explore_food' | 'explore_resource'
+function getSkillBonus(survivor, context){
+  // Check all skills (array or legacy single)
+  const skills=getSurvivorSkills(survivor).map(s=>s.toLowerCase().trim());
+  // Run through each skill and merge bonuses
+  let merged={};
+  for(const skill of skills.length?skills:[(survivor.skill||'ninguna').toLowerCase().trim()]){
+    const b=_getSingleSkillBonus(skill,context);
+    Object.assign(merged,b);
+  }
+  return merged;
+}
+function _getSingleSkillBonus(skill, context){
+  switch(skill){
+    case 'ingeniero':
+      // Building costs -1 material (min 1)
+      if(context==='build') return {costReduction:1};
+      break;
+    case 'explorador':
+      // +10% weight to positive explore events
+      if(context==='event_positive') return {weightMult:1.10};
+      break;
+    case 'precavido':
+      // -10% weight to negative explore events
+      if(context==='event_negative') return {weightMult:0.90};
+      break;
+    case 'rastreador':
+      // +50% weight to survivor-finding explore events
+      if(context==='explore_survivor') return {weightMult:1.50};
+      break;
+    case 'recolector':
+      // +1 to any resource found while exploring
+      if(context==='explore_resource') return {bonus:1};
+      break;
+    case 'cazador':
+      // +1 food when exploring
+      if(context==='explore_food') return {bonus:1};
+      break;
+    case 'chatarrero':
+      // +1 material when recycling
+      if(context==='reciclar') return {bonus:1};
+      break;
+  }
+  return {};
+}
+
+// Helper: get all active (non-dead) survivor skills for a context
+function getActiveSkillBonuses(context){
+  return aliveSurvivors()
+    .filter(s=>s.action?.type!==undefined||true)
+    .map(s=>getSkillBonus(s,context))
+    .filter(b=>Object.keys(b).length>0);
+}
+
+// Helper: get skill bonus for a specific survivor
+function getSurvivorSkillLabel(s){
+  const labels={
+    'ingeniero':'⚙ Ingeniero — edificios -1 recurso',
+    'explorador':'🗺 Explorador — +10% eventos positivos',
+    'precavido':'🛡 Precavido — -10% eventos negativos',
+    'rastreador':'👁 Rastreador — más probabilidad de encontrar supervivientes',
+    'recolector':'📦 Recolector — +1 recurso al explorar',
+    'cazador':'🏹 Cazador — +1 comida al explorar',
+    'ninguna':'—',
+  };
+  const key=(s.skill||'ninguna').toLowerCase().trim();
+  return labels[key]||s.skill;
+}
+
+
+// ── SURVIVOR MORALE SYSTEM ──
+function checkLowMorale(){
+  aliveSurvivors().forEach(s=>{
+    if(s.morale<=0&&s.status!=='muerto'){
+      // Can recover by resting if food available
+      if(s.action?.type==='descansar'&&state.food>0){
+        s.morale=1;
+        s.fed=true;
+        state.food=Math.max(0,state.food-1);
+        addLog(`${s.name} descansa y recupera la moral gracias a una ración extra.`);
+        return;
+      }
+      // Otherwise: depart or betray
+      triggerSurvivorLeaving(s);
+    }
+  });
+}
+
+function triggerSurvivorLeaving(s){
+  const betrays=Math.random()<0.4; // 40% chance betrayal, 60% just leaves
+  if(betrays){
+    // Betrayal: sabotage event
+    addLog(`💢 ${s.name} ha traicionado al asentamiento antes de marcharse!`);
+    const betrayalType=Math.floor(Math.random()*3);
+    if(betrayalType===0){
+      // Destroy random building
+      const built=Object.values(state.buildings).filter(b=>b.built&&b.active);
+      if(built.length){
+        const b=pick(built);
+        b.built=false; b.level=0;
+        addLog(`🔥 ${s.name} destruyó ${b.name} antes de irse.`);
+      }
+    } else if(betrayalType===1){
+      // Disable random building
+      const built=Object.values(state.buildings).filter(b=>b.built&&b.active);
+      if(built.length){
+        const b=pick(built);
+        b.active=false;
+        addLog(`⚠ ${s.name} saboteó ${b.name} antes de irse.`);
+      }
+    } else {
+      // Steal resources
+      const stolen=Math.min(state.food,Math.floor(Math.random()*3)+1);
+      state.food=Math.max(0,state.food-stolen);
+      const stolenMat=Math.min(state.materials,Math.floor(Math.random()*3)+1);
+      state.materials=Math.max(0,state.materials-stolenMat);
+      addLog(`💰 ${s.name} robó ${stolen} comida y ${stolenMat} materiales antes de irse.`);
+    }
+  } else {
+    addLog(`🚪 ${s.name} ha abandonado el asentamiento.`);
+  }
+  state.stability=Math.max(0,state.stability-2);
+  // Move to cemetery-style tracking but as "departed"
+  state.cemetery.push({
+    id:s.id, name:s.name, imageUrl:s.imageUrl||'',
+    story:s.story||'', diedOnDay:state.day,
+    departed:true, betrayed:betrays
+  });
+  s.status='muerto'; // remove from active roster
+  addLog(`-2 estabilidad por la ${betrays?'traición':'partida'} de ${s.name}.`);
+}
+
+function applyDailyMoraleDecay(){
+  // Morale naturally decreases for unfed survivors handled in food consumption
+  // Also: injured survivors without treatment lose morale
+  aliveSurvivors().forEach(s=>{
+    if(s.status==='herido'&&s.action?.type!=='descansar'){
+      s.morale=Math.max(0,s.morale-1);
+      if(s.morale<=0) addLog(`😞 ${s.name} está herido y desmoralizado.`);
+    }
+  });
 }
 
 // ── Normalise any effect format into the unified [{type,...}] array ──
@@ -1515,7 +1879,7 @@ function normaliseEffects(raw){
   if(Array.isArray(raw)) return raw;
   // Legacy key-value object: { food:-2, morale:1, injureRandom:true, disableRandomBuilding:true, setAttackThreat:true, addSurvivor:1, forageMax:1 }
   const out=[];
-  const KNOWN_RESOURCES=['food','materials','morale','meds','electricity'];
+  const KNOWN_RESOURCES=['food','materials','morale','stability','meds','electricity'];
   Object.entries(raw).forEach(([k,v])=>{
     if(KNOWN_RESOURCES.includes(k)){
       out.push(v>0?{type:'addResource',resource:k,amount:v}:{type:'removeResource',resource:k,amount:Math.abs(v)});
@@ -1678,12 +2042,32 @@ function applyEffect(effect,delayed){
   switch(effect.type){
     case 'addResource':{
       const key=effect.resource,amt=Number(effect.amount||0);
+      if(key==='morale'||key==='stability'){ state.stability=Math.min(10,state.stability+amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad +${amt}.`); break; }
       if(typeof state[key]==='number'){state[key]+=amt;addLog(`${delayed?'[Retrasado] ':''}${resourceLabel(key)} +${amt}.`)}
       break;
     }
     case 'removeResource':{
       const key=effect.resource,amt=Number(effect.amount||0);
+      if(key==='morale'||key==='stability'){ state.stability=Math.max(0,state.stability-amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad -${amt}.`); break; }
       if(typeof state[key]==='number'){state[key]=Math.max(0,state[key]-amt);addLog(`${delayed?'[Retrasado] ':''}${resourceLabel(key)} -${amt}.`)}
+      break;
+    }
+    case 'moraleAll':{
+      const amt=Number(effect.amount||0);
+      aliveSurvivors().forEach(s=>{ s.morale=Math.max(0,Math.min(s.maxMorale??2,s.morale+amt)); });
+      addLog(`${delayed?'[Retrasado] ':''}${amt>0?'😊':'😞'} Moral de todos ${amt>0?'+':''}${amt}.`);
+      break;
+    }
+    case 'moraleSurvivor':{
+      const amt=Number(effect.amount||0);
+      const target=effect.targetId?state.survivors.find(s=>s.id===effect.targetId):pick(aliveSurvivors());
+      if(target){ target.morale=Math.max(0,Math.min(target.maxMorale??2,target.morale+amt)); addLog(`${delayed?'[Retrasado] ':''}${getMoraleEmoji(target)} ${target.name} moral ${amt>0?'+':''}${amt}.`); }
+      break;
+    }
+    case 'stabilityChange':{
+      const amt=Number(effect.amount||0);
+      state.stability=Math.max(0,Math.min(10,state.stability+amt));
+      addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad ${amt>0?'+':''}${amt}.`);
       break;
     }
     case 'healInjured':{
@@ -1765,6 +2149,9 @@ function applyEffect(effect,delayed){
           imageUrl:newSurvivor.image?.url||'',
           story:newSurvivor.story||'',
           skill:newSurvivor.skill||'ninguna',
+          morale:Number(newSurvivor.moralCurrent??newSurvivor.morale??2),
+          maxMorale:Number(newSurvivor.moralMax??2),
+          fed:true,
           status:'activo',
           action:null
         });
@@ -1799,56 +2186,73 @@ function setEvent(ev){
   }
   const days=Number(ev.days||1);
   state.eventTotalDays=days;
-  // Only reset countdown if this is a fresh event (not a continuation)
   if(!ev._continuing) state.eventDaysLeft=days;
-  renderEventDurationBar();
-  eventTitle.textContent=ev.title||'Evento';
-  const subEl=document.getElementById('eventSubtitle');
-  if(subEl){
-    if(ev._explorerId||ev._explorerName){
-      const explorerName=ev._explorerName||(state.survivors.find(s=>s.id===ev._explorerId)?.name)||'';
-      subEl.textContent=explorerName?`Exploración de ${explorerName}`:'';
-      subEl.style.display=explorerName?'':'none';
-    } else {
-      subEl.style.display='none';
-    }
-  }
-  eventText.innerHTML=escapeHtml(ev.text||'').replace(/\n/g,'<br>');
-  eventImage.innerHTML=ev.image?`<img src="${escapeAttr(ev.image)}" alt="">`:'';
-  eventOptions.innerHTML='';
+
+  // ── Populate popup ──
+  const imgWrap=document.getElementById('popupImg');
+  if(ev.image){ imgWrap.innerHTML=`<img src="${escapeAttr(ev.image)}" alt="">`; imgWrap.classList.add('has-img'); }
+  else { imgWrap.innerHTML=''; imgWrap.classList.remove('has-img'); }
+
+  // Subtitle (explorer name)
+  const subEl=document.getElementById('popupSubtitle');
+  if(ev._explorerName||(ev._explorerId&&state.survivors.find(s=>s.id===ev._explorerId))){
+    const name=ev._explorerName||(state.survivors.find(s=>s.id===ev._explorerId)?.name)||'';
+    subEl.textContent=`Exploración de ${name}`; subEl.style.display='';
+  } else { subEl.style.display='none'; }
+
+  document.getElementById('popupTitle').textContent=ev.title||'Evento';
+  document.getElementById('popupText').innerHTML=escapeHtml(ev.text||'').replace(/\n/g,'<br>');
+
+  // Duration bar
+  const durEl=document.getElementById('popupDuration');
+  if(days>1){
+    const left=state.eventDaysLeft;
+    document.getElementById('popupDurationText').textContent=`⏱ ${left} día${left!==1?'s':''} restante${left!==1?'s':''}`;
+    document.getElementById('popupDurationPips').innerHTML=Array.from({length:days},(_,i)=>`<div class="dur-pip${i>=left?' empty':''}"></div>`).join('');
+    durEl.classList.add('active');
+  } else { durEl.classList.remove('active'); }
+
+  // Options
+  const optsEl=document.getElementById('popupOptions');
+  optsEl.innerHTML='';
   (ev.options||[]).forEach(opt=>{
     const btn=document.createElement('button');
-    btn.className=opt.className||'primary';
+    btn.className='opt-btn '+(opt.className==='secondary'?'secondary':'');
     btn.textContent=opt.label;
     btn.addEventListener('click',()=>{opt.action();render()});
-    eventOptions.appendChild(btn);
+    optsEl.appendChild(btn);
   });
+
+  // Open popup
+  document.getElementById('eventPopupOverlay').classList.add('open');
 }
 
-function renderEventDurationBar(){
-  const bar=document.getElementById('eventDurationBar');
-  if(!state.pendingEvent||state.eventTotalDays<=1){bar.style.display='none';return;}
-  const left=state.eventDaysLeft;
-  const total=state.eventTotalDays;
-  const pips=Array.from({length:total},(_,i)=>
-    `<div class="dur-pip${i>=left?' empty':''}"></div>`
-  ).join('');
-  bar.innerHTML=`<span>⏱ DURACIÓN: ${left} día${left!==1?'s':''} restante${left!==1?'s':''}</span><div class="dur-pips">${pips}</div>`;
-  bar.style.display='flex';
-}
+// renderEventDurationBar replaced by popup duration display
+
 
 function closeEvent(){
   state.pendingEvent=null;
   state.eventDaysLeft=0;
   state.eventTotalDays=1;
-  eventTitle.textContent='Sin evento';
-  eventText.innerHTML='Asigna acciones y pulsa Finalizar día.';
-  eventImage.innerHTML='';
-  eventOptions.innerHTML='';
-  const bar=document.getElementById('eventDurationBar');
-  if(bar) bar.style.display='none';
-  const sub=document.getElementById('eventSubtitle');
-  if(sub) sub.style.display='none';
+  document.getElementById('eventPopupOverlay').classList.remove('open');
+  renderActiveEvents();
+}
+
+function renderActiveEvents(){
+  const list=document.getElementById('activeEventsList');
+  if(!list) return;
+  const active=[];
+  if(state._activeMultiDayEvent&&state._activeMultiDayEvent._daysLeft>0) active.push(state._activeMultiDayEvent);
+  if(!active.length){ list.innerHTML='<div class="no-active-events">// Sin efectos activos.</div>'; return; }
+  list.innerHTML=active.map(ev=>{
+    const left=ev._daysLeft||1;
+    const total=ev._totalDays||1;
+    const pips=Array.from({length:total},(_,i)=>`<span class="active-event-pip${i>=left?' empty':''}"></span>`).join('');
+    return `<div class="active-event-item" onclick="setEvent(state._activeMultiDayEvent)">
+      <div class="active-event-name">${escapeHtml(ev.title||'Evento')}</div>
+      <div class="active-event-days">${pips}<span>${left} día${left!==1?'s':''} restante${left!==1?'s':''}</span></div>
+    </div>`;
+  }).join('');
 }
 
 function resetAssignments(){
@@ -1872,7 +2276,14 @@ function getActionModifier(action){return Number(window.tempActionMods?.[action]
 function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar'})[type]||type}
 function actionSummary(s){if(s.status==='muerto')return'No disponible.';if(s.status==='herido'&&!s.action)return'Está herido. Solo puede descansar.';if(s.fatigue<=0&&!s.action)return'Sin fatiga. Solo puede descansar.';if(!s.action)return'Sin acción asignada.';if(s.action.target)return`Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}`;return`Acción asignada: ${actionLabel(s.action.type)}`}
 function statusLabel(status){return({activo:'Activo',ocupado:'Ocupado',herido:'Herido',muerto:'Muerto'})[status]||status}
-function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Moral',meds:'Medicamentos',electricity:'Electricidad'})[key]||key}
+
+function getMoraleEmoji(s){
+  const m=s.morale??2;
+  if(m>=2) return '😊';
+  if(m===1) return '😐';
+  return '😞';
+}
+function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Estabilidad',stability:'Estabilidad',meds:'Medicamentos',electricity:'Electricidad'})[key]||key}
 function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
 function injureSurvivor(s,msg){if(s.status!=='muerto')s.status='herido';addLog(msg)}
@@ -1891,7 +2302,7 @@ function killSurvivor(s,msg){
   addLog(msg||`${s.name} ha muerto.`);
 }
 function addLog(text){state.log.unshift(`Día ${state.day}: ${text}`);state.log=state.log.slice(0,80)}
-function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No queda ningún superviviente con vida.');if(state.morale<=0)return openGameOver('La moral del asentamiento ha llegado a cero.')}
+function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No queda ningún superviviente con vida.');if(state.stability<=0)return openGameOver('La estabilidad del asentamiento ha caído a cero. El grupo se disuelve.')}
 function openGameOver(text){document.getElementById('gameOverText').textContent=text;gameOverWrap.classList.add('open')}
 function getBuildingCost(buildingId){const b=state.buildings[buildingId];const base=Number(b?.cost||0);const level=Number(b?.level||0);return Math.ceil(base*Math.pow(2,level))}
 function pickStartingSurvivors(count){const pool=(gameData.survivors||[]).filter(s=>Number(s.rarity??4)===4);const shuffled=[...pool].sort(()=>Math.random()-0.5);return shuffled.slice(0,count)}

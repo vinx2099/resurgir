@@ -622,8 +622,7 @@
           <div class="field">
             <label>Tipo de evento <span class="req">*</span></label>
             <select id="f-type" onchange="onTypeChange()">
-              <option value="city">Diario — Ciudad</option>
-              <option value="survivor">Diario — Superviviente</option>
+              <option value="city">Diario</option>
               <option value="weekly">Semanal fijo (cada 7 días)</option>
               <option value="story">Historia — día exacto</option>
               <option value="explore">Exploración (se activa al explorar)</option>
@@ -857,7 +856,7 @@ let uploadedImageUrl = '';
 
 // ── BUILDINGS & RESOURCES (matching the game) ──
 const RESOURCES = ['food','materials','morale','meds','electricity'];
-const RESOURCE_LABELS = { food:'Comida', materials:'Materiales', morale:'Moral', meds:'Medicamentos', electricity:'Electricidad' };
+const RESOURCE_LABELS = { food:'Comida', materials:'Materiales', morale:'Estabilidad (legacy)', stability:'Estabilidad', meds:'Medicamentos', electricity:'Electricidad' };
 const BUILDINGS = ['huerto','atalaya','muros','barracones','camion','hospital','generador'];
 const BUILDING_LABELS = { huerto:'Huerto', atalaya:'Atalaya', muros:'Muros', barracones:'Barracones', camion:'Camión Raider', hospital:'Hospital', generador:'Generador' };
 
@@ -874,6 +873,9 @@ const EFFECT_TYPES = [
   { value: 'injureExplorer',   label: 'Herir al explorador (quien inició el evento)' },
   { value: 'setAttackThreat',  label: 'Activar amenaza de ataque' },
   { value: 'limitAction',      label: 'Inhabilitar acción (X días)' },
+  { value: 'moraleAll',        label: '😊 Moral a todos los supervivientes (+/-)' },
+  { value: 'moraleSurvivor',   label: '😐 Moral a un superviviente (+/-)' },
+  { value: 'stabilityChange',  label: '🏛 Cambiar Estabilidad de la base (+/-)' },
 ];
 
 // ── MODE ──
@@ -981,6 +983,11 @@ function updateEffectRowFields(row, type) {
     p1.appendChild(oRandom);
   } else if (type === 'injureExplorer') {
     // No params — always targets the survivor who triggered the explore event
+  } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
+    amt.style.display = '';
+    amt.placeholder = type === 'stabilityChange' ? 'Cantidad (+/-)' : 'Moral +/- (ej: 1 o -1)';
+    amt.value = type === 'stabilityChange' ? 1 : 1;
+    amt.min = -10; amt.max = 10;
   } else if (type === 'setAttackThreat') {
     // Show attack config panel
     p1.style.display = '';
@@ -1046,6 +1053,8 @@ function readEffectRows(containerId) {
       effect.target = p1.value || 'random';
     } else if (type === 'injureExplorer') {
       // no extra params
+    } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
+      effect.amount = Number(amt.value) || 1;
     } else if (type === 'setAttackThreat') {
       effect.arrivalDays = Number(p1.value) || 1;
       effect.attackStrength = Number(amt.value) || 3;
@@ -1079,6 +1088,9 @@ function effectToString(e) {
   if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
   if (e.type === 'setAttackThreat') return `⚔ Amenaza de ataque · Fuerza ${e.attackStrength||3} · Llega en ${e.arrivalDays||1}d`;
   if (e.type === 'limitAction') return `🚫 Inhabilitar acción: ${e.action} (${e.days||1}d)`;
+  if (e.type === 'moraleAll') return `${e.amount>0?'😊':'😞'} Moral todos ${e.amount>0?'+':''}${e.amount}`;
+  if (e.type === 'moraleSurvivor') return `${e.amount>0?'😊':'😞'} Moral superviviente ${e.amount>0?'+':''}${e.amount}`;
+  if (e.type === 'stabilityChange') return `🏛 Estabilidad ${e.amount>0?'+':''}${e.amount}`;
   return e.type;
 }
 
@@ -1182,7 +1194,7 @@ function updatePreview() {
     optionsEl.appendChild(btnB);
   }
 
-  const typeStr = ev.type==='story'?`📖 Historia — día ${ev.day||'?'}`:ev.type==='weekly'?`📅 Semanal — semana ${ev.week||1}`:ev.type==='explore'?'🗺 Exploración':ev.type==='survivor'?'👤 Superviviente':'🏙 Ciudad';
+  const typeStr = ev.type==='story'?`📖 Historia — día ${ev.day||'?'}`:ev.type==='weekly'?`📅 Semanal — semana ${ev.week||1}`:ev.type==='explore'?'🗺 Exploración':'📋 Diario';
   const actionStr = ev.relatedAction ? `  ·  Relacionado con: ${ev.relatedAction}` : '';
   const repeatStr = ev.repeatable ? '  ·  ↺ Repetible' : '';
   document.getElementById('previewMeta').textContent =
@@ -1342,7 +1354,7 @@ function renderEventList() {
     const effectCount = ev.choiceMode === 'direct'
       ? (ev.effects?.length || 0) + ' efecto(s)'
       : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0}`;
-    const typeTag = ev.type==='weekly' ? `📅 Semanal (semana ${ev.week||'?'})` : ev.type==='explore'?'🗺 Exploración':ev.type==='survivor'?'👤 Superviviente':'🏙 Ciudad';
+    const typeTag = ev.type==='weekly' ? `📅 Semanal (semana ${ev.week||'?'})` : ev.type==='explore'?'🗺 Exploración':'📋 Diario';
     const actionTag = ev.relatedAction ? `  ·  ⚡ ${ev.relatedAction}` : '';
     const repeatTag = ev.repeatable ? '  ·  ↺' : '';
     info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  ${typeTag}  ·  ${modeTag}  ·  ${effectCount}  ·  ${ev.days}d${ev.type!=='weekly'?' · peso '+ev.weight:''}${actionTag}${repeatTag}</div>`;
@@ -1543,6 +1555,8 @@ function loadEffectIntoRow(row, eff) {
   } else if (eff.type === 'limitAction') {
     p1.value = eff.action || 'forraje';
     amt.value = eff.days || 1;
+  } else if (eff.type === 'moraleAll' || eff.type === 'moraleSurvivor' || eff.type === 'stabilityChange') {
+    amt.value = eff.amount || 1;
   }
 }
 

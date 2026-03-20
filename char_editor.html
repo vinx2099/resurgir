@@ -599,6 +599,19 @@
             <label>Fatiga máxima</label>
             <input id="f-fatigueMax" type="number" min="1" step="1" value="3" />
           </div>
+          <div class="field">
+            <label>Moral inicial <span style="color:var(--muted);font-size:9px;">(0=😞 1=😐 2=😊)</span></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--line2);overflow:hidden;" id="moraleSelector">
+              <button type="button" class="mode-btn" data-morale="0" onclick="setMoraleInit(0)" style="font-size:18px;padding:8px;">😞</button>
+              <button type="button" class="mode-btn" data-morale="1" onclick="setMoraleInit(1)" style="font-size:18px;padding:8px;border-left:1px solid var(--line2);border-right:1px solid var(--line2);">😐</button>
+              <button type="button" class="mode-btn active" data-morale="2" onclick="setMoraleInit(2)" style="font-size:18px;padding:8px;">😊</button>
+            </div>
+            <input type="hidden" id="f-moraleCurrent" value="2" />
+          </div>
+          <div class="field">
+            <label>Moral máxima</label>
+            <input id="f-moraleMax" type="number" min="1" max="2" step="1" value="2" />
+          </div>
 
           <div class="field full">
             <label>Historia / Ambientación</label>
@@ -716,7 +729,16 @@
 <script>
 const IMGBB_API_KEY = '41a6c250c03f02564f8f2a0916e56498';
 
-const defaultSkills = ['ninguna','medicina','combate','forrajeo','mecánica','cocina','liderazgo','sigilo','construcción'];
+const defaultSkills = [
+  'ninguna',
+  'ingeniero',    // edificios cuestan -1 recurso
+  'explorador',   // +10% probabilidad evento positivo
+  'precavido',    // -10% probabilidad evento negativo
+  'rastreador',   // más probabilidad de encontrar supervivientes
+  'recolector',   // +1 recurso al explorar
+  'cazador',      // +1 comida al explorar
+  'chatarrero',   // +1 material al reciclar
+];
 
 const state = {
   survivors: [],
@@ -755,6 +777,13 @@ function setUploadStatus(msg, type='') {
 }
 
 // ── RARITY ──
+function setMoraleInit(v){
+  document.getElementById('f-moraleCurrent').value=v;
+  document.querySelectorAll('#moraleSelector .mode-btn').forEach(btn=>{
+    btn.classList.toggle('active', Number(btn.dataset.morale)===v);
+  });
+}
+
 function setRarity(r) {
   state.selectedRarity = Number(r);
   document.querySelectorAll('.rarity-opt').forEach(btn => {
@@ -845,6 +874,8 @@ function getFormData() {
     fatigueCurrent: Number($('f-fatigueCurrent').value || 0),
     fatigueMax: Number($('f-fatigueMax').value || 1),
     story: $('f-story').value.trim(),
+    moralCurrent: Number($('f-moraleCurrent')?.value??2),
+    moralMax: Number($('f-moraleMax')?.value??2),
     image: { url: $('f-imgUrl').value.trim(), deleteUrl: '' },
     skill: $('f-skill').value,
     rarity: state.selectedRarity
@@ -868,6 +899,8 @@ function resetForm() {
   $('f-imgUrl').value = '';
   $('f-skill').value = state.skills[0] || 'ninguna';
   setRarity(4);
+  setMoraleInit(2);
+  if($('f-moraleMax')) $('f-moraleMax').value=2;
   setFormStatus('');
   updateImgPreview('');
   $('formMode').textContent = 'NUEVO';
@@ -883,6 +916,8 @@ function fillForm(s) {
   $('f-imgUrl').value = s.image?.url || '';
   $('f-skill').value = s.skill || 'ninguna';
   setRarity(s.rarity ?? 4);
+  setMoraleInit(s.moralCurrent??s.morale??2);
+  if($('f-moraleMax')) $('f-moraleMax').value=s.moralMax??2;
   updateImgPreview(s.image?.url || '');
   setFormStatus('');
   $('formMode').textContent = 'EDITANDO';
@@ -932,6 +967,8 @@ function render() {
             </div>
             <div class="card-meta">
               ⚡ Fatiga: <span>${s.fatigueCurrent ?? 0} / ${s.fatigueMax ?? 0}</span>
+              &nbsp;&nbsp;
+              ${s.moralCurrent>=2?'😊':s.moralCurrent===1?'😐':'😞'} Moral: <span>${s.moralCurrent??2}/${s.moralMax??2}</span>
             </div>
             ${s.skill && s.skill !== 'ninguna' ? `<div class="skill-tag">${escapeHtml(s.skill)}</div>` : ''}
           </div>
