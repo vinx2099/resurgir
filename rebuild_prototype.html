@@ -937,6 +937,15 @@
   </div>
 
 
+  <!-- Music -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="./data/music/concrete.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="combatMusic" loop preload="auto">
+    <source src="./data/music/warriors.mp3" type="audio/mpeg">
+  </audio>
+  <button id="musicBtn" title="Música">🔊</button>
+
   <!-- Intro screen -->
   <div id="introOverlay" style="
     position:fixed;inset:0;z-index:999;
@@ -1484,7 +1493,8 @@ function resolveActions(){
     }
   });
   // Collective attack resolution — only when attack day has arrived
-  if(state.attackThreat && state.day>=state.attackArrivalDay) resolveGroupAttack();
+  const hasAttackers=state.survivors.some(s=>s.action?.type==='atacar'&&s.status!=='muerto');
+  if(state.attackThreat&&(state.day>=state.attackArrivalDay||hasAttackers)) resolveGroupAttack();
 }
 
 function checkAttackArrival(){
@@ -1512,31 +1522,46 @@ function checkAttackArrival(){
 function resolveGroupAttack(){
   if(!state.attackThreat) return;
 
-  // ── Defenders ──
-  const defenders=state.survivors.filter(s=>s.action?.type==='defender'&&s.status!=='muerto');
-  const defCount=defenders.length;
+  // ── Check if this is a preemptive strike ──
+  const attackers=state.survivors.filter(s=>s.action?.type==='atacar'&&s.status!=='muerto');
+  const isPreemptive=attackers.length>0;
 
-  // ── Atalaya bonus: +2 if built, active, and someone is vigilar ──
-  const atalajaActive=state.buildings.atalaya?.built&&state.buildings.atalaya?.active;
-  const hasVigilante=state.survivors.some(s=>s.action?.type==='vigilar'&&s.status!=='muerto');
-  const atalajaBonus=(atalajaActive&&hasVigilante)?2:0;
+  let totalDef, totalAtk, diff, defRoll, atkRoll;
 
-  // ── Muros bonus: level 1→+1, level 2+→+2 ──
-  const murosLevel=state.buildings.muros?.built?state.buildings.muros.level:0;
-  const murosBonus=murosLevel>=2?2:murosLevel>=1?1:0;
-  const vallaBonus=state.vallaElectrica&&getElectricityFree()>=1?roll(1,6):0;
-  if(vallaBonus>0) addLog(`⚡ Valla eléctrica descarga ${vallaBonus} de daño extra.`);
-
-  // ── Rolls ──
-  const defRoll=roll(1,6);
-  const atkRoll=roll(1,6);
-  const totalDef=defCount+atalajaBonus+murosBonus+vallaBonus+defRoll;
-  const totalAtk=state.attackStrength+atkRoll;
-  const diff=totalAtk-totalDef;
-
-  // ── Log breakdown ──
-  addLog(`⚔ DEFENSA: ${defCount} defensores +${murosBonus} muros +${atalajaBonus} atalaya +${defRoll}(d6) = ${totalDef}`);
-  addLog(`⚔ ATAQUE: ${state.attackStrength} fuerza +${atkRoll}(d6) = ${totalAtk}`);
+  if(isPreemptive){
+    // ── PREEMPTIVE STRIKE ──
+    // (attackers × 1) + skill bonuses (combatiente/explorador +1 each) + 1 emboscada + 1d6
+    const skillBonus=attackers.reduce((sum,s)=>{
+      const skills=getSurvivorSkills(s);
+      return sum+(skills.includes('combatiente')?1:0)+(skills.includes('explorador')?1:0);
+    },0);
+    const emboscadaBonus=1;
+    defRoll=roll(1,6);
+    atkRoll=roll(1,4);
+    totalDef=attackers.length+skillBonus+emboscadaBonus+defRoll;
+    totalAtk=state.attackStrength+atkRoll;
+    diff=totalAtk-totalDef;
+    addLog(`⚔ EMBOSCADA: ${attackers.length} atacantes +${skillBonus} habilidades +${emboscadaBonus} emboscada +${defRoll}(d6) = ${totalDef}`);
+    addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d4) = ${totalAtk}`);
+  } else {
+    // ── DEFENSIVE BATTLE ──
+    const defenders=state.survivors.filter(s=>s.action?.type==='defender'&&s.status!=='muerto');
+    const defCount=defenders.length;
+    const atalajaActive=state.buildings.atalaya?.built&&state.buildings.atalaya?.active;
+    const hasVigilante=state.survivors.some(s=>s.action?.type==='vigilar'&&s.status!=='muerto');
+    const atalajaBonus=(atalajaActive&&hasVigilante)?2:0;
+    const murosLevel=state.buildings.muros?.built?state.buildings.muros.level:0;
+    const murosBonus=murosLevel>=2?2:murosLevel>=1?1:0;
+    const vallaBonus=state.vallaElectrica&&getElectricityFree()>=1?roll(1,6):0;
+    if(vallaBonus>0) addLog(`⚡ Valla eléctrica descarga ${vallaBonus} de daño extra.`);
+    defRoll=roll(1,6);
+    atkRoll=roll(1,4);
+    totalDef=defCount+atalajaBonus+murosBonus+vallaBonus+defRoll;
+    totalAtk=state.attackStrength+atkRoll;
+    diff=totalAtk-totalDef;
+    addLog(`⚔ DEFENSA: ${defCount} defensores +${murosBonus} muros +${atalajaBonus} atalaya +${defRoll}(d6) = ${totalDef}`);
+    addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d4) = ${totalAtk}`);
+  }
 
   const alive=aliveSurvivors();
 
@@ -1544,10 +1569,40 @@ function resolveGroupAttack(){
     // ── VICTORIA ──
     state.attackThreat=false;
     state.stability=Math.min(10,state.stability+1);
-    addLog(`✅ ¡Ataque repelido! (${totalDef} vs ${totalAtk}). +1 estabilidad.`);
+    if(isPreemptive){
+      const loot=[
+        {resource:'materials',amount:Math.floor(Math.random()*2)+1},
+        {resource:'food',amount:Math.floor(Math.random()*2)+1},
+        ...(Math.random()<0.3?[{resource:'meds',amount:1}]:[]),
+      ];
+      loot.forEach(l=>{
+        state[l.resource]=(state[l.resource]||0)+l.amount;
+        addLog(`✅ Emboscada exitosa! +${l.amount} ${resourceLabel(l.resource)}.`);
+      });
+      addLog(`✅ Los raiders han sido eliminados antes de llegar. +1 estabilidad.`);
+      // Injury risk even on victory
+      attackers.forEach(s=>{
+        if(Math.random()<0.35) injureSurvivor(s,`🩸 ${s.name} resulta ${injuredLabel(s)} en la emboscada.`);
+      });
+    } else {
+      addLog(`✅ ¡Ataque repelido! (${totalDef} vs ${totalAtk}). +1 estabilidad.`);
+    }
     applyEffectList(state.attackEffectVictory||[]);
   } else {
     // ── DERROTA ──
+    if(isPreemptive){
+      addLog(`❌ La emboscada fracasó (${totalDef} vs ${totalAtk}). Los raiders siguen avanzando.`);
+      attackers.forEach(s=>{
+        if(Math.random()<0.6) injureSurvivor(s,`🩸 ${s.name} resulta ${injuredLabel(s)} en la emboscada fallida.`);
+      });
+      // Raiders still coming — arrive next day
+      state.attackArrivalDay=state.day+1;
+      state.stability=Math.max(0,state.stability-1);
+      addLog('🏛 -1 estabilidad. Los raiders se reorganizan y atacarán mañana.');
+      applyEffectList(state.attackEffectDefeat||[]);
+      return; // don't clear threat
+    }
+
     addLog(`❌ El asentamiento no pudo resistir el ataque (${totalDef} vs ${totalAtk}). Diferencia: ${diff}.`);
     // Track HOS001 attempts
     if(state._hos001.active&&!state.hospitalUnlocked){
@@ -1555,17 +1610,12 @@ function resolveGroupAttack(){
       addLog(`📋 HOS001: intento ${state._hos001.attempts}. El grupo se reagrupará.`);
     }
 
-    // Casualties: probability scales with margin of defeat
-    // diff 1-2: low injury chance, no death
-    // diff 3-4: moderate injury, tiny death chance
-    // diff 5+:  high injury + real death chance
     const hosBoost=state._hos001?.higherInjury?0.2:0;
-    state._hos001 && (state._hos001.higherInjury=false);  // reset flag
+    state._hos001 && (state._hos001.higherInjury=false);
     const injureChance=Math.min(0.3+diff*0.12+hosBoost, 0.95);
     const deathChance=diff>=5 ? Math.min((diff-4)*0.12, 0.5) : diff>=3 ? 0.05 : 0;
 
-    const candidates=[...alive]; // any survivor can be affected
-    // Try to cause casualties (1 per 2 margin, min 1)
+    const candidates=[...alive];
     const maxCasualties=Math.max(1,Math.floor(diff/2));
     let casualtyCount=0;
     const shuffled=[...candidates].sort(()=>Math.random()-0.5);
@@ -1583,7 +1633,6 @@ function resolveGroupAttack(){
     }
     if(casualtyCount===0) addLog('El ataque causó daños pero no hubo bajas personales.');
 
-    // Moral penalty scales with margin
     const moralPenalty=Math.min(diff,4);
     state.stability=Math.max(0,state.stability-moralPenalty);
     addLog(`🏛 -${moralPenalty} estabilidad por el ataque.`);
@@ -1592,19 +1641,14 @@ function resolveGroupAttack(){
   }
 
   // Reset attack state
+  state.attackThreat=false;
   state.attackStrength=3;
   state.attackArrivalDay=0;
   state.attackEffectVictory=[];
   state.attackEffectDefeat=[];
+  if(typeof setCombatMusic==='function') setCombatMusic(false);
 }
 
-
-function injuredLabel(s){
-  // Simple heuristic: names ending in 'a' are likely feminine
-  const name=(s.name||'').trim();
-  const feminine=name.endsWith('a')||name.endsWith('ie')||name.endsWith('e');
-  return feminine?'herida':'herido';
-}
 function outsideRiskChance(survivor){
   const outsideCount=state.survivors.filter(s=>['forraje','reciclar','defender','explorar'].includes(s.action?.type)).length;
   if(outsideCount<=0) return 0;
@@ -1830,6 +1874,9 @@ function chooseEvent(){
     if(state.seenEvents.has(e.id)) return false;
     // Muros level 3+ reduces sabotaje-type events (30% chance to block)
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
+    // Block raider/attack events if threat already active
+    const isRaiderEvent=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
+    if(isRaiderEvent&&state.attackThreat) return false;
     return true;
   });
   if(!pool.length){
@@ -1843,6 +1890,8 @@ function chooseEvent(){
     if(!e||e.type==='weekly'||e.type==='explore') return false;
     if(state.seenEvents.has(e.id)) return false;
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
+    const _isRaider=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
+    if(_isRaider&&state.attackThreat) return false;
     return true;
   });
   if(!activePool.length){closeEvent();return}
@@ -2118,6 +2167,9 @@ function _getSingleSkillBonus(skill, context){
     case 'chatarrero':
       // +1 material when recycling
       if(context==='reciclar') return {bonus:1};
+      break;
+    case 'combatiente':
+      if(context==='ataque_preventivo') return {attackBonus:1};
       break;
   }
   return {};
@@ -2535,6 +2587,7 @@ function applyEffect(effect,delayed){
       state.attackArrivalDay=arrDays>0?state.day+arrDays:state.day;
       const days=arrDays>0?`en ${arrDays} día${arrDays!==1?'s':''}. Día ${state.attackArrivalDay}.`:'¡inminente!';
       addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! Fuerza: ${state.attackStrength} · Llegada: ${days}`);
+      if(typeof setCombatMusic==='function') setCombatMusic(true);
       break;
     }
     case 'disableRandomBuilding':{
@@ -2741,14 +2794,18 @@ function getAvailableActions(s){
   if(neg!=='miedoso') arr.push('explorar');
   if(state.buildings.atalaya?.built&&state.buildings.atalaya?.active) arr.unshift('vigilar');
   if(state.buildings.hospital?.built&&state.buildings.hospital?.active) arr.push('investigar');
-  if(state.attackThreat&&neg!=='cobarde') arr.push('defender');
+  if(state.attackThreat&&neg!=='cobarde'){
+    const daysLeft=Math.max(0,state.attackArrivalDay-state.day);
+    if(daysLeft<=0) arr.push('defender');   // arrival day: defend only
+    else arr.push('atacar');                // before arrival: preemptive strike
+  }
   arr.push('descansar');
   return arr.filter(a=>!isActionLimited(a));
 }
 
 function isActionLimited(action){return !!(window.tempActionLimits&&window.tempActionLimits[action])}
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
-function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar'})[type]||type}
+function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
 function actionSummary(s){if(s.status==='muerto')return'No disponible.';if(s.status==='herido'&&!s.action)return'Está herido. Solo puede descansar.';if(s.fatigue<=0&&!s.action)return'Sin fatiga. Solo puede descansar.';if(!s.action)return'Sin acción asignada.';if(s.action.target)return`Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}`;return`Acción asignada: ${actionLabel(s.action.type)}`}
 function statusLabel(status){return({activo:'Activo',ocupado:'Ocupado',herido:'Herido',muerto:'Muerto'})[status]||status}
 
@@ -3014,6 +3071,44 @@ function openLoreModal(s){
 loadDefaults();
 // Try to load from /data/ (works on Netlify/server). Falls back to embedded data if not found.
 
+
+// ── MUSIC ──
+const bgMusic = document.getElementById('bgMusic');
+const combatMusic = document.getElementById('combatMusic');
+const musicBtn = document.getElementById('musicBtn');
+let musicMuted = false;
+let combatMusicActive = false;
+
+bgMusic.volume = 0.18;
+combatMusic.volume = 0.25;
+
+function startMusic(){
+  bgMusic.play().catch(()=>{
+    document.addEventListener('click', ()=>bgMusic.play().catch(()=>{}), {once:true});
+  });
+}
+
+function setCombatMusic(active){
+  if(musicMuted) return;
+  if(active && !combatMusicActive){
+    combatMusicActive = true;
+    bgMusic.pause();
+    combatMusic.currentTime = 0;
+    combatMusic.play().catch(()=>{});
+  } else if(!active && combatMusicActive){
+    combatMusicActive = false;
+    combatMusic.pause();
+    bgMusic.play().catch(()=>{});
+  }
+}
+
+musicBtn.addEventListener('click', ()=>{
+  musicMuted = !musicMuted;
+  bgMusic.muted = musicMuted;
+  combatMusic.muted = musicMuted;
+  musicBtn.textContent = musicMuted ? '🔇' : '🔊';
+});
+
 // ── INTRO ──
 const INTRO_LINES = [
   'War...',
@@ -3077,6 +3172,7 @@ function startIntro(){
     overlay.style.transition='opacity 0.8s';
     overlay.style.opacity='0';
     setTimeout(()=>{ overlay.style.display='none'; }, 800);
+    startMusic();
   });
 }
 
