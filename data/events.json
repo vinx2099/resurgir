@@ -15,12 +15,25 @@
         "attackStrength": 4,
         "arrivalDays": 1,
         "effectOnVictory": [
-          { "type": "unlockBuilding", "building": "hospital" },
-          { "type": "addResource", "resource": "meds", "amount": 2 },
-          { "type": "stabilityChange", "amount": 2 }
+          {
+            "type": "unlockBuilding",
+            "building": "hospital"
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 2
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          }
         ],
         "effectOnDefeat": [
-          { "type": "stabilityChange", "amount": -1 }
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
         ]
       }
     ]
@@ -39,14 +52,22 @@
       "A": {
         "label": "Investigar la zona",
         "effects": [
-          { "type": "addSurvivorByRarity" },
-          { "type": "stabilityChange", "amount": 1 }
+          {
+            "type": "addSurvivorByRarity"
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
         ]
       },
       "B": {
         "label": "No arriesgar al grupo",
         "effects": [
-          { "type": "moraleAll", "amount": -1 }
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
         ]
       }
     }
@@ -65,16 +86,31 @@
       "A": {
         "label": "Acogerlos (-2 comida)",
         "effects": [
-          { "type": "addSurvivorByRarity" },
-          { "type": "stabilityChange", "amount": 2 },
-          { "type": "removeResource", "resource": "food", "amount": 2 }
+          {
+            "type": "addSurvivorByRarity"
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          },
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          }
         ]
       },
       "B": {
         "label": "Rechazarlos",
         "effects": [
-          { "type": "stabilityChange", "amount": -1 },
-          { "type": "moraleAll", "amount": -1 }
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
         ]
       }
     }
@@ -93,179 +129,26 @@
       "A": {
         "label": "Responder la señal",
         "effects": [
-          { "type": "stabilityChange", "amount": 2 },
-          { "type": "moraleAll", "amount": 1 }
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
         ]
       },
       "B": {
         "label": "Ignorarla, no arriesgar",
         "effects": [
-          { "type": "moraleAll", "amount": -1 }
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
         ]
       }
     }
-  },
-  {
-    "id": "lluvia_acida",
-    "name": "Lluvia ácida",
-    "type": "city",
-    "weight": 6,
-    "days": 2,
-    "repeatable": false,
-    "text": "Una lluvia ácida cae sobre el asentamiento durante dos días. Los cultivos y estructuras sufren daños menores.",
-    "choiceMode": "direct",
-    "effects": [
-      { "type": "removeResource", "resource": "food", "amount": 1 },
-      { "type": "removeResource", "resource": "materials", "amount": 1 },
-      { "type": "stabilityChange", "amount": -1 }
-    ]
-  },
-  {
-    "id": "comerciante",
-    "name": "Comerciante ambulante",
-    "type": "city",
-    "weight": 7,
-    "days": 1,
-    "repeatable": false,
-    "text": "Un comerciante solitario llega al asentamiento con mercancía variada. No se sabe si es de fiar del todo.",
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Comerciar (-2 mat, +2 comida)",
-        "effects": [
-          { "type": "removeResource", "resource": "materials", "amount": 2 },
-          { "type": "addResource", "resource": "food", "amount": 2 }
-        ]
-      },
-      "B": {
-        "label": "Comprar medicamentos (-3 mat)",
-        "effects": [
-          { "type": "removeResource", "resource": "materials", "amount": 3 },
-          { "type": "addResource", "resource": "meds", "amount": 1 }
-        ]
-      }
-    }
-  },
-  {
-    "id": "sabotaje",
-    "name": "Sabotaje",
-    "type": "city",
-    "weight": 8,
-    "days": 1,
-    "repeatable": true,
-    "text": "Alguien ha saboteado parte de las instalaciones durante la noche. Se han perdido materiales y una estructura ha quedado dañada.",
-    "choiceMode": "direct",
-    "effects": [
-      { "type": "removeResource", "resource": "materials", "amount": 2 },
-      { "type": "stabilityChange", "amount": -1 },
-      { "type": "disableBuilding", "building": "random", "days": 1 }
-    ]
-  },
-  {
-    "id": "hallazgo_deposito",
-    "name": "Depósito olvidado",
-    "type": "city",
-    "weight": 8,
-    "days": 1,
-    "repeatable": false,
-    "text": "Uno de los supervivientes descubre un pequeño depósito de suministros escondido bajo los escombros del sector.",
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Coger la comida",
-        "effects": [
-          { "type": "addResource", "resource": "food", "amount": 3 }
-        ]
-      },
-      "B": {
-        "label": "Coger los materiales",
-        "effects": [
-          { "type": "addResource", "resource": "materials", "amount": 3 }
-        ]
-      }
-    }
-  },
-  {
-    "id": "noche_tranquila",
-    "name": "Noche tranquila",
-    "type": "city",
-    "weight": 9,
-    "days": 1,
-    "repeatable": true,
-    "text": "Por una vez, todo está en calma. El grupo aprovecha para descansar y recuperar fuerzas.",
-    "choiceMode": "direct",
-    "effects": [
-      { "type": "moraleAll", "amount": 1 },
-      { "type": "stabilityChange", "amount": 1 }
-    ]
-  },
-  {
-    "id": "accidente_construccion",
-    "name": "Accidente en la construcción",
-    "type": "city",
-    "weight": 7,
-    "days": 1,
-    "repeatable": false,
-    "text": "Durante los trabajos del día, se produce un accidente. Alguien resulta herido.",
-    "choiceMode": "direct",
-    "effects": [
-      { "type": "injureSurvivor" }
-    ]
-  },
-  {
-    "id": "plaga_cosechas",
-    "name": "Plaga en las cosechas",
-    "type": "city",
-    "weight": 7,
-    "days": 1,
-    "repeatable": false,
-    "text": "Una plaga arrasa parte de los cultivos. Las reservas de comida se ven afectadas.",
-    "choiceMode": "direct",
-    "effects": [
-      { "type": "removeResource", "resource": "food", "amount": 2 },
-      { "type": "stabilityChange", "amount": -1 }
-    ]
-  },
-  {
-    "id": "discusion_interna",
-    "name": "Tensión interna",
-    "type": "city",
-    "weight": 7,
-    "days": 1,
-    "repeatable": false,
-    "text": "{survivor} advierte de una tensión creciente entre algunos miembros del grupo. Si no se gestiona, puede ir a peor.",
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Intervenir y mediar (-1 mat)",
-        "effects": [
-          { "type": "removeResource", "resource": "materials", "amount": 1 },
-          { "type": "moraleAll", "amount": 1 }
-        ]
-      },
-      "B": {
-        "label": "Ignorarlo por ahora",
-        "effects": [
-          { "type": "moraleAll", "amount": -1 },
-          { "type": "stabilityChange", "amount": -1 }
-        ]
-      }
-    }
-  },
-  {
-    "id": "incendio_almacen",
-    "name": "Incendio en el almacén",
-    "type": "city",
-    "weight": 6,
-    "days": 1,
-    "repeatable": false,
-    "text": "Un incendio declarado de madrugada destruye parte de los suministros y daña una instalación.",
-    "choiceMode": "direct",
-    "effects": [
-      { "type": "removeResource", "resource": "materials", "amount": 2 },
-      { "type": "removeResource", "resource": "food", "amount": 1 },
-      { "type": "disableBuilding", "building": "random", "days": 2 }
-    ]
   },
   {
     "id": "raiders_cerca",
@@ -282,12 +165,26 @@
         "attackStrength": 3,
         "arrivalDays": 2,
         "effectOnVictory": [
-          { "type": "stabilityChange", "amount": 1 },
-          { "type": "addResource", "resource": "materials", "amount": 2 }
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
         ],
         "effectOnDefeat": [
-          { "type": "stabilityChange", "amount": -2 },
-          { "type": "removeResource", "resource": "food", "amount": 2 }
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          }
         ]
       }
     ]
@@ -303,8 +200,14 @@
     "text": "Al final de la primera semana, el grupo hace balance. Han sobrevivido, pero el camino por delante es largo.",
     "choiceMode": "direct",
     "effects": [
-      { "type": "moraleAll", "amount": 1 },
-      { "type": "stabilityChange", "amount": 1 }
+      {
+        "type": "moraleAll",
+        "amount": 1
+      },
+      {
+        "type": "stabilityChange",
+        "amount": 1
+      }
     ]
   },
   {
@@ -321,14 +224,23 @@
       "A": {
         "label": "Reorganizar (-1 día productivo)",
         "effects": [
-          { "type": "stabilityChange", "amount": 2 },
-          { "type": "moraleAll", "amount": 1 }
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
         ]
       },
       "B": {
         "label": "Seguir como estamos",
         "effects": [
-          { "type": "stabilityChange", "amount": 0 }
+          {
+            "type": "stabilityChange",
+            "amount": 0
+          }
         ]
       }
     }
@@ -343,7 +255,11 @@
     "text": "{survivor} encuentra una pequeña reserva útil entre los escombros.",
     "choiceMode": "direct",
     "effects": [
-      { "type": "addResource", "resource": "materials", "amount": 2 }
+      {
+        "type": "addResource",
+        "resource": "materials",
+        "amount": 2
+      }
     ]
   },
   {
@@ -356,7 +272,11 @@
     "text": "{survivor} localiza una antigua despensa con conservas en buen estado.",
     "choiceMode": "direct",
     "effects": [
-      { "type": "addResource", "resource": "food", "amount": 3 }
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 3
+      }
     ]
   },
   {
@@ -369,7 +289,9 @@
     "text": "{survivor} encuentra a alguien escondido entre las ruinas. Parece asustado pero en condiciones de unirse al grupo.",
     "choiceMode": "direct",
     "effects": [
-      { "type": "addSurvivorByRarity" }
+      {
+        "type": "addSurvivorByRarity"
+      }
     ]
   },
   {
@@ -382,7 +304,9 @@
     "text": "{survivor} cae en una trampa improvisada entre los escombros. Llega de vuelta con heridas.",
     "choiceMode": "direct",
     "effects": [
-      { "type": "injureExplorer" }
+      {
+        "type": "injureExplorer"
+      }
     ]
   },
   {
@@ -395,7 +319,11 @@
     "text": "{survivor} encuentra una antigua clínica con algunos suministros médicos todavía utilizables.",
     "choiceMode": "direct",
     "effects": [
-      { "type": "addResource", "resource": "meds", "amount": 1 }
+      {
+        "type": "addResource",
+        "resource": "meds",
+        "amount": 1
+      }
     ]
   },
   {
@@ -408,5 +336,171 @@
     "text": "{survivor} no encuentra nada de interés. El sector está vacío.",
     "choiceMode": "direct",
     "effects": []
+  },
+  {
+    "id": "lluvia_acida",
+    "name": "Lluvia ácida",
+    "image": "https://i.ibb.co/HfTD9shg/lluvia-acida.jpg",
+    "text": "Una fuerte tormenta pone en peligro salir al exterior. La lluvia puede contener radiación por lo que se ha decidido no realizar ninguna actividad fuera de los muros.",
+    "days": 2,
+    "weight": 6,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "limitAction",
+        "action": "explorar",
+        "days": 2
+      },
+      {
+        "type": "limitAction",
+        "action": "forraje",
+        "days": 2
+      }
+    ]
+  },
+  {
+    "id": "comerciante",
+    "name": "Comerciante ambulante",
+    "image": "https://i.ibb.co/VpBGZrrr/comerciante.jpg",
+    "text": "Basilio y el fiel Rocinante han vuelto al asentamiento. Los niños corren en su búsqueda con la esperanza de obtener algún juguete o golosina.",
+    "days": 1,
+    "weight": 8,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Comerciar (-2 mat, +2 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Comerciar (-2 comida, +2 materiales)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 3
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      },
+      "C": {
+        "label": "No hacer negocios",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "sabotaje",
+    "name": "Sabotaje",
+    "image": "https://i.ibb.co/v0S0SvC/sabotaje.jpg",
+    "text": "EVENTO que debe salir con Generador funcionando (Añadir condición IF)",
+    "days": 1,
+    "weight": 8,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "stabilityChange",
+        "amount": -1
+      },
+      {
+        "type": "destroyBuilding",
+        "building": "generador"
+      }
+    ]
+  },
+  {
+    "id": "hallazgo_deposito",
+    "name": "Depósito olvidado",
+    "image": "https://i.ibb.co/Y4WgNFV7/alijo.jpg",
+    "text": "Uno de los supervivientes descubre un pequeño alijo de herramientas escondido bajo los escombros de un viejo almacén.",
+    "days": 1,
+    "weight": 6,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "materials",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "noche_tranquila",
+    "name": "Noche tranquila",
+    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
+    "text": "Por una vez, todo está en calma. El grupo aprovecha para descansar y recuperar fuerzas. (HACER CONDICION ALL)",
+    "days": 1,
+    "weight": 9,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "removeFatigue",
+        "target": "random",
+        "amount": 1
+      },
+      {
+        "type": "healSurvivor",
+        "target": "random"
+      }
+    ]
+  },
+  {
+    "id": "accidente_construccion",
+    "name": "Accidente en la construcción",
+    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
+    "text": "Durante los trabajos del día, se produce un accidente. Alguien resulta herido.",
+    "days": 1,
+    "weight": 7,
+    "type": "city",
+    "relatedAction": "construir",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "injureActionSurvivor"
+      }
+    ]
+  },
+  {
+    "id": "incendio_almacen",
+    "name": "Incendio en el almacén",
+    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
+    "text": "Un incendio declarado de madrugada destruye parte de los suministros y daña una instalación.",
+    "days": 1,
+    "weight": 6,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "removeResource",
+        "resource": "materials",
+        "amount": 2
+      },
+      {
+        "type": "disableBuilding",
+        "building": "camion",
+        "days": 2
+      }
+    ]
   }
 ]
