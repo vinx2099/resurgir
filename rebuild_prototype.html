@@ -2817,6 +2817,12 @@ function applyEffect(effect,delayed){
       if(target){ target.morale=Math.max(0,Math.min(target.maxMorale??2,target.morale+amt)); addLog(`${delayed?'[Retrasado] ':''}${getMoraleEmoji(target)} ${target.name} moral ${amt>0?'+':''}${amt}.`); }
       break;
     }
+	case 'fatigueAll':{
+      const amt=Number(effect.amount||0);
+      aliveSurvivors().forEach(s=>{ s.fatigue=Math.max(0,Math.min(s.maxFatigue??3,s.fatigue+amt)); });
+      addLog(`${delayed?'[Retrasado] ':''}${amt>0?'⚡':'😴'} Fatiga de todos ${amt>0?'+':''}${amt}.`);
+      break;
+    }
     case 'stabilityChange':{
       const amt=Number(effect.amount||0);
       state.stability=Math.max(0,Math.min(10,state.stability+amt));

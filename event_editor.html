@@ -879,6 +879,7 @@ const EFFECT_TYPES = [
   { value: 'removeResource',   label: 'Reducir recurso' },
   { value: 'addFatigue',       label: 'Incrementar fatiga (superviviente)' },
   { value: 'removeFatigue',    label: 'Reducir fatiga (superviviente)' },
+  { value: 'fatigueAll',       label: '⚡ Fatiga a todos los supervivientes (+/-)' },
   { value: 'disableBuilding',  label: 'Inhabilitar edificio (X días)' },
   { value: 'destroyBuilding',  label: 'Destruir edificio' },
   { value: 'addSurvivor',      label: 'Añadir superviviente (por rareza)' },
@@ -912,6 +913,7 @@ function addEffectRow(target) {
     direct: 'directEffectRows',
     optionA: 'optionAEffectRows',
     optionB: 'optionBEffectRows',
+	 optionC: 'optionCEffectRows',
     attackVictory: 'attackVictoryRows',
     attackDefeat: 'attackDefeatRows',
   };
