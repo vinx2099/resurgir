@@ -1055,6 +1055,54 @@ function loadConditionIntoUI(cond){
   }
 }
 
+
+function addDecideOption(wrapper){
+  const idx = wrapper._optCount++;
+  const box = document.createElement('div');
+  box.className = 'decide-option-box';
+  box.style.cssText = 'border:1px solid var(--line2);padding:8px 10px;background:var(--panel2);position:relative;';
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="font-size:10px;color:var(--amber-bright);font-family:var(--font-mono);letter-spacing:0.1em;">OPCIÓN ${String.fromCharCode(65+idx)}</span>
+      <button type="button" onclick="this.closest('.decide-option-box').remove();updatePreview();" style="background:none;border:none;color:var(--danger-bright);cursor:pointer;font-size:14px;padding:0 4px;">×</button>
+    </div>
+    <div class="form-grid" style="gap:6px;">
+      <div class="field full">
+        <label style="font-size:9px;">Etiqueta del botón</label>
+        <input type="text" class="decide-opt-label" placeholder="Ej: Negociar con los raiders" />
+      </div>
+      <div class="field full">
+        <label style="font-size:9px;">Descripción (opcional)</label>
+        <input type="text" class="decide-opt-desc" placeholder="Texto explicativo bajo el botón" />
+      </div>
+      <div class="field full">
+        <label style="font-size:9px;">Línea de registro (opcional)</label>
+        <input type="text" class="decide-opt-log" placeholder="Texto que aparece en el log al elegir esta opción" />
+      </div>
+    </div>
+    <div class="decide-opt-effects" style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"></div>
+    <button type="button" class="btn" style="font-size:10px;padding:3px 8px;margin-top:5px;" onclick="addEffectRow(this.previousElementSibling);updatePreview();">+ Efecto</button>
+  `;
+  wrapper.appendChild(box);
+}
+
+function readDecideOptions(row){
+  if(!row._decideWrapper) return [];
+  const boxes = row._decideWrapper.querySelectorAll('.decide-option-box');
+  return Array.from(boxes).map(box => {
+    const label = box.querySelector('.decide-opt-label')?.value?.trim()||'Opción';
+    const description = box.querySelector('.decide-opt-desc')?.value?.trim()||undefined;
+    const log = box.querySelector('.decide-opt-log')?.value?.trim()||undefined;
+    const effectContainer = box.querySelector('.decide-opt-effects');
+    const effects = effectContainer ? readEffectRows(effectContainer) : [];
+    const opt = { label };
+    if(description) opt.description = description;
+    if(log) opt.log = log;
+    if(effects.length) opt.effects = effects;
+    return opt;
+  });
+}
+
 function setMode(m) {
   mode = m;
   document.getElementById('modeDirectBtn').classList.toggle('active', m === 'direct');
@@ -1183,13 +1231,24 @@ function updateEffectRowFields(row, type) {
   } else if (type === 'injureActionSurvivor') {
     // No params — targets a survivor who did the relatedAction this day
   } else if (type === 'decide') {
-    // Show textarea for options array
-    const ta = document.createElement('textarea');
-    ta.className = 'decide-options-input';
-    ta.placeholder = '[{"label":"Opción A","effects":[...]},{"label":"Opción B","effects":[...]}]';
-    ta.rows = 4;
-    ta.style.cssText = 'grid-column:1/-1;width:100%;font-family:monospace;font-size:10px;background:var(--panel2);color:var(--text);border:1px solid var(--line2);padding:6px;resize:vertical;margin-top:4px;';
-    row.appendChild(ta);
+    // Build dynamic decide option boxes
+    const wrapper = document.createElement('div');
+    wrapper.className = 'decide-wrapper';
+    wrapper.style.cssText = 'grid-column:1/-1;margin-top:6px;display:flex;flex-direction:column;gap:8px;';
+    // Add initial 2 options
+    wrapper._optCount = 0;
+    row._decideWrapper = wrapper;
+    row.appendChild(wrapper);
+    // Add option button
+    const addOptBtn = document.createElement('button');
+    addOptBtn.type = 'button';
+    addOptBtn.textContent = '+ Añadir opción';
+    addOptBtn.className = 'btn';
+    addOptBtn.style.cssText = 'font-size:10px;padding:4px 10px;margin-top:4px;grid-column:1/-1;';
+    addOptBtn.onclick = () => { addDecideOption(wrapper); updatePreview(); };
+    row.appendChild(addOptBtn);
+    addDecideOption(wrapper);
+    addDecideOption(wrapper);
   } else if (type === 'unlockBuilding') {
     p1.style.display = '';
     ['huerto','atalaya','muros','barracones','taller','hospital','generador','pozo','almacen'].forEach(b=>{
@@ -1282,8 +1341,7 @@ function readEffectRows(containerId) {
     } else if (type === 'injureActionSurvivor') {
       // no extra params
     } else if (type === 'decide') {
-      const ta = row.querySelector('.decide-options-input');
-      try { effect.options = JSON.parse(ta?.value||'[]'); } catch { effect.options=[]; }
+      effect.options = readDecideOptions(row);
     } else if (type === 'unlockBuilding') {
       effect.building = p1.value;
     } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {

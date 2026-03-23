@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RESURGIR — Editor de Ubicaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Share+Tech+Mono&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e08; --panel: #0f1410; --panel2: #131a10;
+    --line: #1e2a18; --line2: #243020;
+    --text: #c8d4b8; --muted: #6a7a5a; --dim: #3d4a33;
+    --ok: #4a8a35; --ok-bright: #72c44e; --ok-glow: rgba(74,138,53,0.08);
+    --amber: #b87c2a; --amber-bright: #e8a84a;
+    --danger: #8a3535; --danger-bright: #c84040;
+    --warn-bright: #e8c84a;
+    --font-display: 'Oswald', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-worn: 'Special Elite', cursive;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 12px; min-height: 100vh; }
+
+  .topbar { background: var(--panel); border-bottom: 1px solid var(--line2); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-title { font-family: var(--font-display); font-size: 18px; font-weight: 600; letter-spacing: 0.1em; color: var(--ok-bright); }
+  .topbar a { font-size: 10px; color: var(--muted); text-decoration: none; border: 1px solid var(--line2); padding: 3px 10px; transition: all 0.15s; }
+  .topbar a:hover { color: var(--ok-bright); border-color: var(--ok-bright); }
+
+  .layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line2); }
+  .panel-header { font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ok-bright); padding: 10px 14px; border-bottom: 1px solid var(--line2); display: flex; align-items: center; justify-content: space-between; }
+  .panel-body { padding: 14px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field.full { grid-column: 1 / -1; }
+  .field.third { grid-column: span 1; }
+  label { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+  input[type=text], input[type=number], select, textarea {
+    background: var(--panel2); border: 1px solid var(--line2); color: var(--text);
+    font-family: var(--font-mono); font-size: 11px; padding: 6px 8px;
+    outline: none; width: 100%;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--ok); }
+  textarea { resize: vertical; min-height: 60px; }
+
+  .section-divider { display: flex; align-items: center; gap: 8px; margin: 14px 0 10px; font-size: 9px; color: var(--amber-bright); letter-spacing: 0.12em; text-transform: uppercase; }
+  .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--line2); }
+
+  .btn { background: var(--panel2); border: 1px solid var(--line2); color: var(--text); font-family: var(--font-mono); font-size: 11px; padding: 7px 14px; cursor: pointer; letter-spacing: 0.06em; transition: all 0.15s; }
+  .btn:hover { border-color: var(--ok); color: var(--ok-bright); }
+  .btn.primary { border-color: var(--ok); color: var(--ok-bright); background: var(--ok-glow); }
+  .btn.primary:hover { background: rgba(74,138,53,0.18); }
+  .btn.danger { border-color: var(--danger); color: var(--danger-bright); }
+  .btn.danger:hover { background: rgba(138,53,53,0.15); }
+  .btn.amber { border-color: var(--amber); color: var(--amber-bright); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  .range-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; }
+  .range-sep { color: var(--muted); font-size: 10px; text-align: center; }
+
+  .hostile-types { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .hostile-tag { display: flex; align-items: center; gap: 4px; background: rgba(138,53,53,0.1); border: 1px solid var(--danger); color: var(--danger-bright); padding: 3px 8px; font-size: 10px; cursor: pointer; }
+  .hostile-tag:hover { background: rgba(138,53,53,0.2); }
+  .hostile-tag .remove { color: var(--danger-bright); font-size: 12px; line-height: 1; }
+
+  .loot-row { display: grid; grid-template-columns: 100px 1fr auto 1fr; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .loot-label { font-size: 10px; color: var(--muted); }
+
+  /* Location list */
+  .loc-list { display: flex; flex-direction: column; gap: 6px; }
+  .loc-card { background: var(--panel2); border: 1px solid var(--line2); padding: 10px 12px; cursor: pointer; transition: border-color 0.15s; display: grid; grid-template-columns: 28px 1fr auto; align-items: start; gap: 8px; }
+  .loc-card:hover { border-color: var(--ok); }
+  .loc-card.selected { border-color: var(--ok-bright); background: var(--ok-glow); }
+  .loc-card-icon { font-size: 20px; text-align: center; margin-top: 2px; }
+  .loc-card-name { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.06em; color: var(--text); }
+  .loc-card-meta { font-size: 9px; color: var(--muted); margin-top: 2px; }
+  .loc-card-actions { display: flex; gap: 4px; }
+
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .toggle-row label { font-size: 11px; color: var(--text); text-transform: none; letter-spacing: 0; cursor: pointer; }
+  input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--ok); }
+
+  .regen-panel { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line2); background: rgba(184,124,42,0.04); display: none; }
+  .regen-panel.visible { display: block; }
+
+  .survivor-section { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line2); background: rgba(74,138,53,0.04); display: none; }
+  .survivor-section.visible { display: block; }
+
+  .preview-box { background: var(--panel2); border: 1px solid var(--line2); padding: 10px; font-size: 10px; color: var(--muted); line-height: 1.7; white-space: pre-wrap; font-family: var(--font-mono); max-height: 500px; overflow-y: auto; }
+
+  .badge { display: inline-block; font-size: 8px; padding: 1px 5px; border: 1px solid; letter-spacing: 0.08em; text-transform: uppercase; }
+  .badge.risk-0 { border-color: var(--ok); color: var(--ok-bright); }
+  .badge.risk-1 { border-color: var(--amber); color: var(--amber-bright); }
+  .badge.risk-2 { border-color: var(--amber); color: var(--amber-bright); }
+  .badge.risk-3 { border-color: var(--danger); color: var(--danger-bright); }
+  .badge.risk-4 { border-color: var(--danger-bright); color: var(--danger-bright); }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--ok); color: var(--ok-bright); padding: 8px 20px; font-size: 11px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 999; }
+  .toast.show { opacity: 1; }
+  .toast.err { border-color: var(--danger); color: var(--danger-bright); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--dim); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-title">◎ EDITOR DE UBICACIONES</div>
+  <a href="index.html">← INICIO</a>
+</div>
+
+<div class="layout">
+  <!-- LEFT: Form -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <span id="formMode">NUEVA UBICACIÓN</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" id="newBtn">+ Nueva</button>
+          <button class="btn primary" id="saveBtn">✓ Guardar</button>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <!-- BÁSICOS -->
+        <div class="section-divider"><span>Datos básicos</span></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>ID único</label>
+            <input type="text" id="f-id" placeholder="ej: supermarket" />
+          </div>
+          <div class="field">
+            <label>Icono (emoji)</label>
+            <input type="text" id="f-icon" placeholder="🏪" maxlength="4" />
+          </div>
+          <div class="field full">
+            <label>Nombre (usa {adj} para adjetivo variable)</label>
+            <input type="text" id="f-name" placeholder="ej: Supermercado {adj}" />
+          </div>
+          <div class="field full">
+            <label>Adjetivos posibles (separados por coma)</label>
+            <input type="text" id="f-adjectives" placeholder="ej: abandonado, en ruinas, saqueado" />
+          </div>
+          <div class="field full">
+            <label>Descripción</label>
+            <textarea id="f-description" placeholder="Descripción que verá el jugador al explorar..."></textarea>
+          </div>
+        </div>
+
+        <!-- RIESGO -->
+        <div class="section-divider"><span>Riesgo y hostiles</span></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Nivel de riesgo (0-4)</label>
+            <select id="f-risk">
+              <option value="0">0 — Seguro</option>
+              <option value="1">1 — Bajo</option>
+              <option value="2" selected>2 — Medio</option>
+              <option value="3">3 — Alto</option>
+              <option value="4">4 — Extremo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Probabilidad de hostiles (%)</label>
+            <input type="number" id="f-hostilesChance" value="25" min="0" max="100" />
+          </div>
+          <div class="field full">
+            <label>Tipos de hostiles posibles</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+              <select id="hostileTypeSelect">
+                <option value="raiders">Raiders</option>
+                <option value="sectarians">Sectarios</option>
+                <option value="wolves">Lobos salvajes</option>
+                <option value="dogs">Perros salvajes</option>
+                <option value="custom">Personalizado...</option>
+              </select>
+              <button class="btn" id="addHostileTypeBtn">+ Añadir</button>
+              <input type="text" id="customHostileName" placeholder="Nombre personalizado" style="display:none;width:160px;" />
+            </div>
+            <div id="hostileTypesList" class="hostile-types"></div>
+          </div>
+          <div class="field">
+            <label>Fuerza hostiles (mín)</label>
+            <input type="number" id="f-hostileStrMin" value="2" min="1" max="10" />
+          </div>
+          <div class="field">
+            <label>Fuerza hostiles (máx)</label>
+            <input type="number" id="f-hostileStrMax" value="4" min="1" max="10" />
+          </div>
+        </div>
+
+        <!-- LOOT -->
+        <div class="section-divider"><span>Loot</span></div>
+        <div id="lootRows">
+          <div class="loot-row">
+            <span class="loot-label">🍽 Comida</span>
+            <input type="number" class="loot-min" data-res="food" value="0" min="0" max="20" />
+            <span class="range-sep">—</span>
+            <input type="number" class="loot-max" data-res="food" value="3" min="0" max="20" />
+          </div>
+          <div class="loot-row">
+            <span class="loot-label">🔧 Materiales</span>
+            <input type="number" class="loot-min" data-res="materials" value="1" min="0" max="20" />
+            <span class="range-sep">—</span>
+            <input type="number" class="loot-max" data-res="materials" value="4" min="0" max="20" />
+          </div>
+          <div class="loot-row">
+            <span class="loot-label">💊 Medicamentos</span>
+            <input type="number" class="loot-min" data-res="meds" value="0" min="0" max="10" />
+            <span class="range-sep">—</span>
+            <input type="number" class="loot-max" data-res="meds" value="0" min="0" max="10" />
+          </div>
+        </div>
+
+        <!-- MECÁNICAS -->
+        <div class="section-divider"><span>Mecánicas</span></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Días de exploración</label>
+            <input type="number" id="f-exploreDays" value="1" min="1" max="5" />
+          </div>
+          <div class="field">
+            <label>Peso de aparición (1-10)</label>
+            <input type="number" id="f-weight" value="5" min="1" max="10" />
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <div class="toggle-row">
+            <input type="checkbox" id="f-exhaustible" checked>
+            <label for="f-exhaustible">Agotable — se vacía al saquearlo</label>
+          </div>
+          <div class="toggle-row">
+            <input type="checkbox" id="f-renewable" onchange="toggleRenewable()">
+            <label for="f-renewable">Renovable — genera recursos periódicamente</label>
+          </div>
+        </div>
+
+        <!-- RENOVABLE -->
+        <div class="regen-panel" id="regenPanel">
+          <div style="font-size:10px;color:var(--amber-bright);margin-bottom:8px;">⟳ Configuración de regeneración</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Cada cuántos días regenera</label>
+              <input type="number" id="f-regenDays" value="7" min="1" max="30" />
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:10px;color:var(--muted);margin-bottom:6px;">Loot al explotar (agota la zona):</div>
+          <div id="exploitLootRows">
+            <div class="loot-row">
+              <span class="loot-label">🍽 Comida</span>
+              <input type="number" class="exploit-min" data-res="food" value="0" min="0" max="20" />
+              <span class="range-sep">—</span>
+              <input type="number" class="exploit-max" data-res="food" value="0" min="0" max="20" />
+            </div>
+            <div class="loot-row">
+              <span class="loot-label">🔧 Materiales</span>
+              <input type="number" class="exploit-min" data-res="materials" value="0" min="0" max="20" />
+              <span class="range-sep">—</span>
+              <input type="number" class="exploit-max" data-res="materials" value="0" min="0" max="20" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SUPERVIVIENTE -->
+        <div class="section-divider"><span>Superviviente encontrado</span></div>
+        <div class="toggle-row">
+          <input type="checkbox" id="f-hasSurvivor" onchange="toggleSurvivorSection()">
+          <label for="f-hasSurvivor">Puede haber un superviviente en esta ubicación</label>
+        </div>
+        <div class="survivor-section" id="survivorSection">
+          <div class="form-grid">
+            <div class="field">
+              <label>Probabilidad (%)</label>
+              <input type="number" id="f-survivorChance" value="30" min="1" max="100" />
+            </div>
+            <div class="field">
+              <label>Tipo</label>
+              <select id="f-survivorType" onchange="updateSurvivorType()">
+                <option value="random">Aleatorio (cualquier rareza)</option>
+                <option value="rarity">Por rareza</option>
+                <option value="specific">ID específico</option>
+              </select>
+            </div>
+            <div class="field" id="rarityField" style="display:none;">
+              <label>Rareza mínima</label>
+              <select id="f-survivorRarity">
+                <option value="4">R4 — Común</option>
+                <option value="3">R3 — Poco común</option>
+                <option value="2">R2 — Raro</option>
+                <option value="1">R1 — Legendario</option>
+              </select>
+            </div>
+            <div class="field" id="specificField" style="display:none;">
+              <label>ID del superviviente</label>
+              <input type="text" id="f-survivorId" placeholder="ej: survivor_8d56p6ec" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: List + Preview -->
+  <div style="display:flex;flex-direction:column;gap:12px;">
+
+    <!-- List -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Ubicaciones (<span id="locCount">0</span>)</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" id="importJsonBtn">⬆ Importar</button>
+          <input type="file" id="importJsonFile" accept=".json" style="display:none">
+          <button class="btn amber" id="downloadBtn">⬇ Exportar</button>
+        </div>
+      </div>
+      <div class="panel-body" style="max-height:340px;overflow-y:auto;">
+        <div id="locList" class="loc-list">
+          <div class="empty-state">// Sin ubicaciones todavía.<br>Crea una con el formulario.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="panel">
+      <div class="panel-header">Vista previa JSON</div>
+      <div class="panel-body">
+        <pre id="previewBox" class="preview-box">// Aquí aparecerá el JSON...</pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ── STATE ──
+const state = {
+  locations: [],
+  editingId: null,
+  hostileTypes: [],
+};
+
+// ── UTILS ──
+function uid(){ return 'loc_' + Math.random().toString(36).slice(2,10); }
+function escapeHtml(s){ return String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+function showToast(msg, isErr=false){
+  const t=$('toast'); t.textContent=msg;
+  t.className='toast show'+(isErr?' err':'');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',2800);
+}
+
+// ── HOSTILE TYPES ──
+$('addHostileTypeBtn').addEventListener('click',()=>{
+  const sel=$('hostileTypeSelect');
+  const customInput=$('customHostileName');
+  let type, label;
+  if(sel.value==='custom'){
+    type='custom_'+customInput.value.toLowerCase().replace(/\s+/g,'_');
+    label=customInput.value.trim();
+    if(!label){ showToast('Escribe el nombre del hostil',true); return; }
+    customInput.value='';
+  } else {
+    const labels={raiders:'Raiders',sectarians:'Sectarios',wolves:'Lobos salvajes',dogs:'Perros salvajes'};
+    type=sel.value; label=labels[type]||type;
+  }
+  if(state.hostileTypes.find(h=>h.type===type)) return;
+  state.hostileTypes.push({type,label});
+  renderHostileTypes();
+});
+
+$('hostileTypeSelect').addEventListener('change',()=>{
+  $('customHostileName').style.display=$('hostileTypeSelect').value==='custom'?'':'none';
+});
+
+function renderHostileTypes(){
+  const el=$('hostileTypesList');
+  if(!state.hostileTypes.length){ el.innerHTML='<span style="color:var(--dim);font-size:10px;">Sin tipos asignados</span>'; return; }
+  el.innerHTML=state.hostileTypes.map(h=>`
+    <div class="hostile-tag" onclick="removeHostileType('${h.type}')">
+      ${escapeHtml(h.label)} <span class="remove">×</span>
+    </div>`).join('');
+}
+function removeHostileType(type){ state.hostileTypes=state.hostileTypes.filter(h=>h.type!==type); renderHostileTypes(); }
+
+// ── TOGGLES ──
+function toggleRenewable(){
+  const on=$('f-renewable').checked;
+  $('regenPanel').classList.toggle('visible',on);
+  if(on) $('f-exhaustible').checked=false;
+}
+function toggleSurvivorSection(){
+  $('survivorSection').classList.toggle('visible',$('f-hasSurvivor').checked);
+}
+function updateSurvivorType(){
+  const t=$('f-survivorType').value;
+  $('rarityField').style.display=t==='rarity'?'':'none';
+  $('specificField').style.display=t==='specific'?'':'none';
+}
+
+// ── READ FORM ──
+function getFormData(){
+  const id = state.editingId || uid();
+  const name = $('f-name').value.trim();
+  const adjStr = $('f-adjectives').value.trim();
+  const adjectives = adjStr ? adjStr.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  const resources = {};
+  document.querySelectorAll('.loot-min').forEach(el=>{
+    const res=el.dataset.res;
+    const min=Number(el.value)||0;
+    const max=Number(document.querySelector(`.loot-max[data-res="${res}"]`)?.value)||0;
+    if(max>0||min>0) resources[res]=[min,max];
+  });
+  const renewable = $('f-renewable').checked;
+  let exploitResources = undefined;
+  let regenerateDays = undefined;
+  if(renewable){
+    regenerateDays = Number($('f-regenDays').value)||7;
+    const er={};
+    document.querySelectorAll('.exploit-min').forEach(el=>{
+      const res=el.dataset.res;
+      const min=Number(el.value)||0;
+      const max=Number(document.querySelector(`.exploit-max[data-res="${res}"]`)?.value)||0;
+      if(max>0||min>0) er[res]=[min,max];
+    });
+    if(Object.keys(er).length) exploitResources=er;
+  }
+  const hasSurv=$('f-hasSurvivor').checked;
+  let survivorSpawn=undefined;
+  if(hasSurv){
+    const t=$('f-survivorType').value;
+    survivorSpawn={
+      chance: Number($('f-survivorChance').value)/100||0.3,
+      type: t,
+    };
+    if(t==='rarity') survivorSpawn.rarity=Number($('f-survivorRarity').value)||4;
+    if(t==='specific') survivorSpawn.survivorId=$('f-survivorId').value.trim();
+  }
+  const loc = {
+    id,
+    name,
+    adjectives,
+    icon: $('f-icon').value.trim()||'📍',
+    description: $('f-description').value.trim(),
+    riskLevel: Number($('f-risk').value)||0,
+    hostilesChance: Number($('f-hostilesChance').value)/100||0,
+    hostileTypes: state.hostileTypes.map(h=>h.type),
+    hostileStrength: [
+      Number($('f-hostileStrMin').value)||1,
+      Number($('f-hostileStrMax').value)||3,
+    ],
+    resources,
+    exploreDays: Number($('f-exploreDays').value)||1,
+    weight: Number($('f-weight').value)||5,
+    exhaustible: $('f-exhaustible').checked,
+  };
+  if(renewable){ loc.exhaustible=false; loc.regenerateDays=regenerateDays; }
+  if(exploitResources) loc.exploitResources=exploitResources;
+  if(survivorSpawn) loc.survivorSpawn=survivorSpawn;
+  // Remove empty arrays
+  if(!loc.adjectives.length) delete loc.adjectives;
+  if(!loc.hostileTypes.length) delete loc.hostileTypes;
+  return loc;
+}
+
+function validateForm(loc){
+  if(!loc.name) return 'El nombre es obligatorio.';
+  if(!loc.id) return 'El ID es obligatorio.';
+  return '';
+}
+
+// ── SAVE ──
+function saveLoc(){
+  if(!state.editingId) state.editingId=uid();
+  const loc=getFormData();
+  const err=validateForm(loc);
+  if(err){ showToast(err,true); return; }
+  const idx=state.locations.findIndex(l=>l.id===loc.id);
+  if(idx>=0){ state.locations[idx]=loc; showToast(`"${loc.name}" actualizado ✓`); }
+  else { state.locations.push(loc); showToast(`"${loc.name}" añadido ✓`); }
+  state.editingId=null;
+  resetForm();
+  render();
+}
+
+// ── RESET ──
+function resetForm(){
+  state.editingId=null;
+  state.hostileTypes=[];
+  $('f-id').value='';
+  $('f-name').value='';
+  $('f-icon').value='';
+  $('f-adjectives').value='';
+  $('f-description').value='';
+  $('f-risk').value='2';
+  $('f-hostilesChance').value='25';
+  $('f-hostileStrMin').value='2';
+  $('f-hostileStrMax').value='4';
+  $('f-exploreDays').value='1';
+  $('f-weight').value='5';
+  $('f-exhaustible').checked=true;
+  $('f-renewable').checked=false;
+  $('regenPanel').classList.remove('visible');
+  $('f-hasSurvivor').checked=false;
+  $('survivorSection').classList.remove('visible');
+  $('f-survivorChance').value='30';
+  $('f-survivorType').value='random';
+  $('rarityField').style.display='none';
+  $('specificField').style.display='none';
+  document.querySelectorAll('.loot-min,.loot-max').forEach(el=>{
+    const defaults={food:[0,3],materials:[1,4],meds:[0,0]};
+    const res=el.dataset.res;
+    const isMin=el.classList.contains('loot-min');
+    el.value=defaults[res]?.[isMin?0:1]??0;
+  });
+  document.querySelectorAll('.exploit-min,.exploit-max').forEach(el=>el.value=0);
+  renderHostileTypes();
+  $('formMode').textContent='NUEVA UBICACIÓN';
+  updatePreview();
+}
+
+// ── FILL FORM ──
+function fillForm(loc){
+  state.editingId=loc.id;
+  state.hostileTypes=(loc.hostileTypes||[]).map(t=>{
+    const labels={raiders:'Raiders',sectarians:'Sectarios',wolves:'Lobos salvajes',dogs:'Perros salvajes'};
+    return {type:t, label:labels[t]||t};
+  });
+  $('f-id').value=loc.id||'';
+  $('f-name').value=loc.name||'';
+  $('f-icon').value=loc.icon||'';
+  $('f-adjectives').value=(loc.adjectives||[]).join(', ');
+  $('f-description').value=loc.description||'';
+  $('f-risk').value=loc.riskLevel??2;
+  $('f-hostilesChance').value=Math.round((loc.hostilesChance||0)*100);
+  $('f-hostileStrMin').value=loc.hostileStrength?.[0]??2;
+  $('f-hostileStrMax').value=loc.hostileStrength?.[1]??4;
+  $('f-exploreDays').value=loc.exploreDays||1;
+  $('f-weight').value=loc.weight||5;
+  $('f-exhaustible').checked=loc.exhaustible!==false&&!loc.regenerateDays;
+  $('f-renewable').checked=!!loc.regenerateDays;
+  $('regenPanel').classList.toggle('visible',!!loc.regenerateDays);
+  if(loc.regenerateDays) $('f-regenDays').value=loc.regenerateDays;
+  // Loot
+  ['food','materials','meds'].forEach(res=>{
+    const range=loc.resources?.[res];
+    const minEl=document.querySelector(`.loot-min[data-res="${res}"]`);
+    const maxEl=document.querySelector(`.loot-max[data-res="${res}"]`);
+    if(minEl) minEl.value=range?.[0]??0;
+    if(maxEl) maxEl.value=range?.[1]??0;
+  });
+  // Exploit loot
+  if(loc.exploitResources){
+    ['food','materials'].forEach(res=>{
+      const range=loc.exploitResources[res];
+      const minEl=document.querySelector(`.exploit-min[data-res="${res}"]`);
+      const maxEl=document.querySelector(`.exploit-max[data-res="${res}"]`);
+      if(minEl) minEl.value=range?.[0]??0;
+      if(maxEl) maxEl.value=range?.[1]??0;
+    });
+  }
+  // Survivor spawn
+  const sp=loc.survivorSpawn;
+  $('f-hasSurvivor').checked=!!sp;
+  $('survivorSection').classList.toggle('visible',!!sp);
+  if(sp){
+    $('f-survivorChance').value=Math.round((sp.chance||0.3)*100);
+    $('f-survivorType').value=sp.type||'random';
+    if(sp.rarity) $('f-survivorRarity').value=sp.rarity;
+    if(sp.survivorId) $('f-survivorId').value=sp.survivorId;
+    updateSurvivorType();
+  }
+  renderHostileTypes();
+  $('formMode').textContent='EDITANDO';
+  updatePreview();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── RENDER LIST ──
+function render(){
+  $('locCount').textContent=state.locations.length;
+  const el=$('locList');
+  if(!state.locations.length){
+    el.innerHTML='<div class="empty-state">// Sin ubicaciones todavía.</div>';
+    return;
+  }
+  const riskLabels=['Seguro','Bajo','Medio','Alto','Extremo'];
+  el.innerHTML=state.locations.map(loc=>`
+    <div class="loc-card ${state.editingId===loc.id?'selected':''}" onclick="fillForm(state.locations.find(l=>l.id==='${loc.id}'))">
+      <div class="loc-card-icon">${loc.icon||'📍'}</div>
+      <div>
+        <div class="loc-card-name">${escapeHtml(loc.name)}</div>
+        <div class="loc-card-meta">
+          <span class="badge risk-${loc.riskLevel||0}">${riskLabels[loc.riskLevel||0]}</span>
+          · ${loc.exploreDays||1} día${(loc.exploreDays||1)!==1?'s':''}
+          · Peso: ${loc.weight||5}
+          ${loc.regenerateDays?'· ⟳ Renovable':''}
+          ${loc.survivorSpawn?'· 👤':''}
+          ${(loc.hostileTypes||[]).length?'· ⚔ '+Math.round((loc.hostilesChance||0)*100)+'% hostiles':''}
+        </div>
+      </div>
+      <div class="loc-card-actions">
+        <button class="btn" onclick="event.stopPropagation();deleteLoc('${loc.id}')" title="Eliminar" style="padding:4px 8px;color:var(--danger-bright);border-color:var(--danger);">✕</button>
+      </div>
+    </div>`).join('');
+  updatePreview();
+}
+
+function deleteLoc(id){
+  if(!confirm('¿Eliminar esta ubicación?')) return;
+  state.locations=state.locations.filter(l=>l.id!==id);
+  if(state.editingId===id) resetForm();
+  render();
+  showToast('Ubicación eliminada');
+}
+
+// ── PREVIEW ──
+function updatePreview(){
+  const loc=getFormData();
+  $('previewBox').textContent=JSON.stringify(loc,null,2);
+}
+
+// ── IMPORT / EXPORT ──
+$('importJsonBtn').addEventListener('click',()=>$('importJsonFile').click());
+$('importJsonFile').addEventListener('change',async e=>{
+  const file=e.target.files?.[0]; if(!file) return;
+  try {
+    const text=await file.text();
+    const parsed=JSON.parse(text);
+    if(!Array.isArray(parsed)){ showToast('Debe ser un array JSON',true); return; }
+    let added=0,updated=0;
+    parsed.forEach(loc=>{
+      const idx=state.locations.findIndex(l=>l.id===loc.id);
+      if(idx>=0){ state.locations[idx]=loc; updated++; }
+      else { state.locations.push(loc); added++; }
+    });
+    render();
+    showToast(`${added+updated} ubicaciones importadas ✓`);
+  } catch(err){ showToast('Error: '+err.message,true); }
+  e.target.value='';
+});
+
+$('downloadBtn').addEventListener('click',()=>{
+  if(!state.locations.length){ showToast('Sin ubicaciones para exportar',true); return; }
+  const blob=new Blob([JSON.stringify(state.locations,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='locations.json'; a.click();
+  showToast('locations.json descargado ✓');
+});
+
+// Auto-load from /data/locations.json
+async function autoLoad(){
+  try {
+    const res=await fetch('./data/locations.json');
+    if(!res.ok) return;
+    const data=await res.json();
+    if(!Array.isArray(data)) return;
+    data.forEach(loc=>{
+      if(!state.locations.find(l=>l.id===loc.id)) state.locations.push(loc);
+    });
+    render();
+    showToast(`${data.length} ubicaciones cargadas desde /data/ ✓`);
+  } catch(e){ console.warn('No se pudo cargar locations.json:', e.message); }
+}
+
+// ── EVENTS ──
+$('saveBtn').addEventListener('click',saveLoc);
+$('newBtn').addEventListener('click',resetForm);
+
+// Live preview on any input change
+document.querySelectorAll('input,select,textarea').forEach(el=>{
+  el.addEventListener('input',updatePreview);
+  el.addEventListener('change',updatePreview);
+});
+
+// ── INIT ──
+renderHostileTypes();
+updatePreview();
+autoLoad();
+</script>
+</body>
+</html>
