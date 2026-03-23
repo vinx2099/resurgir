@@ -1576,77 +1576,89 @@ function openBuildModal(survivorId){
 
 function endDay(){
   // Only block if there's a pending event that requires player choice
-  if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive) return;
+  if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive){
+    addLog('⚠ Debes resolver el evento actual antes de finalizar el día.');
+    render();
+    return;
+  }
   // Prevent double-execution
-  if(state._processingDay) return;
+  if(state._processingDay){
+    addLog('⏳ El día ya se está procesando. Espera un momento.');
+    return;
+  }
   state._processingDay=true;
-  // Snapshot action counts before resolving (used to weight event selection)
-  state._lastDayActions={};
-  state._lastDayActionSurvivors={};  // action -> [survivorIds]
-  state.survivors.forEach(s=>{
-    if(s.action?.type&&s.status!=='muerto'){
-      state._lastDayActions[s.action.type]=(state._lastDayActions[s.action.type]||0)+1;
-      if(!state._lastDayActionSurvivors[s.action.type]) state._lastDayActionSurvivors[s.action.type]=[];
-      state._lastDayActionSurvivors[s.action.type].push(s.id);
+  try{
+    // Snapshot action counts before resolving (used to weight event selection)
+    state._lastDayActions={};
+    state._lastDayActionSurvivors={};  // action -> [survivorIds]
+    state.survivors.forEach(s=>{
+      if(s.action?.type&&s.status!=='muerto'){
+        state._lastDayActions[s.action.type]=(state._lastDayActions[s.action.type]||0)+1;
+        if(!state._lastDayActionSurvivors[s.action.type]) state._lastDayActionSurvivors[s.action.type]=[];
+        state._lastDayActionSurvivors[s.action.type].push(s.id);
+      }
+    });
+    resolveTravelMovement();
+    resolveLocationExploration();
+    checkAttackArrival();  // check if attackers arrived without being fought
+    resolveActions();
+    applyDailyIncome();
+    applyFoodConsumption();
+    applyBarracksPenalty();
+    applyDailyMoraleDecay();
+    regenerateLocations();
+    processDelayedEffects();
+    // Handle food shortage choice popup if needed
+    if(state._pendingFoodChoice){
+      openFoodChoicePopup();
+      return; // pause endDay — resumes after food choice
     }
-  });
-  resolveTravelMovement();
-  resolveLocationExploration();
-  checkAttackArrival();  // check if attackers arrived without being fought
-  resolveActions();
-  applyDailyIncome();
-  applyFoodConsumption();
-  applyBarracksPenalty();
-  applyDailyMoraleDecay();
-  regenerateLocations();
-  processDelayedEffects();
-  // Handle food shortage choice popup if needed
-  if(state._pendingFoodChoice){
-    openFoodChoicePopup();
-    state._processingDay=false;
-    return; // pause endDay — resumes after food choice
-  }
-  checkLowMorale();
-  // +1 stability every 7 days survived
-  if(state.day>0 && state.day%7===0){
-    state.stability=Math.min(10,state.stability+1);
-    addLog(`🏛 Semana ${Math.floor(state.day/7)} completada. +1 estabilidad.`);
-  }
-  // +1 stability every 3 days if all survivors have high morale
-  if(state.day%3===0){
-    const allHappy=aliveSurvivors();
-    if(allHappy.length>0&&allHappy.every(s=>(s.morale??2)>=2)){
+    checkLowMorale();
+    // +1 stability every 7 days survived
+    if(state.day>0 && state.day%7===0){
       state.stability=Math.min(10,state.stability+1);
-      addLog(`🏛 El grupo lleva días con la moral alta. +1 estabilidad.`);
+      addLog(`🏛 Semana ${Math.floor(state.day/7)} completada. +1 estabilidad.`);
     }
-  }
-  state.day+=1;
-  resetForNewDay();
-  // Handle multi-day active event persistence
-  if(state._activeMultiDayEvent){
-    state._activeMultiDayEvent._daysLeft-=1;
-    if(state._activeMultiDayEvent._daysLeft>0){
-      // Keep showing it with updated countdown, combine with new event possible
-      const carried=state._activeMultiDayEvent;
-      state.eventDaysLeft=carried._daysLeft;
-      state.eventTotalDays=carried._totalDays;
-      carried._continuing=true;
-      carried._multiDayPassive=true;  // doesn't block endDay
-      // Always show a new daily event on top
-      if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
-      // If no new event, re-show the carried one
-      if(!state.pendingEvent){
-        setEvent(carried);
+    // +1 stability every 3 days if all survivors have high morale
+    if(state.day%3===0){
+      const allHappy=aliveSurvivors();
+      if(allHappy.length>0&&allHappy.every(s=>(s.morale??2)>=2)){
+        state.stability=Math.min(10,state.stability+1);
+        addLog(`🏛 El grupo lleva días con la moral alta. +1 estabilidad.`);
+      }
+    }
+    state.day+=1;
+    resetForNewDay();
+    // Handle multi-day active event persistence
+    if(state._activeMultiDayEvent){
+      state._activeMultiDayEvent._daysLeft-=1;
+      if(state._activeMultiDayEvent._daysLeft>0){
+        // Keep showing it with updated countdown, combine with new event possible
+        const carried=state._activeMultiDayEvent;
+        state.eventDaysLeft=carried._daysLeft;
+        state.eventTotalDays=carried._totalDays;
+        carried._continuing=true;
+        carried._multiDayPassive=true;  // doesn't block endDay
+        // Always show a new daily event on top
+        if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
+        // If no new event, re-show the carried one
+        if(!state.pendingEvent){
+          setEvent(carried);
+        }
+      } else {
+        state._activeMultiDayEvent=null;
+        if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
       }
     } else {
-      state._activeMultiDayEvent=null;
       if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
     }
-  } else {
-    if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
+  } catch(err){
+    console.error('Error al finalizar día:', err);
+    addLog(`❌ Error al finalizar día: ${err?.message||err}`);
+  } finally {
+    state._processingDay=false;
+    render();
   }
-  state._processingDay=false;
-  render();
 }
 
 
@@ -3477,13 +3489,23 @@ function applyEffect(effect,delayed){
     }
     case 'setAttackThreat':{
       state.attackThreat=true;
+      let hostileType=(effect.hostileType||'raiders');
+      if(hostileType==='random'){
+        const ids=(gameData.hostiles||[]).map(h=>h.id).filter(Boolean);
+        hostileType=ids.length?pick(ids):'raiders';
+      }
+      if(!getHostileDef(hostileType)) hostileType='raiders';
+      state.attackHostileType=hostileType;
       if(effect.attackStrength) state.attackStrength=Number(effect.attackStrength);
       if(effect.effectOnVictory?.length) state.attackEffectVictory=deepClone(effect.effectOnVictory);
       if(effect.effectOnDefeat?.length)  state.attackEffectDefeat=deepClone(effect.effectOnDefeat);
       const arrDays=Number(effect.arrivalDays||0);
       state.attackArrivalDay=arrDays>0?state.day+arrDays:state.day;
       const days=arrDays>0?`en ${arrDays} día${arrDays!==1?'s':''}. Día ${state.attackArrivalDay}.`:'¡inminente!';
-      addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! Fuerza: ${state.attackStrength} · Llegada: ${days}`);
+      const hostileDef=getHostileDef(hostileType);
+      const hostileLabel=hostileDef?.label||hostileType;
+      const hostileIcon=hostileDef?.icon?`${hostileDef.icon} `:'';
+      addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! ${hostileIcon}${hostileLabel} · Fuerza: ${state.attackStrength} · Llegada: ${days}`);
       if(typeof setCombatMusic==='function') setCombatMusic(true);
       break;
     }
@@ -3763,7 +3785,22 @@ function getAvailableActions(s){
 function isActionLimited(action){return !!(window.tempActionLimits&&window.tempActionLimits[action])}
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
 function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
-function actionSummary(s){if(s.status==='muerto')return'No disponible.';if(s.status==='herido'&&!s.action)return'Está herido. Solo puede descansar.';if(s.fatigue<=0&&!s.action)return'Sin fatiga. Solo puede descansar.';if(!s.action)return'Sin acción asignada.';if(s.action.target)return`Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}`;return`Acción asignada: ${actionLabel(s.action.type)}`}
+function actionSummary(s){
+  if(s.status==='muerto') return 'No disponible.';
+  if(s.status==='herido'&&!s.action) return 'Está herido. Solo puede descansar.';
+  if(s.fatigue<=0&&!s.action) return 'Sin fatiga. Solo puede descansar.';
+  if(!s.action) return 'Sin acción asignada.';
+
+  if(s.action.type==='construir'&&s.action.target){
+    const bld=state.buildings?.[s.action.target];
+    const daysLeft=Math.max(0,Number(bld?._constructionDaysLeft??0));
+    const daysText=daysLeft>0?` · ${daysLeft} día${daysLeft!==1?'s':''} restante${daysLeft!==1?'s':''}`:' · completando';
+    return `Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}${daysText}`;
+  }
+
+  if(s.action.target) return `Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}`;
+  return `Acción asignada: ${actionLabel(s.action.type)}`;
+}
 function statusLabel(status){return({activo:'Activo',ocupado:'Ocupado',herido:'Herido',muerto:'Muerto'})[status]||status}
 
 
@@ -3772,6 +3809,8 @@ function getSurvivorImage(s){
   if(s.status==='herido'&&s.imageUrlInjured) return s.imageUrlInjured;
   return s.imageUrl||'';
 }
+
+function injuredLabel(){return 'herido/a'}
 
 function getMoraleEmoji(s){
   const m=s.morale??2;

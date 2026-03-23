@@ -638,6 +638,14 @@
             <label>Día exacto <span class="req">*</span> <span style="color:var(--muted)">(aparece solo ese día)</span></label>
             <input type="number" id="f-day" value="7" min="1" max="999" />
           </div>
+          <div class="field" id="dayMinField">
+            <label>Día mínimo <span style="color:var(--muted)">(opcional)</span></label>
+            <input type="number" id="f-dayMin" value="" min="1" max="999" placeholder="ej: 13" />
+          </div>
+          <div class="field" id="dayMaxField">
+            <label>Día máximo <span style="color:var(--muted)">(opcional)</span></label>
+            <input type="number" id="f-dayMax" value="" min="1" max="999" placeholder="ej: 17" />
+          </div>
           <div class="field" id="relatedActionField">
             <label>Acción relacionada <span style="color:var(--muted)">(opcional — aumenta probabilidad si se usa)</span></label>
             <select id="f-relatedAction">
@@ -723,6 +731,7 @@
               <option value="stability_min">🏛 Estabilidad mínima</option>
               <option value="stability_max">🏛 Estabilidad máxima</option>
               <option value="day_min">📅 Día mínimo</option>
+              <option value="day_max">📅 Día máximo</option>
               <option value="and">🔗 Y (todas las condiciones)</option>
               <option value="or">⚡ O (alguna condición)</option>
             </select>
@@ -846,6 +855,13 @@
             <div class="block-title" style="color:var(--danger-bright);">⚔ Parámetros de la amenaza</div>
             <div class="form-grid" style="margin-bottom:8px;">
               <div class="field">
+                <label>Tipo de hostil</label>
+                <select id="f-attackHostile">
+                  <option value="random">🎲 Aleatorio (de hostiles.json)</option>
+                  <option value="raiders">💀 Raiders</option>
+                </select>
+              </div>
+              <div class="field">
                 <label>Fuerza del grupo hostil</label>
                 <input type="number" id="f-attackStrength" value="3" min="1" max="15" placeholder="1-15" />
               </div>
@@ -940,12 +956,29 @@ let mode = 'direct';
 let events = [];
 // storyEvents merged into events (distinguished by type='story')
 let uploadedImageUrl = '';
+let hostileDefs = [];
 
 // ── BUILDINGS & RESOURCES (matching the game) ──
 const RESOURCES = ['food','materials','morale','meds','electricity'];
 const RESOURCE_LABELS = { food:'Comida', materials:'Materiales', morale:'Estabilidad (legacy)', stability:'Estabilidad', meds:'Medicamentos', electricity:'Electricidad' };
 const BUILDINGS = ['huerto','atalaya','muros','barracones','camion','hospital','generador'];
 const BUILDING_LABELS = { huerto:'Huerto', atalaya:'Atalaya', muros:'Muros', barracones:'Barracones', camion:'Camión Raider', hospital:'Hospital', generador:'Generador' };
+
+function populateHostileSelect(){
+  const sel=document.getElementById('f-attackHostile');
+  if(!sel) return;
+  const current=sel.value||'random';
+  const opts=[`<option value="random">🎲 Aleatorio (de hostiles.json)</option>`];
+  const hostiles=(hostileDefs||[]).filter(h=>h&&h.id);
+  if(!hostiles.some(h=>h.id==='raiders')) hostiles.unshift({id:'raiders',label:'Raiders',icon:'💀'});
+  hostiles.forEach(h=>{
+    const icon=h.icon?`${h.icon} `:'';
+    const label=h.label||h.name||h.id;
+    opts.push(`<option value="${h.id}">${icon}${label}</option>`);
+  });
+  sel.innerHTML=opts.join('');
+  sel.value=[...sel.options].some(o=>o.value===current)?current:'random';
+}
 
 const EFFECT_TYPES = [
   { group: '📦 Recursos', value: 'modifyResource',     label: '📦 Recurso (+/-)' },
@@ -1053,6 +1086,32 @@ function loadConditionIntoUI(cond){
     if(cond.minLevel) document.getElementById('f-condValue').value=cond.minLevel;
     if(cond.value!==undefined) document.getElementById('f-condValue').value=cond.value;
   }
+}
+
+function splitDayRangeCondition(cond){
+  if(!cond) return { dayMin: undefined, dayMax: undefined, condition: undefined };
+  if(cond.type==='day_min') return { dayMin: Number(cond.value)||1, dayMax: undefined, condition: undefined };
+  if(cond.type==='day_max') return { dayMin: undefined, dayMax: Number(cond.value)||1, condition: undefined };
+  if(cond.type!=='and'||!Array.isArray(cond.conditions)) return { dayMin: undefined, dayMax: undefined, condition: cond };
+
+  let dayMin, dayMax;
+  const rest=[];
+  cond.conditions.forEach(c=>{
+    if(c?.type==='day_min'){
+      const v=Number(c.value)||1;
+      dayMin=dayMin===undefined?v:Math.max(dayMin,v);
+    } else if(c?.type==='day_max'){
+      const v=Number(c.value)||1;
+      dayMax=dayMax===undefined?v:Math.min(dayMax,v);
+    } else if(c){
+      rest.push(c);
+    }
+  });
+
+  let condition;
+  if(rest.length===1) condition=rest[0];
+  else if(rest.length>1) condition={type:'and',conditions:rest};
+  return { dayMin, dayMax, condition };
 }
 
 
@@ -1380,7 +1439,12 @@ function effectToString(e) {
   if (e.type === 'injureSurvivor') return `Herir superviviente (${e.target||'aleatorio'})`;
   if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
   if (e.type === 'injureActionSurvivor') return `🩸 Herir a quien realizó la acción relacionada`;
-  if (e.type === 'setAttackThreat') return `⚔ Amenaza de ataque · Fuerza ${e.attackStrength||3} · Llega en ${e.arrivalDays||1}d`;
+  if (e.type === 'setAttackThreat') {
+    const hostile = e.hostileType==='random'
+      ? 'hostil aleatorio'
+      : (hostileDefs.find(h=>h.id===e.hostileType)?.label || e.hostileType || 'raiders');
+    return `⚔ Amenaza (${hostile}) · Fuerza ${e.attackStrength||3} · Llega en ${e.arrivalDays||1}d`;
+  }
   if (e.type === 'limitAction') return `🚫 Inhabilitar acción: ${e.action} (${e.days||1}d)`;
   if (e.type === 'moraleAll') return `${e.amount>0?'😊':'😞'} Moral todos ${e.amount>0?'+':''}${e.amount}`;
   if (e.type === 'moraleSurvivor') return `${e.amount>0?'😊':'😞'} Moral superviviente ${e.amount>0?'+':''}${e.amount}`;
@@ -1402,8 +1466,17 @@ function buildEventObject() {
   const type = document.getElementById('f-type').value || 'city';
   const week = type==='weekly' ? (Number(document.getElementById('f-week').value)||1) : undefined;
   const day  = type==='story'  ? (Number(document.getElementById('f-day').value)||1)  : undefined;
+  const dayMin = Number(document.getElementById('f-dayMin')?.value||0) || undefined;
+  const dayMax = Number(document.getElementById('f-dayMax')?.value||0) || undefined;
   const relatedAction = document.getElementById('f-relatedAction')?.value || '';
-  const condition=readCondition();
+  let condition=readCondition();
+  const dayRangeConds=[];
+  if(dayMin!==undefined) dayRangeConds.push({type:'day_min',value:dayMin});
+  if(dayMax!==undefined) dayRangeConds.push({type:'day_max',value:dayMax});
+  if(dayRangeConds.length){
+    const dayRangeCond=dayRangeConds.length===1 ? dayRangeConds[0] : {type:'and',conditions:dayRangeConds};
+    condition = condition ? {type:'and',conditions:[condition,dayRangeCond]} : dayRangeCond;
+  }
   const priority=document.getElementById('f-priority')?.checked||false;
   const ev = { id, name, image: imgUrl, text: story, days, weight: (type==='weekly'||type==='story')?0:weight, type };
   if(condition) ev.condition=condition;
@@ -1420,6 +1493,7 @@ function buildEventObject() {
     ev.choiceMode = 'direct';
     ev.effects = [{
       type: 'setAttackThreat',
+      hostileType: document.getElementById('f-attackHostile')?.value || 'random',
       attackStrength: Number(document.getElementById('f-attackStrength').value) || 3,
       arrivalDays: Number(document.getElementById('f-attackArrival').value) || 1,
       effectOnVictory: readEffectRows('attackVictoryRows'),
@@ -1506,8 +1580,20 @@ function updatePreview() {
   const typeStr = ev.type==='story'?`📖 Historia — día ${ev.day||'?'}`:ev.type==='weekly'?`📅 Semanal — semana ${ev.week||1}`:ev.type==='explore'?'🗺 Exploración':'📋 Diario';
   const actionStr = ev.relatedAction ? `  ·  Relacionado con: ${ev.relatedAction}` : '';
   const repeatStr = ev.repeatable ? '  ·  ↺ Repetible' : '';
+  const rangeFromCond=(cond,type)=>cond?.type===type?cond.value:undefined;
+  const extractRange=(cond)=>{
+    if(!cond) return {};
+    if(cond.type==='and'&&Array.isArray(cond.conditions)){
+      const mins=cond.conditions.filter(c=>c?.type==='day_min').map(c=>Number(c.value)||0).filter(v=>v>0);
+      const maxs=cond.conditions.filter(c=>c?.type==='day_max').map(c=>Number(c.value)||0).filter(v=>v>0);
+      return {min:mins.length?Math.max(...mins):undefined,max:maxs.length?Math.min(...maxs):undefined};
+    }
+    return {min:rangeFromCond(cond,'day_min'),max:rangeFromCond(cond,'day_max')};
+  };
+  const range=extractRange(ev.condition);
+  const rangeStr=(range.min||range.max)?`  ·  Rango: ${range.min?`día ${range.min}`:'inicio'}-${range.max?`día ${range.max}`:'sin tope'}`:'';
   document.getElementById('previewMeta').textContent =
-    `ID: ${ev.id || '—'}  ·  ${typeStr}  ·  ${ev.type!=='weekly'?'Peso: '+ev.weight+'  ·  ':''}Duración: ${ev.days}d${actionStr}${repeatStr}`;
+    `ID: ${ev.id || '—'}  ·  ${typeStr}  ·  ${ev.type!=='weekly'?'Peso: '+ev.weight+'  ·  ':''}Duración: ${ev.days}d${rangeStr}${actionStr}${repeatStr}`;
 
   // JSON output
   document.getElementById('currentJsonOutput').textContent = JSON.stringify(ev, null, 2);
@@ -1592,6 +1678,8 @@ function onTypeChange(){
   const t=document.getElementById('f-type').value;
   document.getElementById('weekField').style.display=t==='weekly'?'':'none';
   document.getElementById('dayField').style.display=t==='story'?'':'none';
+  document.getElementById('dayMinField').style.display=t==='story'?'none':'';
+  document.getElementById('dayMaxField').style.display=t==='story'?'none':'';
   document.getElementById('weightField').style.display=(t==='weekly'||t==='story')?'none':'';
   document.getElementById('relatedActionField').style.display=(t==='weekly'||t==='story'||t==='explore')?'none':'';
   document.getElementById('repeatableField').style.display=(t==='weekly'||t==='story')?'none':'';
@@ -1599,9 +1687,15 @@ function onTypeChange(){
 }
 
 // ── ALL FORM INPUTS → PREVIEW ──
-['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-week','f-day','f-relatedAction'].forEach(id => {
+['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-week','f-day','f-dayMin','f-dayMax','f-relatedAction'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', updatePreview);
+});
+const attackStrengthInput=document.getElementById('f-attackStrength');
+if(attackStrengthInput) attackStrengthInput.addEventListener('input', updatePreview);
+['f-attackHostile','f-attackArrival'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('change', updatePreview);
 });
 
 // ── ADD EVENT ──
@@ -1756,6 +1850,10 @@ function loadEventForEditing(idx) {
   if(document.getElementById('f-type')) document.getElementById('f-type').value = ev.type || 'city';
   if(document.getElementById('f-week')) document.getElementById('f-week').value = ev.week || 1;
   if(document.getElementById('f-day'))  document.getElementById('f-day').value  = ev.day  || 7;
+  const {dayMin,dayMax,condition}=splitDayRangeCondition(ev.condition);
+  if(document.getElementById('f-dayMin')) document.getElementById('f-dayMin').value = dayMin??'';
+  if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = dayMax??'';
+  loadConditionIntoUI(condition);
   if(document.getElementById('f-relatedAction')) document.getElementById('f-relatedAction').value = ev.relatedAction || '';
   setRepeatable(!!ev.repeatable);
   onTypeChange();
@@ -1770,6 +1868,7 @@ function loadEventForEditing(idx) {
     setMode('attack');
     const atk = ev.effects.find(e=>e.type==='setAttackThreat');
     if(atk) {
+      if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = atk.hostileType || 'random';
       document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
       document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
       ['attackVictoryRows','attackDefeatRows'].forEach(id => { document.getElementById(id).innerHTML=''; });
@@ -1828,6 +1927,9 @@ function loadStoryEventForEditing(idx) {
   document.getElementById('f-imgurl').value = ev.image || '';
   document.getElementById('f-type').value = 'story';
   document.getElementById('f-day').value = ev.day || 7;
+  if(document.getElementById('f-dayMin')) document.getElementById('f-dayMin').value = '';
+  if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = '';
+  loadConditionIntoUI(ev.condition);
   setRepeatable(!!ev.repeatable);
   onTypeChange();
 
@@ -1836,6 +1938,7 @@ function loadStoryEventForEditing(idx) {
     setMode('attack');
     const atk = ev.effects.find(e=>e.type==='setAttackThreat');
     if(atk) {
+      if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = atk.hostileType || 'random';
       document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
       document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
       ['attackVictoryRows','attackDefeatRows'].forEach(id => { document.getElementById(id).innerHTML=''; });
@@ -1914,12 +2017,15 @@ function clearForm() {
   document.getElementById('f-days').value = 1;
   document.getElementById('f-weight').value = 8;
   if(document.getElementById('f-day')) document.getElementById('f-day').value = 7;
+  if(document.getElementById('f-dayMin')) document.getElementById('f-dayMin').value = '';
+  if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = '';
   setRepeatable(false);
   document.getElementById('f-condType').value='';
   updateConditionUI();
   if(document.getElementById('f-condJson')) document.getElementById('f-condJson').value='';
   if(document.getElementById('f-condId')) document.getElementById('f-condId').value='';
   if(document.getElementById('f-priority')) document.getElementById('f-priority').checked=false;
+  if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = 'random';
   if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
   if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';
   ['attackVictoryRows','attackDefeatRows'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=''; });
@@ -2016,6 +2122,7 @@ function showToast(msg, isErr = false) {
 // ── INIT ──
 updateWeightHint(8);
 setRepeatable(false);
+populateHostileSelect();
 updatePreview();
 
 // Auto-load JSONs from /data/ on startup (works on Netlify/server)
@@ -2040,6 +2147,18 @@ async function autoLoadFromServer() {
       showToast(`${added} evento${added !== 1 ? 's' : ''} cargado${added !== 1 ? 's' : ''} desde /data/events.json ✓`);
     }
   } catch { /* not on server */ }
+
+  try {
+    const resHostiles = await fetch('./data/hostiles.json');
+    if (resHostiles.ok) {
+      const incomingHostiles = await resHostiles.json();
+      if (Array.isArray(incomingHostiles)) {
+        hostileDefs = incomingHostiles;
+        populateHostileSelect();
+        updatePreview();
+      }
+    }
+  } catch { /* ignore if hostiles unavailable */ }
 }
 autoLoadFromServer();
 </script>
