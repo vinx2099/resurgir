@@ -3489,13 +3489,23 @@ function applyEffect(effect,delayed){
     }
     case 'setAttackThreat':{
       state.attackThreat=true;
+      let hostileType=(effect.hostileType||'raiders');
+      if(hostileType==='random'){
+        const ids=(gameData.hostiles||[]).map(h=>h.id).filter(Boolean);
+        hostileType=ids.length?pick(ids):'raiders';
+      }
+      if(!getHostileDef(hostileType)) hostileType='raiders';
+      state.attackHostileType=hostileType;
       if(effect.attackStrength) state.attackStrength=Number(effect.attackStrength);
       if(effect.effectOnVictory?.length) state.attackEffectVictory=deepClone(effect.effectOnVictory);
       if(effect.effectOnDefeat?.length)  state.attackEffectDefeat=deepClone(effect.effectOnDefeat);
       const arrDays=Number(effect.arrivalDays||0);
       state.attackArrivalDay=arrDays>0?state.day+arrDays:state.day;
       const days=arrDays>0?`en ${arrDays} día${arrDays!==1?'s':''}. Día ${state.attackArrivalDay}.`:'¡inminente!';
-      addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! Fuerza: ${state.attackStrength} · Llegada: ${days}`);
+      const hostileDef=getHostileDef(hostileType);
+      const hostileLabel=hostileDef?.label||hostileType;
+      const hostileIcon=hostileDef?.icon?`${hostileDef.icon} `:'';
+      addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! ${hostileIcon}${hostileLabel} · Fuerza: ${state.attackStrength} · Llegada: ${days}`);
       if(typeof setCombatMusic==='function') setCombatMusic(true);
       break;
     }
@@ -3775,7 +3785,22 @@ function getAvailableActions(s){
 function isActionLimited(action){return !!(window.tempActionLimits&&window.tempActionLimits[action])}
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
 function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
-function actionSummary(s){if(s.status==='muerto')return'No disponible.';if(s.status==='herido'&&!s.action)return'Está herido. Solo puede descansar.';if(s.fatigue<=0&&!s.action)return'Sin fatiga. Solo puede descansar.';if(!s.action)return'Sin acción asignada.';if(s.action.target)return`Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}`;return`Acción asignada: ${actionLabel(s.action.type)}`}
+function actionSummary(s){
+  if(s.status==='muerto') return 'No disponible.';
+  if(s.status==='herido'&&!s.action) return 'Está herido. Solo puede descansar.';
+  if(s.fatigue<=0&&!s.action) return 'Sin fatiga. Solo puede descansar.';
+  if(!s.action) return 'Sin acción asignada.';
+
+  if(s.action.type==='construir'&&s.action.target){
+    const bld=state.buildings?.[s.action.target];
+    const daysLeft=Math.max(0,Number(bld?._constructionDaysLeft??0));
+    const daysText=daysLeft>0?` · ${daysLeft} día${daysLeft!==1?'s':''} restante${daysLeft!==1?'s':''}`:' · completando';
+    return `Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}${daysText}`;
+  }
+
+  if(s.action.target) return `Acción asignada: ${actionLabel(s.action.type)} → ${s.action.target}`;
+  return `Acción asignada: ${actionLabel(s.action.type)}`;
+}
 function statusLabel(status){return({activo:'Activo',ocupado:'Ocupado',herido:'Herido',muerto:'Muerto'})[status]||status}
 
 
@@ -3784,6 +3809,8 @@ function getSurvivorImage(s){
   if(s.status==='herido'&&s.imageUrlInjured) return s.imageUrlInjured;
   return s.imageUrl||'';
 }
+
+function injuredLabel(){return 'herido/a'}
 
 function getMoraleEmoji(s){
   const m=s.morale??2;
