@@ -703,6 +703,79 @@
       </div>
     </div>
 
+
+    <!-- CONDICIÓN -->
+    <div class="panel">
+      <div class="panel-header">Condición de activación <span class="badge-tag" style="background:rgba(106,184,158,0.15);color:var(--accent-bright);">OPCIONAL</span></div>
+      <div class="panel-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Si se define una condición, el evento solo aparecerá cuando se cumpla. Sin condición, aparece normalmente.</div>
+
+        <div class="form-grid">
+          <div class="field full">
+            <label>Tipo de condición</label>
+            <select id="f-condType" onchange="updateConditionUI()">
+              <option value="">— Sin condición —</option>
+              <option value="survivor">👤 Superviviente presente (por ID)</option>
+              <option value="not_survivor">👻 Superviviente ausente/muerto</option>
+              <option value="building">🏗 Edificio construido</option>
+              <option value="building_level">📈 Edificio en nivel mínimo</option>
+              <option value="not_building">🚫 Edificio NO construido</option>
+              <option value="stability_min">🏛 Estabilidad mínima</option>
+              <option value="stability_max">🏛 Estabilidad máxima</option>
+              <option value="day_min">📅 Día mínimo</option>
+              <option value="and">🔗 Y (todas las condiciones)</option>
+              <option value="or">⚡ O (alguna condición)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Simple condition params -->
+        <div id="condSimpleParams" style="display:none;" class="form-grid">
+          <div class="field full" id="condIdField" style="display:none;">
+            <label id="condIdLabel">ID del superviviente</label>
+            <input type="text" id="f-condId" placeholder="ej: survivor_8d56p6ec" />
+            <div style="font-size:9px;color:var(--dim);margin-top:3px;">Puedes ver los IDs en el editor de supervivientes.</div>
+          </div>
+          <div class="field" id="condValueField" style="display:none;">
+            <label id="condValueLabel">Valor</label>
+            <input type="number" id="f-condValue" value="1" min="0" max="999" />
+          </div>
+          <div class="field" id="condBuildingField" style="display:none;">
+            <label>Edificio</label>
+            <select id="f-condBuilding">
+              <option value="huerto">Huerto</option>
+              <option value="atalaya">Atalaya</option>
+              <option value="muros">Muros</option>
+              <option value="barracones">Barracones</option>
+              <option value="taller">Taller</option>
+              <option value="hospital">Hospital</option>
+              <option value="generador">Generador</option>
+              <option value="pozo">Pozo de Agua</option>
+              <option value="almacen">Almacén</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- AND/OR compound condition -->
+        <div id="condCompoundParams" style="display:none;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Define las sub-condiciones en JSON:</div>
+          <textarea id="f-condJson" rows="5" placeholder='[
+  {"type":"survivor","id":"survivor_abc"},
+  {"type":"building","id":"hospital"}
+]' style="width:100%;font-family:monospace;font-size:11px;background:var(--panel2);color:var(--text);border:1px solid var(--line2);padding:8px;resize:vertical;"></textarea>
+          <div style="font-size:9px;color:var(--dim);margin-top:3px;">Array de condiciones. Tipos: survivor, not_survivor, building, building_level, not_building, stability_min, stability_max, day_min, day_max</div>
+        </div>
+
+        <!-- Priority toggle -->
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="f-priority" style="width:14px;height:14px;">
+          <label for="f-priority" style="font-size:11px;color:var(--text);cursor:pointer;">
+            ⭐ Evento prioritario — se activa antes que los eventos normales cuando se cumple la condición
+          </label>
+        </div>
+      </div>
+    </div>
+
     <!-- EFECTO -->
     <div class="panel">
       <div class="panel-header">Forma del efecto <span class="badge-tag">MECÁNICA</span></div>
@@ -875,26 +948,113 @@ const BUILDINGS = ['huerto','atalaya','muros','barracones','camion','hospital','
 const BUILDING_LABELS = { huerto:'Huerto', atalaya:'Atalaya', muros:'Muros', barracones:'Barracones', camion:'Camión Raider', hospital:'Hospital', generador:'Generador' };
 
 const EFFECT_TYPES = [
-  { value: 'addResource',      label: 'Incrementar recurso' },
-  { value: 'removeResource',   label: 'Reducir recurso' },
-  { value: 'addFatigue',       label: 'Incrementar fatiga (superviviente)' },
-  { value: 'removeFatigue',    label: 'Reducir fatiga (superviviente)' },
-  { value: 'fatigueAll',       label: '⚡ Fatiga a todos los supervivientes (+/-)' },
-  { value: 'disableBuilding',  label: 'Inhabilitar edificio (X días)' },
-  { value: 'destroyBuilding',  label: 'Destruir edificio' },
-  { value: 'addSurvivor',      label: 'Añadir superviviente (por rareza)' },
-  { value: 'healSurvivor',     label: 'Curar superviviente herido' },
-  { value: 'injureSurvivor',   label: 'Herir superviviente (aleatorio)' },
-  { value: 'injureExplorer',   label: 'Herir al explorador (quien inició el evento)' },
-  { value: 'injureActionSurvivor', label: '🩸 Herir a quien realizó la acción relacionada' },
-  { value: 'setAttackThreat',  label: 'Activar amenaza de ataque' },
-  { value: 'limitAction',      label: 'Inhabilitar acción (X días)' },
-  { value: 'moraleAll',        label: '😊 Moral a todos los supervivientes (+/-)' },
-  { value: 'moraleSurvivor',   label: '😐 Moral a un superviviente (+/-)' },
-  { value: 'stabilityChange',  label: '🏛 Cambiar Estabilidad de la base (+/-)' },
+  { group: '📦 Recursos', value: 'modifyResource',     label: '📦 Recurso (+/-)' },
+  { group: '🙂 Estado del grupo', value: 'fatigueAll', label: '⚡ Fatiga a todos (+/-)' },
+  { group: '🙂 Estado del grupo', value: 'modifyFatigue', label: '😮 Fatiga de un superviviente (+/-)' },
+  { group: '🙂 Estado del grupo', value: 'moraleAll',  label: '😊 Moral a todos (+/-)' },
+  { group: '🙂 Estado del grupo', value: 'moraleSurvivor', label: '😐 Moral a un superviviente (+/-)' },
+  { group: '🏚 Base y construcciones', value: 'stabilityChange', label: '🏛 Cambiar estabilidad de la base (+/-)' },
+  { group: '🏚 Base y construcciones', value: 'disableBuilding', label: '🚧 Inhabilitar edificio (X días)' },
+  { group: '🏚 Base y construcciones', value: 'destroyBuilding', label: '💥 Destruir edificio' },
+  { group: '👥 Supervivientes', value: 'addSurvivor', label: '🧲 Añadir superviviente' },
+  { group: '👥 Supervivientes', value: 'healSurvivor', label: '🩹 Curar superviviente herido' },
+  { group: '👥 Supervivientes', value: 'injureSurvivor', label: '🩸 Herir superviviente aleatorio' },
+  { group: '👥 Supervivientes', value: 'injureExplorer', label: '🧭 Herir al explorador' },
+  { group: '👥 Supervivientes', value: 'injureActionSurvivor', label: '🎯 Herir a quien realizó la acción relacionada' },
+  { group: '⚔ Riesgo y restricciones', value: 'setAttackThreat', label: '⚔ Activar amenaza de ataque' },
+  { group: '⚔ Riesgo y restricciones', value: 'limitAction', label: '🚫 Inhabilitar acción (X días)' },
+  { group: '🎭 Narrativa', value: 'decide', label: '🎭 DECIDIR — el jugador elige entre opciones personalizadas' },
+  { group: '🎭 Narrativa', value: 'unlockBuilding', label: '🏗 Desbloquear edificio' },
 ];
 
 // ── MODE ──
+
+// ── CONDITION UI ──
+function updateConditionUI(){
+  const type=document.getElementById('f-condType').value;
+  const simple=document.getElementById('condSimpleParams');
+  const compound=document.getElementById('condCompoundParams');
+  const idField=document.getElementById('condIdField');
+  const valueField=document.getElementById('condValueField');
+  const buildingField=document.getElementById('condBuildingField');
+  const idLabel=document.getElementById('condIdLabel');
+  const valueLabel=document.getElementById('condValueLabel');
+
+  simple.style.display='none';
+  compound.style.display='none';
+  idField.style.display='none';
+  valueField.style.display='none';
+  buildingField.style.display='none';
+
+  if(!type) return;
+
+  if(type==='and'||type==='or'){
+    compound.style.display='block';
+  } else {
+    simple.style.display='block';
+    if(type==='survivor'||type==='not_survivor'){
+      idField.style.display='';
+      idLabel.textContent=type==='survivor'?'ID del superviviente (debe estar vivo)':'ID del superviviente (debe estar ausente/muerto)';
+    }
+    if(type==='building'||type==='not_building'||type==='building_level'){
+      buildingField.style.display='';
+    }
+    if(type==='building_level'){
+      valueField.style.display='';
+      valueLabel.textContent='Nivel mínimo requerido';
+    }
+    if(type==='stability_min'||type==='stability_max'){
+      valueField.style.display='';
+      valueLabel.textContent=type==='stability_min'?'Estabilidad mínima':'Estabilidad máxima';
+    }
+    if(type==='day_min'||type==='day_max'){
+      valueField.style.display='';
+      valueLabel.textContent=type==='day_min'?'Día mínimo':'Día máximo';
+    }
+  }
+}
+
+function readCondition(){
+  const type=document.getElementById('f-condType').value;
+  if(!type) return undefined;
+  if(type==='and'||type==='or'){
+    try{
+      const subs=JSON.parse(document.getElementById('f-condJson').value||'[]');
+      return {type, conditions:subs};
+    }catch{ return undefined; }
+  }
+  const cond={type};
+  if(type==='survivor'||type==='not_survivor'){
+    cond.id=document.getElementById('f-condId').value.trim();
+    if(!cond.id) return undefined;
+  }
+  if(type==='building'||type==='not_building'||type==='building_level'){
+    cond.id=document.getElementById('f-condBuilding').value;
+  }
+  if(type==='building_level'){
+    cond.minLevel=Number(document.getElementById('f-condValue').value)||1;
+  }
+  if(type==='stability_min'||type==='stability_max'||type==='day_min'||type==='day_max'){
+    cond.value=Number(document.getElementById('f-condValue').value)||0;
+  }
+  return cond;
+}
+
+function loadConditionIntoUI(cond){
+  if(!cond){ document.getElementById('f-condType').value=''; updateConditionUI(); return; }
+  const type=cond.type||'';
+  document.getElementById('f-condType').value=type;
+  updateConditionUI();
+  if(type==='and'||type==='or'){
+    document.getElementById('f-condJson').value=JSON.stringify(cond.conditions||[],null,2);
+  } else {
+    if(cond.id&&(type==='survivor'||type==='not_survivor')) document.getElementById('f-condId').value=cond.id;
+    if(cond.id&&(type==='building'||type==='not_building'||type==='building_level')) document.getElementById('f-condBuilding').value=cond.id;
+    if(cond.minLevel) document.getElementById('f-condValue').value=cond.minLevel;
+    if(cond.value!==undefined) document.getElementById('f-condValue').value=cond.value;
+  }
+}
+
 function setMode(m) {
   mode = m;
   document.getElementById('modeDirectBtn').classList.toggle('active', m === 'direct');
@@ -913,7 +1073,7 @@ function addEffectRow(target) {
     direct: 'directEffectRows',
     optionA: 'optionAEffectRows',
     optionB: 'optionBEffectRows',
-	 optionC: 'optionCEffectRows',
+    optionC: 'optionCEffectRows',
     attackVictory: 'attackVictoryRows',
     attackDefeat: 'attackDefeatRows',
   };
@@ -931,14 +1091,20 @@ function addEffectRow(target) {
     row.remove();
     updatePreview();
   });
-  updateEffectRowFields(row, 'addResource');
+  updateEffectRowFields(row, 'modifyResource');
   // Listen all inputs
   row.querySelectorAll('input,select').forEach(el => el.addEventListener('input', updatePreview));
   updatePreview();
 }
 
 function buildEffectRowHTML() {
-  const typeOpts = EFFECT_TYPES.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
+  const groups = [];
+  EFFECT_TYPES.forEach(t => {
+    const last = groups[groups.length - 1];
+    if (!last || last.group !== t.group) groups.push({ group: t.group, items: [t] });
+    else last.items.push(t);
+  });
+  const typeOpts = groups.map(g => `<optgroup label="${g.group}">${g.items.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}</optgroup>`).join('');
   return `
     <select class="effect-type-select">${typeOpts}</select>
     <select class="effect-param1-select"></select>
@@ -955,20 +1121,31 @@ function updateEffectRowFields(row, type) {
   p1.style.display = 'none';
   amt.style.display = 'none';
 
-  if (type === 'addResource' || type === 'removeResource') {
+  if (type === 'modifyResource') {
     p1.style.display = '';
     amt.style.display = '';
+    amt.placeholder = 'Cantidad (+/-)';
+    amt.value = 1;
+    amt.min = -99; amt.max = 99;
     RESOURCES.forEach(r => {
       const o = document.createElement('option');
       o.value = r; o.textContent = RESOURCE_LABELS[r];
       p1.appendChild(o);
     });
-  } else if (type === 'addFatigue' || type === 'removeFatigue') {
+  } else if (type === 'modifyFatigue') {
     amt.style.display = '';
+    amt.placeholder = 'Fatiga +/- (ej: 1 o -1)';
+    amt.value = 1;
+    amt.min = -10; amt.max = 10;
     p1.style.display = '';
     const o = document.createElement('option');
     o.value = 'random'; o.textContent = 'Superviviente aleatorio';
     p1.appendChild(o);
+  } else if (type === 'fatigueAll') {
+    amt.style.display = '';
+    amt.placeholder = 'Fatiga +/- (ej: 1 o -1)';
+    amt.value = 1;
+    amt.min = -10; amt.max = 10;
   } else if (type === 'disableBuilding') {
     p1.style.display = '';
     amt.style.display = '';
@@ -987,12 +1164,15 @@ function updateEffectRowFields(row, type) {
     });
   } else if (type === 'addSurvivor') {
     p1.style.display = '';
+    const any = document.createElement('option');
+    any.value = 'any'; any.textContent = '🎲 Totalmente aleatorio';
+    p1.appendChild(any);
     [1,2,3,4].forEach(r => {
       const o = document.createElement('option');
       o.value = r; o.textContent = `Rareza ${r}${ r===4?' (común)':r===3?' (poco común)':r===2?' (raro)':' (legendario)'}`;
       p1.appendChild(o);
     });
-    p1.value = '4';
+    p1.value = 'any';
   } else if (type === 'healSurvivor' || type === 'injureSurvivor') {
     p1.style.display = '';
     const oRandom = document.createElement('option');
@@ -1002,6 +1182,19 @@ function updateEffectRowFields(row, type) {
     // No params — always targets the survivor who triggered the explore event
   } else if (type === 'injureActionSurvivor') {
     // No params — targets a survivor who did the relatedAction this day
+  } else if (type === 'decide') {
+    // Show textarea for options array
+    const ta = document.createElement('textarea');
+    ta.className = 'decide-options-input';
+    ta.placeholder = '[{"label":"Opción A","effects":[...]},{"label":"Opción B","effects":[...]}]';
+    ta.rows = 4;
+    ta.style.cssText = 'grid-column:1/-1;width:100%;font-family:monospace;font-size:10px;background:var(--panel2);color:var(--text);border:1px solid var(--line2);padding:6px;resize:vertical;margin-top:4px;';
+    row.appendChild(ta);
+  } else if (type === 'unlockBuilding') {
+    p1.style.display = '';
+    ['huerto','atalaya','muros','barracones','taller','hospital','generador','pozo','almacen'].forEach(b=>{
+      const o=document.createElement('option'); o.value=b; o.textContent=b.charAt(0).toUpperCase()+b.slice(1); p1.appendChild(o);
+    });
   } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
     amt.style.display = '';
     amt.placeholder = type === 'stabilityChange' ? 'Cantidad (+/-)' : 'Moral +/- (ej: 1 o -1)';
@@ -1055,25 +1248,44 @@ function readEffectRows(containerId) {
     const p1 = row.querySelector('.effect-param1-select');
     const amt = row.querySelector('.effect-amount-input');
     const effect = { type };
-    if (type === 'addResource' || type === 'removeResource') {
+    if (type === 'modifyResource') {
       effect.resource = p1.value;
-      effect.amount = Number(amt.value) || 1;
-    } else if (type === 'addFatigue' || type === 'removeFatigue') {
-      effect.target = p1.value;
-      effect.amount = Number(amt.value) || 1;
+      const signedAmount = Number(amt.value);
+      const finalAmount = Number.isFinite(signedAmount) && signedAmount !== 0 ? signedAmount : 1;
+      effect.type = finalAmount >= 0 ? 'addResource' : 'removeResource';
+      effect.amount = Math.abs(finalAmount);
+    } else if (type === 'modifyFatigue') {
+      effect.target = p1.value || 'random';
+      const signedAmount = Number(amt.value);
+      const finalAmount = Number.isFinite(signedAmount) && signedAmount !== 0 ? signedAmount : 1;
+      effect.type = finalAmount >= 0 ? 'addFatigue' : 'removeFatigue';
+      effect.amount = Math.abs(finalAmount);
+    } else if (type === 'fatigueAll') {
+      const signedAmount = Number(amt.value);
+      effect.amount = Number.isFinite(signedAmount) && signedAmount !== 0 ? signedAmount : 1;
     } else if (type === 'disableBuilding') {
       effect.building = p1.value;
       effect.days = Number(amt.value) || 1;
     } else if (type === 'destroyBuilding') {
       effect.building = p1.value;
     } else if (type === 'addSurvivor') {
-      effect.rarity = Number(p1.value) || 4;
+      if (p1.value === 'any') {
+        effect.type = 'addSurvivorRandom';
+      } else {
+        effect.type = 'addSurvivorByRarity';
+        effect.rarity = Number(p1.value) || 4;
+      }
     } else if (type === 'healSurvivor' || type === 'injureSurvivor') {
       effect.target = p1.value || 'random';
     } else if (type === 'injureExplorer') {
       // no extra params
     } else if (type === 'injureActionSurvivor') {
       // no extra params
+    } else if (type === 'decide') {
+      const ta = row.querySelector('.decide-options-input');
+      try { effect.options = JSON.parse(ta?.value||'[]'); } catch { effect.options=[]; }
+    } else if (type === 'unlockBuilding') {
+      effect.building = p1.value;
     } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
       effect.amount = Number(amt.value) || 1;
     } else if (type === 'setAttackThreat') {
@@ -1097,13 +1309,15 @@ function readEffectRows(containerId) {
 }
 
 function effectToString(e) {
-  if (e.type === 'addResource') return `+${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
-  if (e.type === 'removeResource') return `-${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
-  if (e.type === 'addFatigue') return `+${e.amount} fatiga (${e.target})`;
-  if (e.type === 'removeFatigue') return `-${e.amount} fatiga (${e.target})`;
-  if (e.type === 'disableBuilding') return `Inhabilitar ${BUILDING_LABELS[e.building]||e.building} ${e.days}d`;
-  if (e.type === 'destroyBuilding') return `Destruir ${BUILDING_LABELS[e.building]||e.building}`;
-  if (e.type === 'addSurvivor') return `Nuevo superviviente (rareza ${e.rarity})`;
+  if (e.type === 'addResource') return `📦 +${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
+  if (e.type === 'removeResource') return `📦 -${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
+  if (e.type === 'addFatigue') return `😮 +${e.amount} fatiga (${e.target||'aleatorio'})`;
+  if (e.type === 'removeFatigue') return `😌 -${e.amount} fatiga (${e.target||'aleatorio'})`;
+  if (e.type === 'fatigueAll') return `⚡ Fatiga todos ${e.amount>0?'+':''}${e.amount}`;
+  if (e.type === 'disableBuilding') return `🚧 Inhabilitar ${BUILDING_LABELS[e.building]||e.building} ${e.days}d`;
+  if (e.type === 'destroyBuilding') return `💥 Destruir ${BUILDING_LABELS[e.building]||e.building}`;
+  if (e.type === 'addSurvivorRandom') return `🎲 Nuevo superviviente totalmente aleatorio`;
+  if (e.type === 'addSurvivor' || e.type === 'addSurvivorByRarity') return `🧲 Nuevo superviviente (rareza ${e.rarity})`;
   if (e.type === 'healSurvivor') return `Curar superviviente herido`;
   if (e.type === 'injureSurvivor') return `Herir superviviente (${e.target||'aleatorio'})`;
   if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
@@ -1113,6 +1327,8 @@ function effectToString(e) {
   if (e.type === 'moraleAll') return `${e.amount>0?'😊':'😞'} Moral todos ${e.amount>0?'+':''}${e.amount}`;
   if (e.type === 'moraleSurvivor') return `${e.amount>0?'😊':'😞'} Moral superviviente ${e.amount>0?'+':''}${e.amount}`;
   if (e.type === 'stabilityChange') return `🏛 Estabilidad ${e.amount>0?'+':''}${e.amount}`;
+  if (e.type === 'decide') return `🎭 DECIDIR (${(e.options||[]).length} opciones)`;
+  if (e.type === 'unlockBuilding') return `🏗 Desbloquear: ${e.building||'?'}`;
   return e.type;
 }
 
@@ -1129,7 +1345,11 @@ function buildEventObject() {
   const week = type==='weekly' ? (Number(document.getElementById('f-week').value)||1) : undefined;
   const day  = type==='story'  ? (Number(document.getElementById('f-day').value)||1)  : undefined;
   const relatedAction = document.getElementById('f-relatedAction')?.value || '';
+  const condition=readCondition();
+  const priority=document.getElementById('f-priority')?.checked||false;
   const ev = { id, name, image: imgUrl, text: story, days, weight: (type==='weekly'||type==='story')?0:weight, type };
+  if(condition) ev.condition=condition;
+  if(priority) ev.priority=true;
   if(week!==undefined) ev.week=week;
   if(day!==undefined)  ev.day=day;
   if(relatedAction) ev.relatedAction=relatedAction;
@@ -1216,6 +1436,13 @@ function updatePreview() {
       (ev.options.B.effects.length ? '  →  ' + ev.options.B.effects.map(effectToString).join(', ') : '');
     optionsEl.appendChild(btnA);
     optionsEl.appendChild(btnB);
+    if (ev.options.C && ev.options.C.label) {
+      const btnC = document.createElement('button');
+      btnC.className = 'preview-opt-btn';
+      btnC.textContent = (ev.options.C.label || 'Opción C') +
+        (ev.options.C.effects.length ? '  →  ' + ev.options.C.effects.map(effectToString).join(', ') : '');
+      optionsEl.appendChild(btnC);
+    }
   }
 
   const typeStr = ev.type==='story'?`📖 Historia — día ${ev.day||'?'}`:ev.type==='weekly'?`📅 Semanal — semana ${ev.week||1}`:ev.type==='explore'?'🗺 Exploración':'📋 Diario';
@@ -1377,7 +1604,7 @@ function renderEventList() {
     const modeTag = ev.choiceMode === 'direct' ? '⚡ Directo' : '⚖ Elección';
     const effectCount = ev.choiceMode === 'direct'
       ? (ev.effects?.length || 0) + ' efecto(s)'
-      : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0}`;
+      : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0} · C: ${ev.options?.C?.effects?.length||0}`;
     const typeTag = ev.type==='weekly' ? `📅 Semanal (semana ${ev.week||'?'})` : ev.type==='explore'?'🗺 Exploración':'📋 Diario';
     const actionTag = ev.relatedAction ? `  ·  ⚡ ${ev.relatedAction}` : '';
     const repeatTag = ev.repeatable ? '  ·  ↺' : '';
@@ -1437,7 +1664,7 @@ function renderEventList() {
     const modeTag = ev.choiceMode === 'direct' ? '⚡ Directo' : '⚖ Elección';
     const effectCount = ev.choiceMode === 'direct'
       ? (ev.effects?.length || 0) + ' efecto(s)'
-      : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0}`;
+      : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0} · C: ${ev.options?.C?.effects?.length||0}`;
     info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  📅 Día ${ev.day}  ·  ${modeTag}  ·  ${effectCount}</div>`;
 
     const editBtn = document.createElement('button');
@@ -1536,7 +1763,6 @@ function loadStoryEventForEditing(idx) {
   const ev = events[idx];
   events.splice(idx, 1);
   renderEventList(); updateEventCount();
-  // Reuse loadEventForEditing logic by temporarily merging
   document.getElementById('f-id').value = ev.id || '';
   document.getElementById('f-name').value = ev.name || '';
   document.getElementById('f-story').value = ev.text || '';
@@ -1544,16 +1770,37 @@ function loadStoryEventForEditing(idx) {
   document.getElementById('f-imgurl').value = ev.image || '';
   document.getElementById('f-type').value = 'story';
   document.getElementById('f-day').value = ev.day || 7;
+  setRepeatable(!!ev.repeatable);
   onTypeChange();
-  setMode(ev.choiceMode === 'choice' ? 'choice' : 'direct');
-  // rows cleared above
+
+  const hasAttackEffect = (ev.effects||[]).some(e=>e.type==='setAttackThreat');
+  if (hasAttackEffect) {
+    setMode('attack');
+    const atk = ev.effects.find(e=>e.type==='setAttackThreat');
+    if(atk) {
+      document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
+      document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
+      ['attackVictoryRows','attackDefeatRows'].forEach(id => { document.getElementById(id).innerHTML=''; });
+      (atk.effectOnVictory||[]).forEach(eff => { addEffectRow('attackVictory'); const rows=document.getElementById('attackVictoryRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
+      (atk.effectOnDefeat||[]).forEach(eff => { addEffectRow('attackDefeat'); const rows=document.getElementById('attackDefeatRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
+    }
+  } else {
+    setMode(ev.choiceMode === 'choice' ? 'choice' : 'direct');
+  }
+
+  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+
   if (ev.choiceMode === 'direct' && ev.effects && !hasAttackEffect) {
     ev.effects.forEach(eff => { addEffectRow('direct'); const rows = document.getElementById('directEffectRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1], eff); });
   } else if (ev.choiceMode === 'choice' && ev.options) {
     document.getElementById('f-labelA').value = ev.options.A?.label || '';
     document.getElementById('f-labelB').value = ev.options.B?.label || '';
+    document.getElementById('f-labelC').value = ev.options.C?.label || '';
     (ev.options.A?.effects||[]).forEach(eff => { addEffectRow('optionA'); const rows = document.getElementById('optionAEffectRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1], eff); });
     (ev.options.B?.effects||[]).forEach(eff => { addEffectRow('optionB'); const rows = document.getElementById('optionBEffectRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1], eff); });
+    (ev.options.C?.effects||[]).forEach(eff => { addEffectRow('optionC'); const rows = document.getElementById('optionCEffectRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1], eff); });
   }
   updatePreview();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1562,24 +1809,34 @@ function loadStoryEventForEditing(idx) {
 
 function loadEffectIntoRow(row, eff) {
   const typeSelect = row.querySelector('.effect-type-select');
-  typeSelect.value = eff.type;
-  updateEffectRowFields(row, eff.type);
   const p1 = row.querySelector('.effect-param1-select');
   const amt = row.querySelector('.effect-amount-input');
 
+  let uiType = eff.type;
+  if (eff.type === 'addResource' || eff.type === 'removeResource') uiType = 'modifyResource';
+  else if (eff.type === 'addFatigue' || eff.type === 'removeFatigue') uiType = 'modifyFatigue';
+  else if (eff.type === 'addSurvivorByRarity' || eff.type === 'addSurvivorRandom') uiType = 'addSurvivor';
+
+  typeSelect.value = uiType;
+  updateEffectRowFields(row, uiType);
+
   if (eff.type === 'addResource' || eff.type === 'removeResource') {
     p1.value = eff.resource || 'food';
-    amt.value = eff.amount || 1;
+    amt.value = eff.type === 'removeResource' ? -(eff.amount || 1) : (eff.amount || 1);
   } else if (eff.type === 'addFatigue' || eff.type === 'removeFatigue') {
     p1.value = eff.target || 'random';
-    amt.value = eff.amount || 1;
+    amt.value = eff.type === 'removeFatigue' ? -(eff.amount || 1) : (eff.amount || 1);
+  } else if (eff.type === 'fatigueAll') {
+    amt.value = (eff.amount ?? 1);
   } else if (eff.type === 'disableBuilding') {
     p1.value = eff.building || 'huerto';
     amt.value = eff.days || 1;
   } else if (eff.type === 'destroyBuilding') {
     p1.value = eff.building || 'huerto';
-  } else if (eff.type === 'addSurvivor') {
-    p1.value = eff.rarity || 4;
+  } else if (eff.type === 'addSurvivor' || eff.type === 'addSurvivorByRarity') {
+    p1.value = String(eff.rarity || 4);
+  } else if (eff.type === 'addSurvivorRandom') {
+    p1.value = 'any';
   } else if (eff.type === 'healSurvivor' || eff.type === 'injureSurvivor') {
     p1.value = eff.target || 'random';
   } else if (eff.type === 'limitAction') {
@@ -1600,6 +1857,11 @@ function clearForm() {
   document.getElementById('f-weight').value = 8;
   if(document.getElementById('f-day')) document.getElementById('f-day').value = 7;
   setRepeatable(false);
+  document.getElementById('f-condType').value='';
+  updateConditionUI();
+  if(document.getElementById('f-condJson')) document.getElementById('f-condJson').value='';
+  if(document.getElementById('f-condId')) document.getElementById('f-condId').value='';
+  if(document.getElementById('f-priority')) document.getElementById('f-priority').checked=false;
   if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
   if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';
   ['attackVictoryRows','attackDefeatRows'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=''; });
