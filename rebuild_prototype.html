@@ -1391,7 +1391,7 @@ function renderSurvivors(){
             if(assigned) cls+=' assigned';
             else if(available&&canAct&&s.status!=='ocupado') cls+=' available';
             else cls+=' unavailable';
-            return '<button class="'+cls+'" data-action="'+a+'" data-sid="${s.id}" title="'+info.label+'" '+(((!available||!canAct||s.status==='ocupado')&&!assigned)?'disabled':'')+'>'+info.icon+'</button>';
+            return `<button class="${cls}" data-action="${a}" data-sid="${s.id}" title="${info.label}" ${((!available||!canAct||s.status==='ocupado')&&!assigned)?'disabled':''}>${info.icon}</button>`;
           }).join('')}
         </div>`}
       </div>`;
