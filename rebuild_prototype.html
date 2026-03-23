@@ -1576,77 +1576,89 @@ function openBuildModal(survivorId){
 
 function endDay(){
   // Only block if there's a pending event that requires player choice
-  if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive) return;
+  if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive){
+    addLog('⚠ Debes resolver el evento actual antes de finalizar el día.');
+    render();
+    return;
+  }
   // Prevent double-execution
-  if(state._processingDay) return;
+  if(state._processingDay){
+    addLog('⏳ El día ya se está procesando. Espera un momento.');
+    return;
+  }
   state._processingDay=true;
-  // Snapshot action counts before resolving (used to weight event selection)
-  state._lastDayActions={};
-  state._lastDayActionSurvivors={};  // action -> [survivorIds]
-  state.survivors.forEach(s=>{
-    if(s.action?.type&&s.status!=='muerto'){
-      state._lastDayActions[s.action.type]=(state._lastDayActions[s.action.type]||0)+1;
-      if(!state._lastDayActionSurvivors[s.action.type]) state._lastDayActionSurvivors[s.action.type]=[];
-      state._lastDayActionSurvivors[s.action.type].push(s.id);
+  try{
+    // Snapshot action counts before resolving (used to weight event selection)
+    state._lastDayActions={};
+    state._lastDayActionSurvivors={};  // action -> [survivorIds]
+    state.survivors.forEach(s=>{
+      if(s.action?.type&&s.status!=='muerto'){
+        state._lastDayActions[s.action.type]=(state._lastDayActions[s.action.type]||0)+1;
+        if(!state._lastDayActionSurvivors[s.action.type]) state._lastDayActionSurvivors[s.action.type]=[];
+        state._lastDayActionSurvivors[s.action.type].push(s.id);
+      }
+    });
+    resolveTravelMovement();
+    resolveLocationExploration();
+    checkAttackArrival();  // check if attackers arrived without being fought
+    resolveActions();
+    applyDailyIncome();
+    applyFoodConsumption();
+    applyBarracksPenalty();
+    applyDailyMoraleDecay();
+    regenerateLocations();
+    processDelayedEffects();
+    // Handle food shortage choice popup if needed
+    if(state._pendingFoodChoice){
+      openFoodChoicePopup();
+      return; // pause endDay — resumes after food choice
     }
-  });
-  resolveTravelMovement();
-  resolveLocationExploration();
-  checkAttackArrival();  // check if attackers arrived without being fought
-  resolveActions();
-  applyDailyIncome();
-  applyFoodConsumption();
-  applyBarracksPenalty();
-  applyDailyMoraleDecay();
-  regenerateLocations();
-  processDelayedEffects();
-  // Handle food shortage choice popup if needed
-  if(state._pendingFoodChoice){
-    openFoodChoicePopup();
-    state._processingDay=false;
-    return; // pause endDay — resumes after food choice
-  }
-  checkLowMorale();
-  // +1 stability every 7 days survived
-  if(state.day>0 && state.day%7===0){
-    state.stability=Math.min(10,state.stability+1);
-    addLog(`🏛 Semana ${Math.floor(state.day/7)} completada. +1 estabilidad.`);
-  }
-  // +1 stability every 3 days if all survivors have high morale
-  if(state.day%3===0){
-    const allHappy=aliveSurvivors();
-    if(allHappy.length>0&&allHappy.every(s=>(s.morale??2)>=2)){
+    checkLowMorale();
+    // +1 stability every 7 days survived
+    if(state.day>0 && state.day%7===0){
       state.stability=Math.min(10,state.stability+1);
-      addLog(`🏛 El grupo lleva días con la moral alta. +1 estabilidad.`);
+      addLog(`🏛 Semana ${Math.floor(state.day/7)} completada. +1 estabilidad.`);
     }
-  }
-  state.day+=1;
-  resetForNewDay();
-  // Handle multi-day active event persistence
-  if(state._activeMultiDayEvent){
-    state._activeMultiDayEvent._daysLeft-=1;
-    if(state._activeMultiDayEvent._daysLeft>0){
-      // Keep showing it with updated countdown, combine with new event possible
-      const carried=state._activeMultiDayEvent;
-      state.eventDaysLeft=carried._daysLeft;
-      state.eventTotalDays=carried._totalDays;
-      carried._continuing=true;
-      carried._multiDayPassive=true;  // doesn't block endDay
-      // Always show a new daily event on top
-      if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
-      // If no new event, re-show the carried one
-      if(!state.pendingEvent){
-        setEvent(carried);
+    // +1 stability every 3 days if all survivors have high morale
+    if(state.day%3===0){
+      const allHappy=aliveSurvivors();
+      if(allHappy.length>0&&allHappy.every(s=>(s.morale??2)>=2)){
+        state.stability=Math.min(10,state.stability+1);
+        addLog(`🏛 El grupo lleva días con la moral alta. +1 estabilidad.`);
+      }
+    }
+    state.day+=1;
+    resetForNewDay();
+    // Handle multi-day active event persistence
+    if(state._activeMultiDayEvent){
+      state._activeMultiDayEvent._daysLeft-=1;
+      if(state._activeMultiDayEvent._daysLeft>0){
+        // Keep showing it with updated countdown, combine with new event possible
+        const carried=state._activeMultiDayEvent;
+        state.eventDaysLeft=carried._daysLeft;
+        state.eventTotalDays=carried._totalDays;
+        carried._continuing=true;
+        carried._multiDayPassive=true;  // doesn't block endDay
+        // Always show a new daily event on top
+        if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
+        // If no new event, re-show the carried one
+        if(!state.pendingEvent){
+          setEvent(carried);
+        }
+      } else {
+        state._activeMultiDayEvent=null;
+        if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
       }
     } else {
-      state._activeMultiDayEvent=null;
       if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
     }
-  } else {
-    if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
+  } catch(err){
+    console.error('Error al finalizar día:', err);
+    addLog(`❌ Error al finalizar día: ${err?.message||err}`);
+  } finally {
+    state._processingDay=false;
+    render();
   }
-  state._processingDay=false;
-  render();
 }
 
 
