@@ -5,6 +5,8 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Enfermera antes del Ocaso.",
+    "moralCurrent": 2,
+    "moralMax": 4,
     "image": {
       "url": "https://i.ibb.co/60Cz1spg/c002.png",
       "deleteUrl": ""
@@ -16,8 +18,6 @@
     "skill": "ninguna",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "rarity": 4
   },
   {
@@ -63,34 +63,11 @@
     "rarity": 4
   },
   {
-    "id": "survivor_oziii7xl",
-    "name": "Superviviente",
-    "fatigueCurrent": 3,
-    "fatigueMax": 3,
-    "story": "Genérico",
-    "image": {
-      "url": "https://i.ibb.co/1f0VYsLT/c-GEN.png",
-      "deleteUrl": ""
-    },
-    "imageInjured": {
-      "url": "",
-      "deleteUrl": ""
-    },
-    "skill": "ninguna",
-    "skill2": "ninguna",
-    "negativeSkill": "ninguna",
-    "moralCurrent": 2,
-    "moralMax": 2,
-    "rarity": 4
-  },
-  {
     "id": "survivor_8d56p6ec",
     "name": "Sullivan",
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "image": {
       "url": "https://i.ibb.co/ZpwzD3Yk/c005.png",
       "deleteUrl": ""
@@ -102,6 +79,8 @@
     "skill": "chatarrero",
     "skill2": "ninguna",
     "negativeSkill": "glotón",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "rarity": 3
   },
   {
@@ -152,8 +131,6 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Antiguo vendedor de coches",
-    "moralCurrent": 2,
-    "moralMax": 3,
     "image": {
       "url": "https://i.ibb.co/vCgKF2pK/c007.png",
       "deleteUrl": ""
@@ -165,6 +142,8 @@
     "skill": "ingeniero",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
+    "moralCurrent": 2,
+    "moralMax": 3,
     "rarity": 2
   },
   {
@@ -173,8 +152,6 @@
     "fatigueCurrent": 2,
     "fatigueMax": 2,
     "story": "El chaval del asentamiento",
-    "moralCurrent": 2,
-    "moralMax": 4,
     "image": {
       "url": "https://i.ibb.co/MDRGCQLX/c008.png",
       "deleteUrl": ""
@@ -186,6 +163,8 @@
     "skill": "explorador",
     "skill2": "ninguna",
     "negativeSkill": "miedoso",
+    "moralCurrent": 2,
+    "moralMax": 4,
     "rarity": 2
   }
 ]
