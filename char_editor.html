@@ -587,6 +587,10 @@
 
         <div class="form-grid">
           <div class="field full">
+            <label>ID del superviviente <span style="color:var(--muted);font-size:9px;">(opcional, autogenerado si se deja vacío)</span></label>
+            <input id="f-id" type="text" placeholder="ej: survivor_kirk_001" />
+          </div>
+          <div class="field full">
             <label>Nombre <span class="req">*</span></label>
             <input id="f-name" type="text" placeholder="Nombre del superviviente" />
           </div>
@@ -939,8 +943,9 @@ $('f-newSkill').addEventListener('keydown', e => { if(e.key==='Enter') $('addSki
 
 // ── FORM ──
 function getFormData() {
+  const manualId = $('f-id')?.value.trim();
   return {
-    id: state.editingId || uid(),
+    id: manualId || state.editingId || uid(),
     name: $('f-name').value.trim(),
     fatigueCurrent: Number($('f-fatigueCurrent').value || 0),
     fatigueMax: Number($('f-fatigueMax').value || 1),
@@ -957,6 +962,7 @@ function getFormData() {
 }
 
 function validateSurvivor(s) {
+  if (!s.id) return 'No se pudo generar un ID válido.';
   if (!s.name) return 'El nombre es obligatorio.';
   if (s.fatigueCurrent < 0 || s.fatigueMax < 1) return 'Valores de fatiga inválidos.';
   if (s.fatigueCurrent > s.fatigueMax) return 'La fatiga actual no puede superar la máxima.';
@@ -965,6 +971,7 @@ function validateSurvivor(s) {
 
 function resetForm() {
   state.editingId = null;
+  if($('f-id')) $('f-id').value = '';
   $('f-name').value = '';
   $('f-fatigueCurrent').value = 3;
   $('f-fatigueMax').value = 3;
@@ -988,6 +995,7 @@ function resetForm() {
 
 function fillForm(s) {
   state.editingId = s.id;
+  if($('f-id')) $('f-id').value = s.id || '';
   $('f-name').value = s.name || '';
   $('f-fatigueCurrent').value = s.fatigueCurrent ?? 3;
   $('f-fatigueMax').value = s.fatigueMax ?? 3;
@@ -1008,17 +1016,19 @@ function fillForm(s) {
 }
 
 function saveSurvivor() {
-  // Fix: assign stable ID before getFormData to avoid uid() generating different IDs
-  if (!state.editingId) state.editingId = uid();
   const s = getFormData();
   const err = validateSurvivor(s);
-  if (err) { state.editingId = null; setFormStatus(err, 'err'); return; }
-  const idx = state.survivors.findIndex(x => x.id === s.id);
-  if (idx >= 0) {
-    state.survivors[idx] = s;
+  if (err) { setFormStatus(err, 'err'); return; }
+  const duplicated = state.survivors.find(x => x.id === s.id && x.id !== state.editingId);
+  if (duplicated) { setFormStatus(`El ID "${s.id}" ya existe.`, 'err'); return; }
+  const editingIdx = state.editingId ? state.survivors.findIndex(x => x.id === state.editingId) : -1;
+  if (editingIdx >= 0) {
+    state.survivors[editingIdx] = s;
     showToast(`"${s.name}" actualizado ✓`);
   } else {
-    state.survivors.push(s);
+    const idx = state.survivors.findIndex(x => x.id === s.id);
+    if (idx >= 0) state.survivors[idx] = s;
+    else state.survivors.push(s);
     showToast(`"${s.name}" añadido ✓`);
   }
   resetForm();

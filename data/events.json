@@ -12,7 +12,7 @@
     "effects": [
       {
         "type": "setAttackThreat",
-        "attackStrength": 4,
+        "hostileType": "random",
         "arrivalDays": 1,
         "effectOnVictory": [
           {
@@ -85,7 +85,7 @@
     "effects": [
       {
         "type": "setAttackThreat",
-        "attackStrength": 3,
+        "hostileType": "random",
         "arrivalDays": 2,
         "effectOnVictory": [
           {
@@ -437,7 +437,7 @@
     "effects": [
       {
         "type": "setAttackThreat",
-        "attackStrength": 2,
+        "hostileType": "random",
         "arrivalDays": 1,
         "effectOnVictory": [
           {
