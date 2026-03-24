@@ -4475,11 +4475,31 @@ function startIntro(){
   const textEl=document.getElementById('introText');
   const btn=document.getElementById('introContinueBtn');
   if(!overlay) return;
+  const params = new URLSearchParams(window.location.search);
+  const skipIntro = params.get('skipIntro') === '1';
+  let introEnded = false;
+  let forceFinishTimer = null;
 
   let lineIdx=0;
   let charIdx=0;
   let fullText='';
   let typing=true;
+
+  function endIntro(){
+    if(introEnded) return;
+    introEnded = true;
+    if(forceFinishTimer) clearTimeout(forceFinishTimer);
+    overlay.style.transition='opacity 0.8s';
+    overlay.style.opacity='0';
+    setTimeout(()=>{ overlay.style.display='none'; }, 800);
+    startMusic();
+  }
+
+  if(skipIntro){
+    overlay.style.display='none';
+    startMusic();
+    return;
+  }
 
   // Click anywhere to skip to end
   overlay.addEventListener('click', ()=>{
@@ -4522,13 +4542,10 @@ function startIntro(){
   }
 
   setTimeout(typeNextChar, 600);
+  // Safety fallback: avoid permanent black screen if intro flow gets stuck.
+  forceFinishTimer = setTimeout(endIntro, 10000);
 
-  btn.addEventListener('click', ()=>{
-    overlay.style.transition='opacity 0.8s';
-    overlay.style.opacity='0';
-    setTimeout(()=>{ overlay.style.display='none'; }, 800);
-    startMusic();
-  });
+  btn.addEventListener('click', endIntro);
 }
 
 loadFromFiles().then(() => initGame()).catch(() => initGame());
