@@ -1498,7 +1498,7 @@ function renderSurvivors(){
     }
   }
   // Base panel: only survivors currently in the settlement
-  const tabFilter = s => s.status!=='muerto' && s.location==='base';
+  const tabFilter = s => s.status!=='muerto' && (s.location==='base'||!s.location);
   state.survivors.filter(tabFilter).forEach(s=>{
     const canAct=s.status!=='muerto'&&(!state.pendingEvent||state.pendingEvent._multiDayPassive);
     const actions=getAvailableActions(s);
