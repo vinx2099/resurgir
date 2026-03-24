@@ -39,83 +39,6 @@
     ]
   },
   {
-    "id": "story_dia7_disparos",
-    "name": "Disparos en la distancia",
-    "type": "story",
-    "day": 7,
-    "weight": 0,
-    "days": 1,
-    "repeatable": false,
-    "text": "Durante la noche se escuchan disparos al norte. {survivor} cree que podría haber otros supervivientes en problemas.",
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Investigar la zona",
-        "effects": [
-          {
-            "type": "addSurvivorByRarity"
-          },
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          }
-        ]
-      },
-      "B": {
-        "label": "No arriesgar al grupo",
-        "effects": [
-          {
-            "type": "moraleAll",
-            "amount": -1
-          }
-        ]
-      }
-    }
-  },
-  {
-    "id": "story_dia14_refugiados",
-    "name": "Grupo de refugiados",
-    "type": "story",
-    "day": 14,
-    "weight": 0,
-    "days": 1,
-    "repeatable": false,
-    "text": "Un pequeño grupo llega al asentamiento pidiendo refugio. Están agotados y hambrientos. Acogerlos supondrá un esfuerzo.",
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Acogerlos (-2 comida)",
-        "effects": [
-          {
-            "type": "addSurvivorByRarity"
-          },
-          {
-            "type": "stabilityChange",
-            "amount": 2
-          },
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 2
-          }
-        ]
-      },
-      "B": {
-        "label": "Rechazarlos",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": -1
-          },
-          {
-            "type": "moraleAll",
-            "amount": -1
-          }
-        ]
-      }
-    }
-  },
-  {
     "id": "story_dia21_radio",
     "name": "Señal de radio",
     "type": "story",
@@ -190,154 +113,6 @@
     ]
   },
   {
-    "id": "semanal_1",
-    "name": "Revisión semanal",
-    "type": "weekly",
-    "week": 1,
-    "weight": 10,
-    "days": 1,
-    "repeatable": false,
-    "text": "Al final de la primera semana, el grupo hace balance. Han sobrevivido, pero el camino por delante es largo.",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "moraleAll",
-        "amount": 1
-      },
-      {
-        "type": "stabilityChange",
-        "amount": 1
-      }
-    ]
-  },
-  {
-    "id": "semanal_2",
-    "name": "Segunda semana",
-    "type": "weekly",
-    "week": 2,
-    "weight": 10,
-    "days": 1,
-    "repeatable": false,
-    "text": "Dos semanas en pie. {survivor} propone reorganizar las tareas para ser más eficientes.",
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Reorganizar (-1 día productivo)",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": 2
-          },
-          {
-            "type": "moraleAll",
-            "amount": 1
-          }
-        ]
-      },
-      "B": {
-        "label": "Seguir como estamos",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": 0
-          }
-        ]
-      }
-    }
-  },
-  {
-    "id": "explore_suministros",
-    "name": "Suministros abandonados",
-    "type": "explore",
-    "weight": 10,
-    "days": 1,
-    "repeatable": false,
-    "text": "{survivor} encuentra una pequeña reserva útil entre los escombros.",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "materials",
-        "amount": 2
-      }
-    ]
-  },
-  {
-    "id": "explore_comida",
-    "name": "Despensa intacta",
-    "type": "explore",
-    "weight": 9,
-    "days": 1,
-    "repeatable": false,
-    "text": "{survivor} localiza una antigua despensa con conservas en buen estado.",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "food",
-        "amount": 3
-      }
-    ]
-  },
-  {
-    "id": "explore_superviviente",
-    "name": "Superviviente oculto",
-    "type": "explore",
-    "weight": 6,
-    "days": 1,
-    "repeatable": false,
-    "text": "{survivor} encuentra a alguien escondido entre las ruinas. Parece asustado pero en condiciones de unirse al grupo.",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addSurvivorByRarity"
-      }
-    ]
-  },
-  {
-    "id": "explore_herida",
-    "name": "Trampa en las ruinas",
-    "type": "explore",
-    "weight": 7,
-    "days": 1,
-    "repeatable": false,
-    "text": "{survivor} cae en una trampa improvisada entre los escombros. Llega de vuelta con heridas.",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "injureExplorer"
-      }
-    ]
-  },
-  {
-    "id": "explore_medicamentos",
-    "name": "Clínica abandonada",
-    "type": "explore",
-    "weight": 5,
-    "days": 1,
-    "repeatable": false,
-    "text": "{survivor} encuentra una antigua clínica con algunos suministros médicos todavía utilizables.",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "meds",
-        "amount": 1
-      }
-    ]
-  },
-  {
-    "id": "explore_nada",
-    "name": "Sin novedad",
-    "type": "explore",
-    "weight": 8,
-    "days": 1,
-    "repeatable": true,
-    "text": "{survivor} no encuentra nada de interés. El sector está vacío.",
-    "choiceMode": "direct",
-    "effects": []
-  },
-  {
     "id": "lluvia_acida",
     "name": "Lluvia ácida",
     "image": "https://i.ibb.co/HfTD9shg/lluvia-acida.jpg",
@@ -358,53 +133,6 @@
         "days": 2
       }
     ]
-  },
-  {
-    "id": "comerciante",
-    "name": "Comerciante ambulante",
-    "image": "https://i.ibb.co/VpBGZrrr/comerciante.jpg",
-    "text": "Basilio y el fiel Rocinante han vuelto al asentamiento. Los niños corren en su búsqueda con la esperanza de obtener algún juguete o golosina.",
-    "days": 1,
-    "weight": 8,
-    "type": "city",
-    "repeatable": true,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Comerciar (-2 mat, +2 comida)",
-        "effects": [
-          {
-            "type": "removeResource",
-            "resource": "materials",
-            "amount": 2
-          },
-          {
-            "type": "addResource",
-            "resource": "food",
-            "amount": 2
-          }
-        ]
-      },
-      "B": {
-        "label": "Comerciar (-2 comida, +2 materiales)",
-        "effects": [
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 3
-          },
-          {
-            "type": "addResource",
-            "resource": "materials",
-            "amount": 2
-          }
-        ]
-      },
-      "C": {
-        "label": "No hacer negocios",
-        "effects": []
-      }
-    }
   },
   {
     "id": "sabotaje",
@@ -500,6 +228,278 @@
         "type": "disableBuilding",
         "building": "camion",
         "days": 2
+      }
+    ]
+  },
+  {
+    "id": "semanal_2",
+    "name": "Segunda semana",
+    "image": "",
+    "text": "Dos semanas en pie. {survivor} propone reorganizar las tareas para ser más eficientes.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "day": 14,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Hacer una pequeña fiesta (-2 alimento)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          },
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Seguir como estamos",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "comerciante",
+    "name": "Comerciante ambulante",
+    "image": "https://i.ibb.co/VpBGZrrr/comerciante.jpg",
+    "text": "Basilio y el fiel Rocinante han vuelto al asentamiento. Los niños corren en su búsqueda con la esperanza de obtener algún juguete o golosina.",
+    "days": 1,
+    "weight": 8,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Comerciar (-2 mat, +2 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Comerciar (-2 comida, +2 materiales)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 3
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      },
+      "C": {
+        "label": "No hacer negocios",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "explore_suministros",
+    "name": "Suministros abandonados",
+    "image": "",
+    "text": "{survivor} encuentra una pequeña reserva útil en un camión abandonado.",
+    "days": 1,
+    "weight": 10,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "materials",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "explore_comida",
+    "name": "Despensa intacta",
+    "image": "",
+    "text": "{survivor} localiza una antigua despensa con conservas en buen estado.",
+    "days": 1,
+    "weight": 9,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "explore_herida",
+    "name": "Trampa en las ruinas",
+    "image": "",
+    "text": "{survivor} cae en una trampa improvisada entre los escombros. Llega de vuelta con heridas.",
+    "days": 1,
+    "weight": 7,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "injureExplorer"
+      }
+    ]
+  },
+  {
+    "id": "explore_medicamentos",
+    "name": "Clínica abandonada",
+    "image": "",
+    "text": "{survivor} encuentra una antigua clínica con algunos suministros médicos todavía utilizables.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "meds",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "explore_nada",
+    "name": "Sin novedad",
+    "image": "",
+    "text": "{survivor} no encuentra nada de interés. Un paseo en balde.",
+    "days": 1,
+    "weight": 11,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "story_dia14_refugiados",
+    "name": "Grupo de refugiados",
+    "image": "",
+    "text": "Un pequeño grupo llega al asentamiento pidiendo refugio. Están agotados y hambrientos. Acogerlos supondrá un esfuerzo.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "day": 14,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Acogerlos (+2 Supervivientes)",
+        "effects": [
+          {
+            "type": ""
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          },
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addSurvivor",
+            "rarity": 4
+          },
+          {
+            "type": "addSurvivor",
+            "rarity": 3
+          }
+        ]
+      },
+      "B": {
+        "label": "Rechazarlos",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -4
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Darles víveres y que sigan su camino.",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "semanal_1",
+    "name": "Revisión semanal",
+    "image": "",
+    "text": "Al final de la semana, el grupo hace balance. Han sobrevivido, pero el camino por delante es largo.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "day": 7,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "banda_hostil2",
+    "name": "Grupo de caza",
+    "image": "",
+    "text": "Un grupo ha detectado a {survivor} y le ha seguido hasta el asentamiento.",
+    "days": 1,
+    "weight": 8,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "attackStrength": 2,
+        "arrivalDays": 1,
+        "effectOnVictory": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "injureSurvivor",
+            "target": "random"
+          }
+        ]
       }
     ]
   }
