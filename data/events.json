@@ -1,44 +1,5 @@
 [
   {
-    "id": "HOS001",
-    "name": "El Almacén de Medicinas",
-    "type": "story",
-    "day": 10,
-    "weight": 0,
-    "days": 1,
-    "repeatable": false,
-    "text": "Los exploradores han localizado un viejo almacén sanitario al norte. Está custodiado por un grupo de hostiles, pero contiene suministros suficientes para montar un hospital. Es arriesgado, pero podría cambiar las cosas.",
-    "choiceMode": "attack",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "random",
-        "arrivalDays": 1,
-        "effectOnVictory": [
-          {
-            "type": "unlockBuilding",
-            "building": "hospital"
-          },
-          {
-            "type": "addResource",
-            "resource": "meds",
-            "amount": 2
-          },
-          {
-            "type": "stabilityChange",
-            "amount": 2
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "stabilityChange",
-            "amount": -1
-          }
-        ]
-      }
-    ]
-  },
-  {
     "id": "story_dia21_radio",
     "name": "Señal de radio",
     "type": "story",
@@ -72,45 +33,6 @@
         ]
       }
     }
-  },
-  {
-    "id": "raiders_cerca",
-    "name": "Raiders en la zona",
-    "type": "city",
-    "weight": 9,
-    "days": 1,
-    "repeatable": true,
-    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de raiders parece estar vigilando el asentamiento.",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "random",
-        "arrivalDays": 2,
-        "effectOnVictory": [
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          },
-          {
-            "type": "addResource",
-            "resource": "materials",
-            "amount": 2
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "stabilityChange",
-            "amount": -2
-          },
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 2
-          }
-        ]
-      }
-    ]
   },
   {
     "id": "lluvia_acida",
@@ -151,45 +73,6 @@
       {
         "type": "destroyBuilding",
         "building": "generador"
-      }
-    ]
-  },
-  {
-    "id": "hallazgo_deposito",
-    "name": "Depósito olvidado",
-    "image": "https://i.ibb.co/Y4WgNFV7/alijo.jpg",
-    "text": "Uno de los supervivientes descubre un pequeño alijo de herramientas escondido bajo los escombros de un viejo almacén.",
-    "days": 1,
-    "weight": 6,
-    "type": "city",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "materials",
-        "amount": 2
-      }
-    ]
-  },
-  {
-    "id": "incendio_almacen",
-    "name": "Incendio en el almacén",
-    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
-    "text": "Un incendio declarado de madrugada destruye parte de los suministros y daña una instalación.",
-    "days": 1,
-    "weight": 6,
-    "type": "city",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "removeResource",
-        "resource": "materials",
-        "amount": 2
-      },
-      {
-        "type": "disableBuilding",
-        "building": "camion",
-        "days": 2
       }
     ]
   },
@@ -281,84 +164,6 @@
     }
   },
   {
-    "id": "explore_suministros",
-    "name": "Suministros abandonados",
-    "image": "",
-    "text": "{survivor} encuentra una pequeña reserva útil en un camión abandonado.",
-    "days": 1,
-    "weight": 10,
-    "type": "explore",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "materials",
-        "amount": 2
-      }
-    ]
-  },
-  {
-    "id": "explore_comida",
-    "name": "Despensa intacta",
-    "image": "",
-    "text": "{survivor} localiza una antigua despensa con conservas en buen estado.",
-    "days": 1,
-    "weight": 9,
-    "type": "explore",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "food",
-        "amount": 2
-      }
-    ]
-  },
-  {
-    "id": "explore_herida",
-    "name": "Trampa en las ruinas",
-    "image": "",
-    "text": "{survivor} cae en una trampa improvisada entre los escombros. Llega de vuelta con heridas.",
-    "days": 1,
-    "weight": 7,
-    "type": "explore",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "injureExplorer"
-      }
-    ]
-  },
-  {
-    "id": "explore_medicamentos",
-    "name": "Clínica abandonada",
-    "image": "",
-    "text": "{survivor} encuentra una antigua clínica con algunos suministros médicos todavía utilizables.",
-    "days": 1,
-    "weight": 5,
-    "type": "explore",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "meds",
-        "amount": 1
-      }
-    ]
-  },
-  {
-    "id": "explore_nada",
-    "name": "Sin novedad",
-    "image": "",
-    "text": "{survivor} no encuentra nada de interés. Un paseo en balde.",
-    "days": 1,
-    "weight": 11,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": []
-  },
-  {
     "id": "story_dia14_refugiados",
     "name": "Grupo de refugiados",
     "image": "",
@@ -426,46 +231,6 @@
     "effects": []
   },
   {
-    "id": "banda_hostil2",
-    "name": "Grupo de caza",
-    "image": "",
-    "text": "Un grupo ha detectado a {survivor} y le ha seguido hasta el asentamiento.",
-    "days": 1,
-    "weight": 8,
-    "type": "explore",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "random",
-        "arrivalDays": 1,
-        "effectOnVictory": [
-          {
-            "type": "addResource",
-            "resource": "food",
-            "amount": 1
-          },
-          {
-            "type": "addResource",
-            "resource": "materials",
-            "amount": 1
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 1
-          },
-          {
-            "type": "injureSurvivor",
-            "target": "random"
-          }
-        ]
-      }
-    ]
-  },
-  {
     "id": "noche_tranquila",
     "name": "Noche tranquila",
     "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
@@ -483,86 +248,6 @@
       {
         "type": "healSurvivor",
         "target": "random"
-      }
-    ]
-  },
-  {
-    "id": "kirk001",
-    "name": "Un par de manos más",
-    "image": "",
-    "text": "Kirk conoce a un superviviente que está viviendo por su cuenta en una caravana. Podría ser útil tener un par de manos más en el asentamiento, pero hay que demostrarle al superviviente que somos de fiar.",
-    "days": 1,
-    "weight": 0,
-    "type": "story",
-    "condition": {
-      "type": "survivor",
-      "id": "survivor_kirk"
-    },
-    "priority": true,
-    "day": 3,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Dale a Kirk alimento para convencer al superviviente.",
-        "effects": [
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 2
-          },
-          {
-            "type": "addSurvivorRandom"
-          }
-        ]
-      },
-      "B": {
-        "label": "Es mejor guardar recursos por ahora... nunca se sabe.",
-        "effects": [
-          {
-            "type": "moraleSurvivor",
-            "amount": -1,
-            "targetId": "survivor_kirk"
-          }
-        ]
-      }
-    }
-  },
-  {
-    "id": "raiders_cerca",
-    "name": "Raiders en la zona",
-    "image": "https://i.ibb.co/HDgKccWm/raiders001.jpg",
-    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de raiders parece estar vigilando el asentamiento.",
-    "days": 1,
-    "weight": 9,
-    "type": "city",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "raiders",
-        "attackStrength": 3,
-        "arrivalDays": 2,
-        "effectOnVictory": [
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          },
-          {
-            "type": "addResource",
-            "resource": "materials",
-            "amount": 2
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "stabilityChange",
-            "amount": -2
-          },
-          {
-            "type": "injureSurvivor"
-          }
-        ]
       }
     ]
   },
@@ -600,6 +285,366 @@
           },
           {
             "type": "injureSurvivor"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "raiders_cerca",
+    "name": "Carroñeros en la zona",
+    "image": "https://i.ibb.co/JFG6hg9y/raiders001.jpg",
+    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de carroñeros parece estar vigilando el asentamiento.",
+    "days": 1,
+    "weight": 9,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "random",
+        "attackStrength": 3,
+        "arrivalDays": 2,
+        "combatPopupVictory": {
+          "text": "Seguro que tardarán en pensar a volver por este sitio..."
+        },
+        "combatPopupDefeat": {
+          "text": "Los bastardos han conseguido robarnos materiales del almacén y se han largado."
+        },
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "explore_comida",
+    "name": "Despensa intacta",
+    "image": "https://i.ibb.co/LXfMPNrX/suministros001.jpg",
+    "text": "{survivor} localiza una vieja caja con latas de comida en un camión que había cerca del asentamiento. ¿Lo han dejado queriendo o ha estado delante de nuestras narices todo este rato?",
+    "days": 1,
+    "weight": 6,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "banda_hostil2",
+    "name": "Grupo de caza",
+    "image": "https://i.ibb.co/YBDxnr3h/grupo-caza.jpg",
+    "text": "Un grupo de caza ha detectado a {survivor} y le ha seguido hasta el asentamiento.",
+    "days": 1,
+    "weight": 8,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "random",
+        "attackStrength": 3,
+        "arrivalDays": 1,
+        "combatPopupVictory": {
+          "text": "Les ganamos y encima nos quedamos con su ciervo... todo genial."
+        },
+        "combatPopupDefeat": {
+          "text": "Han luchado como demonios... he pensado que no eran humanos."
+        },
+        "effectOnVictory": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "injureSurvivor"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "explore_nails",
+    "name": "en el clavo...",
+    "image": "https://i.ibb.co/d0s892JZ/nails.jpg",
+    "text": "{survivor} ha encontrado una caja con puntillas y algún tornillo en la basura.",
+    "days": 1,
+    "weight": 10,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "materials",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "explore_nada2",
+    "name": "nada de nada",
+    "image": "https://i.ibb.co/MyP9K89r/nada.jpg",
+    "text": "{survivor} no encuentra nada de interés. Un paseo en balde.",
+    "days": 1,
+    "weight": 10,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "explore_nada",
+    "name": "Sin novedad",
+    "image": "https://i.ibb.co/zWJV53Tr/nada2.jpg",
+    "text": "{survivor} no encuentra nada de interés. Mañana será otro día.",
+    "days": 1,
+    "weight": 10,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "explore_herida",
+    "name": "Trampa de pinchos",
+    "image": "https://i.ibb.co/n8tjd8ZG/trampa.jpg",
+    "text": "{survivor} cae en una trampa improvisada en un agujero. Consigue llegar herido al campamento mientras maldice a esos malditos salvajes.",
+    "days": 1,
+    "weight": 7,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "injureExplorer"
+      }
+    ]
+  },
+  {
+    "id": "explore_medicamentos",
+    "name": "Clínica abandonada",
+    "image": "https://i.ibb.co/8gyVT6Kt/clinica-abandonada.jpg",
+    "text": "{survivor} encuentra una antigua clínica con algunos suministros médicos todavía utilizables.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Lo mejor será coger algo rápido y marcharse.",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "El sótano tiene que tener un almacén mayor",
+        "effects": [
+          {
+            "type": "setAttackThreat",
+            "arrivalDays": 1,
+            "attackStrength": 3,
+            "effectOnDefeat": [
+              {
+                "type": "injureExplorer"
+              },
+              {
+                "type": "addResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 2
+          },
+          {
+            "type": "injureExplorer"
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "incendio_almacen",
+    "name": "Incendio en el taller",
+    "image": "https://i.ibb.co/GQ1DwPVq/fuego.jpg",
+    "text": "Un incendio declarado de madrugada destruye parte de los suministros y daña una instalación.",
+    "days": 1,
+    "weight": 6,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "taller"
+    },
+    "skipWhenAttackActive": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "removeResource",
+        "resource": "materials",
+        "amount": 2
+      },
+      {
+        "type": "disableBuilding",
+        "building": "camion",
+        "days": 1
+      }
+    ]
+  },
+  {
+    "id": "kirk001",
+    "name": "Un par de manos más",
+    "image": "https://i.ibb.co/HftQNbDN/aliados001.jpg",
+    "text": "Kirk conoce a un superviviente que está viviendo por su cuenta en una caravana. Podría ser útil tener un par de manos más en el asentamiento, pero hay que demostrarle al superviviente que somos de fiar.",
+    "days": 1,
+    "weight": 6,
+    "type": "city",
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "survivor",
+          "id": "survivor_kirk"
+        },
+        {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "day_min",
+              "value": 3
+            },
+            {
+              "type": "day_max",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    "priority": true,
+    "skipWhenAttackActive": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Dale a Kirk alimento para convencer al superviviente.",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addSurvivorRandom"
+          }
+        ]
+      },
+      "B": {
+        "label": "Es mejor guardar recursos por ahora... nunca se sabe.",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": -1,
+            "targetId": "survivor_kirk"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "HOS001",
+    "name": "El centro médico fortificado",
+    "image": "https://i.ibb.co/rRTm67YS/Evento-Hospital.jpg",
+    "text": "Los exploradores han localizado un viejo almacén sanitario al norte. Está custodiado por un grupo de hostiles, pero contiene suministros suficientes para montar un centro médico en el asentamiento. Es arriesgado, pero podría cambiar mucho las cosas a nuestro favor.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "priority": true,
+    "day": 10,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "raiders",
+        "attackStrength": 4,
+        "arrivalDays": 1,
+        "combatPopupVictory": {},
+        "combatPopupDefeat": {},
+        "effectOnVictory": [
+          {
+            "type": "unlockBuilding",
+            "building": "hospital"
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 2
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
           }
         ]
       }
