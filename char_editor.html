@@ -881,6 +881,16 @@ function setRarity(r) {
   document.querySelectorAll('.rarity-opt').forEach(btn => {
     btn.classList.toggle('selected', Number(btn.dataset.rarity) === state.selectedRarity);
   });
+  updateSkill2Visibility();
+}
+
+function updateSkill2Visibility() {
+  const field = $('skill2Field');
+  const select = $('f-skill2');
+  if (!field || !select) return;
+  const allowSecondSkill = Number(state.selectedRarity) <= 3;
+  field.style.display = allowSecondSkill ? '' : 'none';
+  if (!allowSecondSkill) select.value = 'ninguna';
 }
 
 document.querySelectorAll('.rarity-opt').forEach(btn => {
@@ -1302,9 +1312,9 @@ render();
 async function autoLoadFromServer() {
   try {
     const res = await fetch('./data/survivors.json');
-    if (!res.ok) return;
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const parsed = await res.json();
-    if (!Array.isArray(parsed)) return;
+    if (!Array.isArray(parsed)) throw new Error('survivors.json no contiene un array');
     let added = 0, updated = 0;
     parsed.forEach(item => {
       const norm = {

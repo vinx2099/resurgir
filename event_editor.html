@@ -1597,6 +1597,7 @@ function buildEventObject() {
   const relatedAction = document.getElementById('f-relatedAction')?.value || '';
   let condition=readCondition();
   const dayRangeConds=[];
+  const skipWhenAttackActive = document.getElementById('f-skipWhenAttackActive')?.checked || false;
   if(dayMin!==undefined) dayRangeConds.push({type:'day_min',value:dayMin});
   if(dayMax!==undefined) dayRangeConds.push({type:'day_max',value:dayMax});
   if(dayRangeConds.length){
@@ -2319,9 +2320,9 @@ updatePreview();
 async function autoLoadFromServer() {
   try {
     const res = await fetch('./data/events.json');
-    if (!res.ok) return;
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const incoming = await res.json();
-    if (!Array.isArray(incoming)) return;
+    if (!Array.isArray(incoming)) throw new Error('events.json no contiene un array');
     let added = 0;
     incoming.forEach(ev => {
       if (!ev.id) return;
@@ -2347,13 +2348,14 @@ async function autoLoadFromServer() {
 
   try {
     const resHostiles = await fetch('./data/hostiles.json');
-    if (resHostiles.ok) {
-      const incomingHostiles = await resHostiles.json();
-      if (Array.isArray(incomingHostiles)) {
-        hostileDefs = incomingHostiles;
-        populateHostileSelect();
-        updatePreview();
-      }
+    if (!resHostiles.ok) throw new Error(`HTTP ${resHostiles.status}`);
+    const incomingHostiles = await resHostiles.json();
+    if (Array.isArray(incomingHostiles)) {
+      hostileDefs = incomingHostiles;
+      populateHostileSelect();
+      updatePreview();
+    } else {
+      throw new Error('hostiles.json no contiene un array');
     }
   } catch {
     if ((!hostileDefs || !hostileDefs.length) && Array.isArray(EMBEDDED_HOSTILES) && EMBEDDED_HOSTILES.length) {
