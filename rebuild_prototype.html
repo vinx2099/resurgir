@@ -1319,7 +1319,7 @@ function initGame(){
   state.day=1;
   state.food=Number(gameData.config?.starting?.food??5);
   state.materials=Number(gameData.config?.starting?.materials??5);
-  state.stability=Number(gameData.config?.starting?.morale??gameData.config?.starting?.stability??5);
+  state.stability=Number(gameData.config?.starting?.stability??gameData.config?.starting?.morale??5);
   state.meds=Number(gameData.config?.starting?.meds??0);
   state.electricity=Number(gameData.config?.starting?.electricity??0);
   state.unlocked=deepClone(gameData.config?.rules?.resources||{meds:false,electricity:false});
@@ -1351,6 +1351,7 @@ function initGame(){
   state.actionLimits={};
   state.log=[];
   state.currentDetail=null;
+  state._lastStabilityTier=getStabilityTier();
 
   const starterCount=Number(gameData.config?.starting?.survivors??3);
   const starters=pickStartingSurvivors(starterCount);
@@ -1392,6 +1393,7 @@ function initGame(){
 }
 
 function render(){
+  maybeLogStabilityTierChange();
   renderTopbar();
   renderSurvivors();
   renderBuildings();
@@ -1400,12 +1402,61 @@ function render(){
   checkGameOver();
 }
 
+function getStabilityTier(value=state.stability){
+  const v=Math.max(0,Math.min(10,Number(value)||0));
+  if(v<=2) return 'collapse';
+  if(v<=4) return 'unstable';
+  if(v<=7) return 'normal';
+  return 'strong';
+}
+function getStabilityModifiers(){
+  const tier=getStabilityTier();
+  const base={
+    tier,
+    defenseBonus:0,
+    negativeEventWeightBonus:0,
+    positiveEventWeightBonus:0,
+    abandonChanceBonus:0,
+    recruitChanceBonus:0,
+    extraBuildDays:0,
+    extraResearchDays:0,
+    restMoraleRecoveryChance:0
+  };
+  if(tier==='collapse') return {...base,defenseBonus:-1,negativeEventWeightBonus:0.25,abandonChanceBonus:0.15,recruitChanceBonus:-20,extraBuildDays:1,extraResearchDays:1};
+  if(tier==='unstable') return {...base,negativeEventWeightBonus:0.10,recruitChanceBonus:-10};
+  if(tier==='strong') return {...base,defenseBonus:1,positiveEventWeightBonus:0.10,recruitChanceBonus:10,restMoraleRecoveryChance:0.25};
+  return base;
+}
+function stabilityTierLabel(tier=getStabilityTier()){
+  return ({collapse:'Colapso',unstable:'Inestable',normal:'Normal',strong:'Fuerte'})[tier]||'Normal';
+}
+function maybeLogStabilityTierChange(){
+  const tier=getStabilityTier();
+  if(!state._lastStabilityTier){ state._lastStabilityTier=tier; return; }
+  if(state._lastStabilityTier===tier) return;
+  if(tier==='collapse') addLog('💥 El asentamiento está al borde del colapso.');
+  else if(tier==='unstable') addLog('⚠ El asentamiento entra en estado inestable.');
+  else if(tier==='normal') addLog('✅ El asentamiento recupera una estabilidad normal.');
+  else if(tier==='strong') addLog('🏛 El asentamiento está fuerte y unido.');
+  state._lastStabilityTier=tier;
+}
+
 function renderTopbar(){
+  const stabilityMods=getStabilityModifiers();
+  const stabilityTier=stabilityMods.tier;
+  const stabilityText=`${state.stability}/10 — ${stabilityTierLabel(stabilityTier)}`;
+  const stabilityTip=stabilityTier==='collapse'
+    ? 'Colapso: defensa -1, +eventos negativos, +abandono, menos reclutas, construcción/investigación más lentas.'
+    : stabilityTier==='unstable'
+      ? 'Inestable: +eventos negativos y menos reclutas.'
+      : stabilityTier==='strong'
+        ? 'Fuerte: defensa +1, +eventos positivos, más reclutas, descanso con posible +1 moral.'
+        : 'Normal: sin modificadores globales.';
   const cards=[
     ['Día','📅',state.day,false],
     ['Comida','🌽',state.food,false],
     ['Materiales','🔧',state.materials,false],
-    ['Estabilidad','🏛',state.stability,false],
+    ['Estabilidad','🏛',stabilityText,false,stabilityTip],
     ['Medicamentos','💊',state.unlocked.meds?state.meds:'--',!state.unlocked.meds],
     (()=>{
       const cap=getElectricityCapacity();
@@ -1415,7 +1466,7 @@ function renderTopbar(){
     })(),
     ['Supervivientes','👥',aliveSurvivors().length,false]
   ];
-  topbar.innerHTML=cards.map(([label,icon,value,locked])=>`<div class="stat ${locked?'locked':''}"><div class="label"><span style="margin-right:3px;font-size:13px">${icon}</span>${label}</div><div class="value">${value}</div></div>`).join('');
+  topbar.innerHTML=cards.map(([label,icon,value,locked,tip])=>`<div class="stat ${locked?'locked':''} ${label==='Estabilidad'&&stabilityTier==='collapse'?'locked':''}" ${tip?`title="${escapeAttr(tip)}"`:''}><div class="label"><span style="margin-right:3px;font-size:13px">${icon}</span>${label}</div><div class="value">${value}</div></div>`).join('');
 }
 
 function renderSurvivors(){
@@ -1648,6 +1699,9 @@ function openBuildModal(survivorId){
       if(ingenieroBonus.costReduction) addLog(`⚙ ${s.name} (Ingeniero) reduce el coste en ${ingenieroBonus.costReduction} material.`);
       // Don't mark as built yet — track construction in progress
       const days=getBuildingConstructionDays(def.id);
+      if(getStabilityModifiers().extraBuildDays>0){
+        addLog('⚠ La baja estabilidad del asentamiento ralentiza el trabajo. +1 día.');
+      }
       state.buildings[def.id]._constructionDays=days;
       state.buildings[def.id]._constructionDaysLeft=days;
       state.buildings[def.id]._underConstruction=true;
@@ -1790,6 +1844,10 @@ function resolveActions(){
       } else {
         addLog(`${s.name} descansa y recupera toda la fatiga.`);
       }
+      if(getStabilityModifiers().restMoraleRecoveryChance>0&&Math.random()<getStabilityModifiers().restMoraleRecoveryChance&&s.morale<(s.maxMorale??2)){
+        s.morale=Math.min(s.maxMorale??2,s.morale+1);
+        addLog(`🏛 La cohesión del asentamiento ayuda a ${s.name}: +1 moral extra por descanso.`);
+      }
     }else if(type==='construir'){
       const buildTarget=s.action.target;
       const bld=buildTarget?state.buildings[buildTarget]:null;
@@ -1826,16 +1884,21 @@ function resolveActions(){
       trackActionXP(s,'explorar');
       triggerExploreEvent(s);  // auto-resolves and logs result
     }else if(type==='investigar'){
-      // 2-day research: first day sets flag, second day yields +1 med
-      if(s._investigatingDay&&s._investigatingDay===state.day-1){
-        // Second day complete
+      const neededDays=Number(s._investigationDaysNeeded||0)||Math.max(1,2+Number(getStabilityModifiers().extraResearchDays||0));
+      const currentDays=Number(s._investigationDaysDone||0);
+      if(currentDays+1>=neededDays){
+        // Research complete
         state.meds+=1;
-        s._investigatingDay=null;
+        s._investigationDaysDone=0;
+        s._investigationDaysNeeded=0;
         addLog(`💊 ${s.name} completa la investigación en el Hospital. +1 medicamento.`);
       } else {
-        // First day
-        s._investigatingDay=state.day;
-        addLog(`🔬 ${s.name} comienza a investigar en el Hospital (1/2 días).`);
+        s._investigationDaysNeeded=neededDays;
+        s._investigationDaysDone=currentDays+1;
+        if(currentDays===0&&getStabilityModifiers().extraResearchDays>0){
+          addLog('⚠ La baja estabilidad del asentamiento ralentiza el trabajo de investigación. +1 día.');
+        }
+        addLog(`🔬 ${s.name} investiga en el Hospital (${s._investigationDaysDone}/${neededDays} días).`);
         // Keep occupied next day too
         s._keepInvestigating=true;
       }
@@ -1909,10 +1972,11 @@ function resolveGroupAttack(){
     const murosLevel=state.buildings.muros?.built?state.buildings.muros.level:0;
     const murosBonus=murosLevel>=2?2:murosLevel>=1?1:0;
     const vallaBonus=state.vallaElectrica&&getElectricityFree()>=1?roll(1,6):0;
+    const stabilityDefenseBonus=Number(getStabilityModifiers().defenseBonus||0);
     if(vallaBonus>0) addLog(`⚡ Valla eléctrica descarga ${vallaBonus} de daño extra.`);
     defRoll=roll(1,6);
     atkRoll=roll(1,6);  // Raiders prepared when attacking — roll 1d6
-    totalDef=defCount+atalajaBonus+murosBonus+vallaBonus+defRoll;
+    totalDef=defCount+atalajaBonus+murosBonus+vallaBonus+defRoll+stabilityDefenseBonus;
     totalAtk=state.attackStrength+atkRoll;
     diff=totalAtk-totalDef;
     ownBreakdown=`Defensores ${defCount}, Muro +${murosBonus}, Atalaya +${atalajaBonus}${vallaBonus?`, Valla +${vallaBonus}`:''}, 1d6 (${defRoll}) = ${totalDef}`;
@@ -2352,6 +2416,7 @@ function chooseEvent(){
 
   const hosActive=state._hos001?.active&&!state.hospitalUnlocked;
   const hosDeferred=hosActive&&state._hos001?.deferred;
+  const stabilityMods=getStabilityModifiers();
   const boostedPool=activePool.map(ev=>{
     let w=Number(ev.weight||1);
     // Action-related boost
@@ -2368,8 +2433,11 @@ function chooseEvent(){
     const isRaiderEv=(Array.isArray(ev.effects)?ev.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(hosDeferred&&isRaiderEv) w=Math.round(w*2.0);
     // Positive/negative event skill modifiers
-    const isPositive=['hallazgo','nada','lluvia'].includes(ev.id)||(ev.effects&&Object.entries(ev.effects||{}).some(([k,v])=>['food','materials','morale'].includes(k)&&v>0));
-    const isNegative=['sabotaje','plaga','incendio','accidente'].includes(ev.id)||(ev.effects&&Object.entries(ev.effects||{}).some(([k,v])=>['food','materials','morale'].includes(k)&&v<0));
+    const tone=(ev.tone||'neutral').toLowerCase();
+    const isPositive=tone==='positive'||['hallazgo','nada','lluvia'].includes(ev.id);
+    const isNegative=tone==='negative'||['sabotaje','plaga','incendio','accidente'].includes(ev.id);
+    if(isPositive&&stabilityMods.positiveEventWeightBonus>0) w=Math.round(w*(1+stabilityMods.positiveEventWeightBonus));
+    if(isNegative&&stabilityMods.negativeEventWeightBonus>0) w=Math.round(w*(1+stabilityMods.negativeEventWeightBonus));
     if(isPositive&&exploradoresCount>0) w=Math.round(w*(1+exploradoresCount*0.10));
     if(isNegative&&precavidosCount>0)  w=Math.round(w*(1-precavidosCount*0.10));
     return{...ev,_effectiveWeight:Math.max(1,w)};
@@ -2568,7 +2636,8 @@ const BUILDING_CONSTRUCTION_DAYS = {
   almacen: 2,
 };
 function getBuildingConstructionDays(id){
-  return BUILDING_CONSTRUCTION_DAYS[id]||1;
+  const base=BUILDING_CONSTRUCTION_DAYS[id]||1;
+  return base + Number(getStabilityModifiers().extraBuildDays||0);
 }
 // ── ELECTRICITY SYSTEM ──
 const BUILDING_ELECTRICITY_COST = { hospital: 2, pozo: 1 };
@@ -2993,7 +3062,7 @@ function resolveLocationExploration(){
         });
         if(loc.survivorChance&&Math.random()<loc.survivorChance&&!state._pendingSurvivor){
           const newSurv=pickSurvivorByRarity();
-          if(newSurv){ state._pendingSurvivor=newSurv; openSurvivorInvitePopup(newSurv); }
+          if(newSurv) attemptRecruitmentOffer(newSurv,'exploración');
         }
         loc.status='explored';
         if(loc.exhaustible) loc.exhausted=true;
@@ -3326,7 +3395,9 @@ function checkLowMorale(){
 }
 
 function triggerSurvivorLeaving(s){
-  const betrays=Math.random()<0.4; // 40% chance betrayal, 60% just leaves
+  const stabilityAbandonBonus=Number(getStabilityModifiers().abandonChanceBonus||0);
+  const betrayChance=Math.max(0,Math.min(1,0.4+stabilityAbandonBonus));
+  const betrays=Math.random()<betrayChance; // base 40%, modified by estabilidad
   if(betrays){
     // Betrayal: sabotage event
     addLog(`💢 ${s.name} ha traicionado al asentamiento antes de marcharse!`);
@@ -3648,7 +3719,8 @@ function applyEffect(effect,delayed){
   switch(effect.type){
     case 'addResource':{
       const key=effect.resource,amt=Number(effect.amount||0);
-      if(key==='morale'||key==='stability'){ state.stability=Math.min(10,state.stability+amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad +${amt}.`); break; }
+      if(key==='stability'){ state.stability=Math.min(10,state.stability+amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad +${amt}.`); break; }
+      if(key==='morale'){ aliveSurvivors().forEach(s=>{ s.morale=Math.min(s.maxMorale??2, s.morale+amt); }); addLog(`${delayed?'[Retrasado] ':''}😊 Moral de todos +${amt}.`); break; }
       if(typeof state[key]==='number'){
         state[key]+=amt;
         addLog(`${delayed?'[Retrasado] ':''}${resourceLabel(key)} +${amt}.`);
@@ -3662,7 +3734,8 @@ function applyEffect(effect,delayed){
     }
     case 'removeResource':{
       const key=effect.resource,amt=Number(effect.amount||0);
-      if(key==='morale'||key==='stability'){ state.stability=Math.max(0,state.stability-amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad -${amt}.`); break; }
+      if(key==='stability'){ state.stability=Math.max(0,state.stability-amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad -${amt}.`); break; }
+      if(key==='morale'){ aliveSurvivors().forEach(s=>{ s.morale=Math.max(0, s.morale-amt); }); addLog(`${delayed?'[Retrasado] ':''}😞 Moral de todos -${amt}.`); break; }
       if(typeof state[key]==='number'){state[key]=Math.max(0,state[key]-amt);addLog(`${delayed?'[Retrasado] ':''}${resourceLabel(key)} -${amt}.`)}
       break;
     }
@@ -4116,7 +4189,7 @@ function getMoraleEmoji(s){
   if(m===1) return '😐';
   return '😞';
 }
-function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Estabilidad',stability:'Estabilidad',meds:'Medicamentos',electricity:'Electricidad'})[key]||key}
+function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Moral',stability:'Estabilidad',meds:'Medicamentos',electricity:'Electricidad'})[key]||key}
 function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
 function injureSurvivor(s,msg,opts={}){
@@ -4441,6 +4514,19 @@ function joinSurvivor(s){
     addLog('⚠ Los barracones están llenos. '+s.name+' se queda en condiciones precarias. -1 estabilidad.');
   }
   state._pendingSurvivor=null;
+}
+
+function attemptRecruitmentOffer(s, source='evento'){
+  if(!s) return false;
+  const recruitBonus=Number(getStabilityModifiers().recruitChanceBonus||0);
+  const chance=Math.max(0,Math.min(100,70+recruitBonus));
+  if(Math.random()*100>chance){
+    addLog(`🚪 ${s.name} no confía en la situación del asentamiento y decide no quedarse (${source}).`);
+    return false;
+  }
+  state._pendingSurvivor=s;
+  openSurvivorInvitePopup(s);
+  return true;
 }
 
 function openSurvivorInvitePopup(s){
