@@ -975,6 +975,7 @@
   <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#3d4a33;" id="headerStatus">SISTEMA ACTIVO ■ ■ ■</span><a href="index.html" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#3d4a33;text-decoration:none;border:1px solid #2a3525;padding:3px 10px;letter-spacing:0.08em;transition:color 0.15s,border-color 0.15s;" onmouseover="this.style.color='#72c44e';this.style.borderColor='#72c44e'" onmouseout="this.style.color='#3d4a33';this.style.borderColor='#2a3525'">← INICIO</a>
 </div>
   <div class="topbar" id="topbar"></div>
+  <div id="dataErrorBanner" style="display:none;background:rgba(90,16,16,0.92);border-bottom:1px solid rgba(196,78,78,0.45);color:#f0c1c1;padding:10px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.04em;line-height:1.6;"></div>
   <div class="layout">
     <section class="panel">
       <div class="panel-header">Personal del asentamiento</div>
@@ -1212,11 +1213,26 @@
     </button>
   </div>
 
+  <div id="dataErrorOverlay" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(5,6,5,0.96);align-items:center;justify-content:center;padding:24px;">
+    <div style="width:min(760px,100%);background:#0f120d;border:1px solid #5f2323;box-shadow:0 0 40px rgba(0,0,0,0.5);">
+      <div style="padding:14px 18px;border-bottom:1px solid rgba(196,78,78,0.35);font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:0.12em;text-transform:uppercase;color:#e28181;">Datos obligatorios no cargados</div>
+      <div style="padding:18px;display:grid;gap:14px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.7;color:#d8c4c4;">No se han cargado los datos correctos. El juego no arrancará con datos falsos o incompletos.</div><div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7;color:#b79a9a;">Comprueba especialmente survivors.json, events.json, locations.json, buildings.json y config.json.</div>
+        <div id="dataErrorOverlayList" style="font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.8;color:#f0c1c1;"></div>
+        <div id="dataErrorOverlayHint" style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7;color:#b79a9a;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button onclick="location.reload()" style="background:#2a120f;border:1px solid #7d2f2f;color:#f0c1c1;padding:10px 16px;cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:0.08em;text-transform:uppercase;">Reintentar</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="gameover" id="gameOverWrap"><div class="gameover-box"><h1>Derrota</h1><p id="gameOverText"></p><button onclick="location.reload()">Reiniciar partida</button></div></div>
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
 const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},log:[],currentDetail:null};
+const dataLoadState={errors:[],loaded:[]};
+let activeMapTab='base';
 
 const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
 
@@ -1228,26 +1244,102 @@ document.querySelectorAll('.building').forEach(btn=>btn.addEventListener('click'
 
 function deepClone(v){return JSON.parse(JSON.stringify(v))}
 
+const DATA_FILE_LABELS={events:'events.json',story:'story_events.json',survivors:'survivors.json',buildings:'buildings.json',config:'config.json',locations:'locations.json',hostiles:'hostiles.json',zones:'zones.json'};
+const REQUIRED_GAME_DATA=[
+  {type:'events',label:'events.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
+  {type:'survivors',label:'survivors.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
+  {type:'buildings',label:'buildings.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
+  {type:'config',label:'config.json',validate:v=>v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length>0,reason:'vacío o no válido'},
+  {type:'locations',label:'locations.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
+  {type:'hostiles',label:'hostiles.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
+  {type:'zones',label:'zones.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
+];
+
+function escapeHtml(str){
+  return String(str??'').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function clearDataLoadErrors(){
+  dataLoadState.errors=[];
+  dataLoadState.loaded=[];
+  updateDataErrorUI();
+}
+function clearDataLoadErrorFor(fileName){
+  dataLoadState.errors=dataLoadState.errors.filter(err=>err.file!==fileName);
+  if(!dataLoadState.loaded.includes(fileName)) dataLoadState.loaded.push(fileName);
+  updateDataErrorUI();
+}
+function handleDataLoadError(fileName, reason){
+  const msg=reason||'No se pudo cargar';
+  const existing=dataLoadState.errors.find(err=>err.file===fileName);
+  if(existing) existing.reason=msg;
+  else dataLoadState.errors.push({file:fileName,reason:msg});
+  updateDataErrorUI();
+}
+function getMissingRequiredData(){
+  const missing=[];
+  REQUIRED_GAME_DATA.forEach(req=>{
+    const value = req.type==='events'
+      ? ([...(gameData.events||[]), ...(gameData.story_events||[])])
+      : gameData[req.type];
+    if(!req.validate(value)) missing.push({file:req.label, reason:req.reason});
+  });
+  return missing;
+}
+function isGameDataReady(){
+  const missing=getMissingRequiredData();
+  missing.forEach(item=>handleDataLoadError(item.file,item.reason));
+  return missing.length===0 && dataLoadState.errors.length===0;
+}
+function updateDataErrorUI(){
+  const banner=document.getElementById('dataErrorBanner');
+  const overlay=document.getElementById('dataErrorOverlay');
+  const list=document.getElementById('dataErrorOverlayList');
+  const hint=document.getElementById('dataErrorOverlayHint');
+  const intro=document.getElementById('introOverlay');
+  if(!banner || !overlay || !list || !hint) return;
+  if(!dataLoadState.errors.length){
+    banner.style.display='none';
+    overlay.style.display='none';
+    list.innerHTML='';
+    hint.textContent='';
+    return;
+  }
+  const lines=dataLoadState.errors
+    .map(err=>`• <strong>${escapeHtml(err.file)}</strong>: ${escapeHtml(err.reason)}`)
+    .join('<br>');
+  banner.innerHTML=`<strong>ERROR DE DATOS</strong> — No se han cargado los datos correctos y la partida no puede iniciarse.<br>${lines}`;
+  banner.style.display='block';
+  list.innerHTML=lines;
+  hint.textContent = window.location.protocol==='file:'
+    ? 'Estás abriendo el HTML con file://. Muchos navegadores bloquean la carga de JSON locales en ese modo. Abre el juego desde un servidor local o desde la versión publicada en web para que pueda leer la carpeta /data.'
+    : 'Comprueba que los archivos existen dentro de /data, que sus nombres son correctos y que contienen JSON válido. Sin esos archivos, la partida no puede arrancar.';
+  overlay.style.display='flex';
+  if(intro) intro.style.display='none';
+}
+
+
 
 // ── Runtime JSON import (drag & drop or file picker) ──
 function importGameJSON(type, jsonData, silent=false){
   try{
     const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
     if(type==='events'){
-      // Split: story events (type='story') go to story_events, rest go to events
+      if(!Array.isArray(data)) throw new Error('events.json no contiene un array');
       gameData.story_events=data.filter(e=>e.type==='story');
       gameData.events=data.filter(e=>e.type!=='story');
+      clearDataLoadErrorFor('events.json');
       if(!silent) addLog(`events.json importado: ${gameData.events.length} eventos · ${gameData.story_events.length} historia.`);
     }
-    else if(type==='story')   { gameData.story_events=data;  if(!silent) addLog(`story_events.json importado: ${data.length} eventos.`); }
-    else if(type==='survivors'){ gameData.survivors=data;    if(!silent) addLog(`survivors.json importado: ${data.length} supervivientes.`); }
-    else if(type==='buildings'){ gameData.buildings=data;    if(!silent) addLog(`buildings.json importado: ${data.length} edificios.`); }
-    else if(type==='config')  { gameData.config=data;        if(!silent) addLog('config.json importado.'); }
-    else if(type==='locations'){ gameData.locationTemplates=data; if(!silent) addLog(`locations.json importado: ${data.length} tipos.`); }
-    else if(type==='hostiles')  { gameData.hostiles=data;          if(!silent) addLog(`hostiles.json importado: ${data.length} tipos.`); }
-    else if(type==='zones')     { gameData.zones=data;            if(!silent) addLog(`zones.json importado: ${data.length} zonas.`); }
+    else if(type==='story')   { if(!Array.isArray(data)) throw new Error('story_events.json no contiene un array'); gameData.story_events=data; clearDataLoadErrorFor('story_events.json'); if(!silent) addLog(`story_events.json importado: ${data.length} eventos.`); }
+    else if(type==='survivors'){ if(!Array.isArray(data)) throw new Error('survivors.json no contiene un array'); gameData.survivors=data; clearDataLoadErrorFor('survivors.json'); if(!silent) addLog(`survivors.json importado: ${data.length} supervivientes.`); }
+    else if(type==='buildings'){ if(!Array.isArray(data)) throw new Error('buildings.json no contiene un array'); gameData.buildings=data; clearDataLoadErrorFor('buildings.json'); if(!silent) addLog(`buildings.json importado: ${data.length} edificios.`); }
+    else if(type==='config')  { if(!data || typeof data!=='object' || Array.isArray(data)) throw new Error('config.json no contiene un objeto'); gameData.config=data; clearDataLoadErrorFor('config.json'); if(!silent) addLog('config.json importado.'); }
+    else if(type==='locations'){ if(!Array.isArray(data)) throw new Error('locations.json no contiene un array'); gameData.locationTemplates=data; clearDataLoadErrorFor('locations.json'); if(!silent) addLog(`locations.json importado: ${data.length} tipos.`); }
+    else if(type==='hostiles')  { if(!Array.isArray(data)) throw new Error('hostiles.json no contiene un array'); gameData.hostiles=data; clearDataLoadErrorFor('hostiles.json'); if(!silent) addLog(`hostiles.json importado: ${data.length} tipos.`); }
+    else if(type==='zones')     { if(!Array.isArray(data)) throw new Error('zones.json no contiene un array'); gameData.zones=data; clearDataLoadErrorFor('zones.json'); if(!silent) addLog(`zones.json importado: ${data.length} zonas.`); }
     if(!silent) render();
   } catch(e) {
+    handleDataLoadError(DATA_FILE_LABELS[type]||type, e.message);
     if(!silent) addLog('Error al importar JSON: ' + e.message);
   }
 }
@@ -1260,6 +1352,7 @@ function handleJSONFile(type, file){
 }
 
 async function loadFromFiles(){
+  clearDataLoadErrors();
   const files = [
     ['events',    './data/events.json'],
     ['survivors', './data/survivors.json'],
@@ -1270,31 +1363,38 @@ async function loadFromFiles(){
     ['zones',     './data/zones.json'],
   ];
   const results = await Promise.allSettled(
-    files.map(([,path]) => fetch(path).then(r => { if(!r.ok) throw new Error(); return r.json(); }))
+    files.map(([,path]) => fetch(path).then(async r => {
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    }))
   );
-  const loaded = [], missing = [];
-  results.forEach(({status, value}, i) => {
+  const loaded = [];
+  results.forEach(({status, value, reason}, i) => {
     const [type, path] = files[i];
     const name = path.split('/').pop();
     if(status === 'fulfilled'){
-      importGameJSON(type, value, true); // silent — no render() before initGame
+      importGameJSON(type, value, true);
       loaded.push(name);
     } else {
-      missing.push(name);
+      handleDataLoadError(name, reason?.message || 'No se pudo cargar');
     }
   });
-  if(loaded.length)   addLog(`Cargado desde /data: ${loaded.join(', ')}.`);
-  if(missing.length)  addLog(`Sin archivo en /data: ${missing.join(', ')} — usando datos embebidos.`);
+  if(loaded.length) addLog(`Cargado desde /data: ${loaded.join(', ')}.`);
+  if(dataLoadState.errors.length) addLog('Error de datos: no se han cargado los JSON obligatorios.');
 }
 
 function applyPastedJson(){
   try{
     const parsed=JSON.parse(document.getElementById('jsonPasteArea').value);
+    clearDataLoadErrors();
     gameData.events=deepClone(parsed.events||[]);
     gameData.story_events=deepClone(parsed.story_events||[]);
     gameData.survivors=deepClone(parsed.survivors||[]);
     gameData.buildings=deepClone(parsed.buildings||[]);
     gameData.config=deepClone(parsed.config||{});
+    gameData.locationTemplates=deepClone(parsed.locations||parsed.locationTemplates||[]);
+    gameData.hostiles=deepClone(parsed.hostiles||[]);
+    gameData.zones=deepClone(parsed.zones||[]);
     jsonModalWrap.classList.remove('open');
     initGame();
   }catch{
@@ -1303,27 +1403,29 @@ function applyPastedJson(){
 }
 
 function loadDefaults(){
-  // No embedded events — everything must come from /data/events.json
   gameData.events=[];
   gameData.story_events=[];
-  // Survivors, buildings, config keep embedded defaults as fallback
-  const realSurvivors=[
-    {"id":"survivor_vw4cahg8","name":"Alex","fatigueCurrent":3,"fatigueMax":3,"story":"Enfermera antes del Ocaso.","image":{"url":"https://i.ibb.co/60Cz1spg/c002.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":4,"rarity":4},
-    {"id":"survivor_kirk","name":"Kirk","fatigueCurrent":3,"fatigueMax":5,"story":"Mercenario que llegó herido al campamento.","image":{"url":"https://i.ibb.co/MDW8bfQ0/c003.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":2,"rarity":4},
-    {"id":"survivor_e34fokvp","name":"Marie","fatigueCurrent":3,"fatigueMax":3,"story":"Líder nata","image":{"url":"https://i.ibb.co/0jgTcNXR/c001.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":2,"rarity":4}
-  ];
-  const realBuildings=[{"id": "huerto", "name": "Huerto", "cost": 3, "effect": "+1 comida por día", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "atalaya", "name": "Atalaya", "cost": 4, "effect": "+1 defensa si se usa Vigilar", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "muros", "name": "Muros", "cost": 5, "effect": "+1 defensa pasiva", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "barracones", "name": "Barracones", "cost": 4, "effect": "4 espacios", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "taller", "name": "Taller", "cost": 5, "effect": "+1 material por día", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "hospital", "name": "Hospital", "cost": 5, "effect": "Desbloquea medicamentos e Investigar. Requiere 2⚡", "initial": false, "constructible": false, "maxLevel": 5}, {"id": "generador", "name": "Generador", "cost": 3, "effect": "Produce electricidad (3/4/5 por nivel)", "initial": false, "constructible": false, "maxLevel": 3}, {"id": "pozo", "name": "Pozo de Agua", "cost": 2, "effect": "Reduce el consumo de comida en 1 por día", "initial": false, "constructible": true, "maxLevel": 3}, {"id": "almacen", "name": "Almacén", "cost": 3, "effect": "Guarda hasta 4 objetos fabricados", "initial": false, "constructible": true, "maxLevel": 1}];
-  const realConfig={"starting": {"food": 5, "materials": 5, "survivors": 3, "morale": 5}, "rules": {"foodPerSurvivor": 1, "barracksCapacity": 4, "recycleValue": 1}};
-  gameData.survivors=deepClone(realSurvivors);
-  gameData.buildings=deepClone(realBuildings);
-  gameData.config=deepClone(realConfig);
+  gameData.survivors=[];
+  gameData.buildings=[];
+  gameData.config=null;
+  gameData.locationTemplates=[];
+  gameData.hostiles=[];
+  gameData.zones=[];
 }
 
 function initGame(){
+  if(!isGameDataReady()){
+    const status=document.getElementById('headerStatus');
+    if(status) status.textContent='ERROR DE DATOS ■ ■ ■';
+    eventTitle.textContent='Error de carga';
+    eventText.textContent='No se han cargado los datos correctos. Revisa los JSON obligatorios de la carpeta /data antes de iniciar la partida.';
+    eventOptions.innerHTML='';
+    return false;
+  }
   state.day=1;
   state.food=Number(gameData.config?.starting?.food??5);
   state.materials=Number(gameData.config?.starting?.materials??5);
-  state.stability=Number(gameData.config?.starting?.morale??gameData.config?.starting?.stability??5);
+  state.stability=Number(gameData.config?.starting?.stability??gameData.config?.starting?.morale??5);
   state.meds=Number(gameData.config?.starting?.meds??0);
   state.electricity=Number(gameData.config?.starting?.electricity??0);
   state.unlocked=deepClone(gameData.config?.rules?.resources||{meds:false,electricity:false});
@@ -1355,12 +1457,14 @@ function initGame(){
   state.actionLimits={};
   state.log=[];
   state.currentDetail=null;
+  state._lastStabilityTier=getStabilityTier();
 
   const starterCount=Math.max(1, Number(gameData.config?.starting?.survivors??3) || 3);
-  let starters=pickStartingSurvivors(starterCount);
-  if(starters.length===0 && (gameData.survivors||[]).length>0){
-    starters=[...(gameData.survivors||[])].sort(()=>Math.random()-0.5).slice(0, starterCount);
-    addLog('⚠ Sin supervivientes raros de inicio. Usando fallback de plantilla.');
+  const starters=pickStartingSurvivors(starterCount);
+  if(starters.length===0){
+    handleDataLoadError('survivors.json', 'no contiene supervivientes válidos para iniciar la partida');
+    updateDataErrorUI();
+    return false;
   }
   state.survivors=starters.map((s,idx)=>({
     id:s.id||idx+1,
@@ -1401,9 +1505,11 @@ function initGame(){
   if(bdp) bdp.style.display='none';
   closeEvent();
   render();
+  return true;
 }
 
 function render(){
+  maybeLogStabilityTierChange();
   renderTopbar();
   renderSurvivors();
   renderBuildings();
@@ -1412,12 +1518,61 @@ function render(){
   checkGameOver();
 }
 
+function getStabilityTier(value=state.stability){
+  const v=Math.max(0,Math.min(10,Number(value)||0));
+  if(v<=2) return 'collapse';
+  if(v<=4) return 'unstable';
+  if(v<=7) return 'normal';
+  return 'strong';
+}
+function getStabilityModifiers(){
+  const tier=getStabilityTier();
+  const base={
+    tier,
+    defenseBonus:0,
+    negativeEventWeightBonus:0,
+    positiveEventWeightBonus:0,
+    abandonChanceBonus:0,
+    recruitChanceBonus:0,
+    extraBuildDays:0,
+    extraResearchDays:0,
+    restMoraleRecoveryChance:0
+  };
+  if(tier==='collapse') return {...base,defenseBonus:-1,negativeEventWeightBonus:0.25,abandonChanceBonus:0.15,recruitChanceBonus:-20,extraBuildDays:1,extraResearchDays:1};
+  if(tier==='unstable') return {...base,negativeEventWeightBonus:0.10,recruitChanceBonus:-10};
+  if(tier==='strong') return {...base,defenseBonus:1,positiveEventWeightBonus:0.10,recruitChanceBonus:10,restMoraleRecoveryChance:0.25};
+  return base;
+}
+function stabilityTierLabel(tier=getStabilityTier()){
+  return ({collapse:'Colapso',unstable:'Inestable',normal:'Normal',strong:'Fuerte'})[tier]||'Normal';
+}
+function maybeLogStabilityTierChange(){
+  const tier=getStabilityTier();
+  if(!state._lastStabilityTier){ state._lastStabilityTier=tier; return; }
+  if(state._lastStabilityTier===tier) return;
+  if(tier==='collapse') addLog('💥 El asentamiento está al borde del colapso.');
+  else if(tier==='unstable') addLog('⚠ El asentamiento entra en estado inestable.');
+  else if(tier==='normal') addLog('✅ El asentamiento recupera una estabilidad normal.');
+  else if(tier==='strong') addLog('🏛 El asentamiento está fuerte y unido.');
+  state._lastStabilityTier=tier;
+}
+
 function renderTopbar(){
+  const stabilityMods=getStabilityModifiers();
+  const stabilityTier=stabilityMods.tier;
+  const stabilityText=`${state.stability}/10 — ${stabilityTierLabel(stabilityTier)}`;
+  const stabilityTip=stabilityTier==='collapse'
+    ? 'Colapso: defensa -1, +eventos negativos, +abandono, menos reclutas, construcción/investigación más lentas.'
+    : stabilityTier==='unstable'
+      ? 'Inestable: +eventos negativos y menos reclutas.'
+      : stabilityTier==='strong'
+        ? 'Fuerte: defensa +1, +eventos positivos, más reclutas, descanso con posible +1 moral.'
+        : 'Normal: sin modificadores globales.';
   const cards=[
     ['Día','📅',state.day,false],
     ['Comida','🌽',state.food,false],
     ['Materiales','🔧',state.materials,false],
-    ['Estabilidad','🏛',state.stability,false],
+    ['Estabilidad','🏛',stabilityText,false,stabilityTip],
     ['Medicamentos','💊',state.unlocked.meds?state.meds:'--',!state.unlocked.meds],
     (()=>{
       const cap=getElectricityCapacity();
@@ -1427,7 +1582,7 @@ function renderTopbar(){
     })(),
     ['Supervivientes','👥',aliveSurvivors().length,false]
   ];
-  topbar.innerHTML=cards.map(([label,icon,value,locked])=>`<div class="stat ${locked?'locked':''}"><div class="label"><span style="margin-right:3px;font-size:13px">${icon}</span>${label}</div><div class="value">${value}</div></div>`).join('');
+  topbar.innerHTML=cards.map(([label,icon,value,locked,tip])=>`<div class="stat ${locked?'locked':''} ${label==='Estabilidad'&&stabilityTier==='collapse'?'locked':''}" ${tip?`title="${escapeAttr(tip)}"`:''}><div class="label"><span style="margin-right:3px;font-size:13px">${icon}</span>${label}</div><div class="value">${value}</div></div>`).join('');
 }
 
 function renderSurvivors(){
@@ -1448,10 +1603,10 @@ function renderSurvivors(){
       threatBanner.style.display='none';
     }
   }
-  // Filter survivors by active map tab
-  const tabFilter = activeMapTab === 'exterior'
+  // Base panel: only survivors currently in the settlement
+  const tabFilter = activeMapTab==='exterior'
     ? s => s.status!=='muerto' && (s.location==='exterior'||s.location==='travelling')
-    : s => s.status!=='muerto' && (s.location==='base'||!s.location);
+    : s => s.status!=='muerto' && (s.location==='base'||s.location===undefined||s.location===null||s.location==='');
   state.survivors.filter(tabFilter).forEach(s=>{
     const canAct=s.status!=='muerto'&&(!state.pendingEvent||state.pendingEvent._multiDayPassive);
     const actions=getAvailableActions(s);
@@ -1461,6 +1616,9 @@ function renderSurvivors(){
     const card=document.createElement('div');
     card.className='survivor-card';
     const loreBtn=`<button class="lore-btn" title="Historia de ${escapeHtml(s.name)}">📖</button>`;
+    const statusText=s.status==='herido'
+      ? `${statusLabel(s.status)} (${injuryDisplayName(s.injuryLevel||'simple')})`
+      : statusLabel(s.status);
     card.innerHTML=`
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
         <div class="avatar">${avatarInner}</div>
@@ -1469,7 +1627,7 @@ function renderSurvivors(){
       <div style="min-width:0;">
         <div class="survivor-top">
           <div class="survivor-name">${escapeHtml(s.name)}</div>
-          <div class="badge ${s.status}">${statusLabel(s.status)}</div>
+          <div class="badge ${s.status}">${statusText}</div>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:2px;">
           <div class="mini"><span style="color:var(--ok)">⚡</span>${s.fatigue}/${s.maxFatigue}</div>
@@ -1481,11 +1639,6 @@ function renderSurvivors(){
         <div style="margin-top:8px;border:1px solid var(--amber);padding:6px 8px;font-size:10px;background:rgba(184,124,42,0.06);">
           <span style="color:var(--amber-bright);">🧭 En tránsito</span>
           <span style="color:var(--muted);margin-left:6px;">${s.travelArrivalDay&&s.travelArrivalDay>state.day?'Llega día '+s.travelArrivalDay:s.travelReturnDay?'Regresa día '+s.travelReturnDay:'...'}</span>
-        </div>`:
-        s.location==='exterior'?`
-        <div style="margin-top:8px;border:1px solid var(--ok);padding:6px 8px;font-size:10px;background:rgba(74,138,53,0.06);">
-          <span style="color:var(--ok-bright);">📍 En exterior</span>
-          <button onclick="openTravelReturnPopup('${s.id}')" style="margin-left:8px;font-size:9px;background:none;border:1px solid var(--muted);color:var(--muted);cursor:pointer;padding:2px 6px;">↩ Regresar</button>
         </div>`:
         `<div class="action-bar" id="actionbar-${s.id}">
           ${ALL_ACTIONS.map(a=>{
@@ -1608,6 +1761,7 @@ function assignAction(id,type){
   if(isActionLimited(type)){addLog(`La acción ${actionLabel(type)} está limitada temporalmente.`);render();return}
   if(type==='vigilar'&&(!state.buildings.atalaya?.built||!state.buildings.atalaya?.active)){addLog('Necesitas una Atalaya activa para vigilar.');render();return}
   if(type==='defender'&&!state.attackThreat){addLog('No hay grupo hostil cercano para atacar.');render();return}
+  if(type==='viajar'){openTravelPopup(id);render();return}
   if(type==='construir'){openBuildModal(id);render();return}
   s.action={type};s.status='ocupado';addLog(`${s.name} ha sido asignado a ${actionLabel(type)}.`);render();
 }
@@ -1657,6 +1811,9 @@ function openBuildModal(survivorId){
       if(ingenieroBonus.costReduction) addLog(`⚙ ${s.name} (Ingeniero) reduce el coste en ${ingenieroBonus.costReduction} material.`);
       // Don't mark as built yet — track construction in progress
       const days=getBuildingConstructionDays(def.id);
+      if(getStabilityModifiers().extraBuildDays>0){
+        addLog('⚠ La baja estabilidad del asentamiento ralentiza el trabajo. +1 día.');
+      }
       state.buildings[def.id]._constructionDays=days;
       state.buildings[def.id]._constructionDaysLeft=days;
       state.buildings[def.id]._underConstruction=true;
@@ -1766,6 +1923,11 @@ function resolveActions(){
   state.survivors.forEach(s=>{
     if(!s.action||s.status==='muerto') return;
     if(s._actionResolved) return;  // prevent double-processing
+    if(requiresForcedRest(s)&&s.action.type!=='descansar'){
+      addLog(`⚠ ${s.name} tiene herida ${injuryDisplayName(s.injuryLevel)} y solo puede descansar.`);
+      s.action={type:'descansar'};
+      s.status='ocupado';
+    }
     s._actionResolved=true;
     const type=s.action.type;
     if(type!=='descansar') s.fatigue=Math.max(0,s.fatigue-1);
@@ -1793,6 +1955,10 @@ function resolveActions(){
         addLog(`${s.name} descansa, come bien y recupera moral (${getMoraleEmoji(s)}).`);
       } else {
         addLog(`${s.name} descansa y recupera toda la fatiga.`);
+      }
+      if(getStabilityModifiers().restMoraleRecoveryChance>0&&Math.random()<getStabilityModifiers().restMoraleRecoveryChance&&s.morale<(s.maxMorale??2)){
+        s.morale=Math.min(s.maxMorale??2,s.morale+1);
+        addLog(`🏛 La cohesión del asentamiento ayuda a ${s.name}: +1 moral extra por descanso.`);
       }
     }else if(type==='construir'){
       const buildTarget=s.action.target;
@@ -1830,16 +1996,21 @@ function resolveActions(){
       trackActionXP(s,'explorar');
       triggerExploreEvent(s);  // auto-resolves and logs result
     }else if(type==='investigar'){
-      // 2-day research: first day sets flag, second day yields +1 med
-      if(s._investigatingDay&&s._investigatingDay===state.day-1){
-        // Second day complete
+      const neededDays=Number(s._investigationDaysNeeded||0)||Math.max(1,2+Number(getStabilityModifiers().extraResearchDays||0));
+      const currentDays=Number(s._investigationDaysDone||0);
+      if(currentDays+1>=neededDays){
+        // Research complete
         state.meds+=1;
-        s._investigatingDay=null;
+        s._investigationDaysDone=0;
+        s._investigationDaysNeeded=0;
         addLog(`💊 ${s.name} completa la investigación en el Hospital. +1 medicamento.`);
       } else {
-        // First day
-        s._investigatingDay=state.day;
-        addLog(`🔬 ${s.name} comienza a investigar en el Hospital (1/2 días).`);
+        s._investigationDaysNeeded=neededDays;
+        s._investigationDaysDone=currentDays+1;
+        if(currentDays===0&&getStabilityModifiers().extraResearchDays>0){
+          addLog('⚠ La baja estabilidad del asentamiento ralentiza el trabajo de investigación. +1 día.');
+        }
+        addLog(`🔬 ${s.name} investiga en el Hospital (${s._investigationDaysDone}/${neededDays} días).`);
         // Keep occupied next day too
         s._keepInvestigating=true;
       }
@@ -1883,6 +2054,8 @@ function resolveGroupAttack(){
   const isPreemptive=attackers.length>0;
 
   let totalDef, totalAtk, diff, defRoll, atkRoll;
+  let ownBreakdown='', enemyBreakdown='';
+  const hostileLabel=getHostileLabel(state.attackHostileType||'raiders');
 
   if(isPreemptive){
     // ── PREEMPTIVE STRIKE ──
@@ -1897,6 +2070,8 @@ function resolveGroupAttack(){
     totalDef=attackers.length+skillBonus+emboscadaBonus+defRoll;
     totalAtk=state.attackStrength+atkRoll;
     diff=totalAtk-totalDef;
+    ownBreakdown=`Atacantes ${attackers.length}, habilidades +${skillBonus}, emboscada +${emboscadaBonus}, 1d6 (${defRoll}) = ${totalDef}`;
+    enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, 1d4 (${atkRoll}) = ${totalAtk}`;
     addLog(`⚔ EMBOSCADA: ${attackers.length} atacantes +${skillBonus} habilidades +${emboscadaBonus} emboscada +${defRoll}(d6) = ${totalDef}`);
     addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d4) = ${totalAtk}`);
   } else {
@@ -1909,12 +2084,15 @@ function resolveGroupAttack(){
     const murosLevel=state.buildings.muros?.built?state.buildings.muros.level:0;
     const murosBonus=murosLevel>=2?2:murosLevel>=1?1:0;
     const vallaBonus=state.vallaElectrica&&getElectricityFree()>=1?roll(1,6):0;
+    const stabilityDefenseBonus=Number(getStabilityModifiers().defenseBonus||0);
     if(vallaBonus>0) addLog(`⚡ Valla eléctrica descarga ${vallaBonus} de daño extra.`);
     defRoll=roll(1,6);
     atkRoll=roll(1,6);  // Raiders prepared when attacking — roll 1d6
-    totalDef=defCount+atalajaBonus+murosBonus+vallaBonus+defRoll;
+    totalDef=defCount+atalajaBonus+murosBonus+vallaBonus+defRoll+stabilityDefenseBonus;
     totalAtk=state.attackStrength+atkRoll;
     diff=totalAtk-totalDef;
+    ownBreakdown=`Defensores ${defCount}, Muro +${murosBonus}, Atalaya +${atalajaBonus}${vallaBonus?`, Valla +${vallaBonus}`:''}, 1d6 (${defRoll}) = ${totalDef}`;
+    enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, 1d6 (${atkRoll}) = ${totalAtk}`;
     addLog(`⚔ DEFENSA: ${defCount} defensores +${murosBonus} muros +${atalajaBonus} atalaya +${defRoll}(d6) = ${totalDef}`);
     addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d6) = ${totalAtk}`);
   }
@@ -2245,8 +2423,30 @@ function checkStoryEvent(){
                (gameData.story_events||[]).find(e=>e.id==='HOS001');
     if(hos){ state._hos001.active=true; setEvent(buildEventFromSchema(hos)); return true; }
   }
+  if(!Array.isArray(state.deferredStoryEventIds)) state.deferredStoryEventIds=[];
+  // First, try deferred story events that were postponed in previous days
+  for(let i=0;i<state.deferredStoryEventIds.length;i++){
+    const deferredId=state.deferredStoryEventIds[i];
+    const deferredEv=(gameData.story_events||[]).find(x=>x.id===deferredId);
+    if(!deferredEv){
+      state.deferredStoryEventIds.splice(i,1);
+      i--;
+      continue;
+    }
+    if(state.attackThreat&&deferredEv.skipWhenAttackActive) continue;
+    if(deferredEv.condition&&!evaluateCondition(deferredEv.condition)) continue;
+    state.deferredStoryEventIds.splice(i,1);
+    addLog(`📖 Evento de historia aplazado activado: ${deferredEv.name||deferredEv.id}.`);
+    setEvent(buildEventFromSchema(deferredEv));
+    return true;
+  }
   const ev=(gameData.story_events||[]).find(x=>Number(x.day)===state.day&&x.id!=='HOS001');
   if(!ev) return false;
+  if(state.attackThreat&&ev.skipWhenAttackActive){
+    if(!state.deferredStoryEventIds.includes(ev.id)) state.deferredStoryEventIds.push(ev.id);
+    addLog(`📖 ${ev.name||ev.id} se aplaza: hay amenaza de ataque activa.`);
+    return false;
+  }
   // Check condition even for story events
   if(ev.condition&&!evaluateCondition(ev.condition)) return false;
   setEvent(buildEventFromSchema(ev));
@@ -2260,6 +2460,7 @@ function checkPriorityEvent(){
     if(!e||e.type==='weekly'||e.type==='explore'||e.type==='story') return false;
     if(!e.priority) return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(!evaluateCondition(e.condition)) return false;
     return true;
   });
@@ -2279,7 +2480,9 @@ function checkWeeklyEvent(){
   const weeklyPool=(gameData.events||[]).filter(e=>e&&e.type==='weekly');
   if(!weeklyPool.length) return false;
   // Try to match exact week number, else cycle through pool
-  const ev=weeklyPool.find(e=>Number(e.week)===week)||weeklyPool[(week-1)%weeklyPool.length];
+  const eligibleWeekly=weeklyPool.filter(e=>!(state.attackThreat&&e.skipWhenAttackActive));
+  if(!eligibleWeekly.length) return false;
+  const ev=eligibleWeekly.find(e=>Number(e.week)===week)||eligibleWeekly[(week-1)%eligibleWeekly.length];
   if(!ev) return false;
   addLog(`Evento semanal (semana ${week}): ${ev.name||ev.title||ev.id}.`);
   setEvent(buildEventFromSchema(ev));
@@ -2291,6 +2494,7 @@ function chooseEvent(){
   const pool=(gameData.events||[]).filter(e=>{
     if(!e||e.type==='weekly'||e.type==='explore') return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
     const isRaiderEvent=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(isRaiderEvent&&state.attackThreat) return false;
@@ -2308,6 +2512,7 @@ function chooseEvent(){
   const activePool=(gameData.events||[]).filter(e=>{
     if(!e||e.type==='weekly'||e.type==='explore') return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
     const _isRaider=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(_isRaider&&state.attackThreat) return false;
@@ -2323,6 +2528,7 @@ function chooseEvent(){
 
   const hosActive=state._hos001?.active&&!state.hospitalUnlocked;
   const hosDeferred=hosActive&&state._hos001?.deferred;
+  const stabilityMods=getStabilityModifiers();
   const boostedPool=activePool.map(ev=>{
     let w=Number(ev.weight||1);
     // Action-related boost
@@ -2339,8 +2545,11 @@ function chooseEvent(){
     const isRaiderEv=(Array.isArray(ev.effects)?ev.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(hosDeferred&&isRaiderEv) w=Math.round(w*2.0);
     // Positive/negative event skill modifiers
-    const isPositive=['hallazgo','nada','lluvia'].includes(ev.id)||(ev.effects&&Object.entries(ev.effects||{}).some(([k,v])=>['food','materials','morale'].includes(k)&&v>0));
-    const isNegative=['sabotaje','plaga','incendio','accidente'].includes(ev.id)||(ev.effects&&Object.entries(ev.effects||{}).some(([k,v])=>['food','materials','morale'].includes(k)&&v<0));
+    const tone=(ev.tone||'neutral').toLowerCase();
+    const isPositive=tone==='positive'||['hallazgo','nada','lluvia'].includes(ev.id);
+    const isNegative=tone==='negative'||['sabotaje','plaga','incendio','accidente'].includes(ev.id);
+    if(isPositive&&stabilityMods.positiveEventWeightBonus>0) w=Math.round(w*(1+stabilityMods.positiveEventWeightBonus));
+    if(isNegative&&stabilityMods.negativeEventWeightBonus>0) w=Math.round(w*(1+stabilityMods.negativeEventWeightBonus));
     if(isPositive&&exploradoresCount>0) w=Math.round(w*(1+exploradoresCount*0.10));
     if(isNegative&&precavidosCount>0)  w=Math.round(w*(1-precavidosCount*0.10));
     return{...ev,_effectiveWeight:Math.max(1,w)};
@@ -2517,6 +2726,7 @@ const ACTION_ICONS = {
   reciclar:  { icon:'⚙', label:'Reciclar' },
   construir: { icon:'🔨', label:'Construir' },
   explorar:  { icon:'🧭', label:'Explorar' },
+  viajar:    { icon:'🥾', label:'Viajar' },
   vigilar:   { icon:'👁', label:'Vigilar' },
   defender:  { icon:'🛡', label:'Defender' },
   atacar:    { icon:'⚔', label:'Atacar' },
@@ -2524,7 +2734,7 @@ const ACTION_ICONS = {
   investigar:{ icon:'🔬', label:'Investigar' },
 };
 // All possible actions in display order
-const ALL_ACTIONS = ['vigilar','forraje','reciclar','construir','explorar','atacar','defender','investigar','descansar'];
+const ALL_ACTIONS = ['vigilar','forraje','reciclar','construir','explorar','viajar','atacar','defender','investigar','descansar'];
 const ALL_ACTIONS_EXTERIOR = []; // exterior actions shown in location detail, not in card
 // ── CONSTRUCTION TIMES (days per building) ──
 const BUILDING_CONSTRUCTION_DAYS = {
@@ -2539,7 +2749,8 @@ const BUILDING_CONSTRUCTION_DAYS = {
   almacen: 2,
 };
 function getBuildingConstructionDays(id){
-  return BUILDING_CONSTRUCTION_DAYS[id]||1;
+  const base=BUILDING_CONSTRUCTION_DAYS[id]||1;
+  return base + Number(getStabilityModifiers().extraBuildDays||0);
 }
 // ── ELECTRICITY SYSTEM ──
 const BUILDING_ELECTRICITY_COST = { hospital: 2, pozo: 1 };
@@ -2821,7 +3032,7 @@ function renderExteriorMap(){
     else if(loc.hasRaiders) btn.classList.add('has-raiders');
     else if(loc.exhausted) btn.classList.add('exhausted');
     // Survivors present
-    const survivorsHere=state.survivors.filter(s=>s.travelDest===loc.instanceId&&s.location==='exterior');
+    const survivorsHere=state.survivors.filter(s=>s.location===loc.instanceId&&s.status!=='muerto');
     if(survivorsHere.length) btn.classList.add('has-survivors');
     btn.style.cssText=`left:${loc.x}%;top:${loc.y}%;position:absolute;`;
     const statusText=loc.status==='undiscovered'?'Sin explorar':
@@ -2845,7 +3056,7 @@ function showLocationDetail(instanceId){
   state.currentDetail='location_'+instanceId;
 
   const riskLabel=['✅ Seguro','⚠ Bajo','⚠⚠ Medio','⚠⚠⚠ Alto','💀 Extremo'][Math.min(loc.riskLevel||0,4)];
-  const survivorsHere=state.survivors.filter(s=>s.travelDest===instanceId&&s.location==='exterior');
+  const survivorsHere=state.survivors.filter(s=>s.location===instanceId&&s.status!=='muerto');
   const travellingHere=state.survivors.filter(s=>s.travelDest===instanceId&&s.location==='travelling');
 
   let html=`<div class="loc-detail-header">${loc.status==='undiscovered'?'❓ Ubicación desconocida':loc.icon+' '+escapeHtml(loc.name)}</div>`;
@@ -2863,6 +3074,9 @@ function showLocationDetail(instanceId){
   }
   if(survivorsHere.length){
     html+=`<div style="font-size:11px;color:var(--ok-bright);margin-bottom:6px;">👤 Aquí: ${survivorsHere.map(s=>escapeHtml(s.name)).join(', ')}</div>`;
+    html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${
+      survivorsHere.map(s=>`<button class="btn secondary" style="font-size:10px;padding:4px 8px;" onclick="openTravelReturnPopup('${s.id}')">↩ ${escapeHtml(s.name)} volver a base</button>`).join('')
+    }</div>`;
   }
   if(travellingHere.length){
     html+=`<div style="font-size:11px;color:var(--amber-bright);margin-bottom:6px;">🧭 En camino: ${travellingHere.map(s=>escapeHtml(s.name)+' (día '+s.travelArrivalDay+')').join(', ')}</div>`;
@@ -2885,7 +3099,7 @@ function showLocationDetail(instanceId){
     btn.innerHTML='🧭 Viajar aquí';
     btn.disabled=!canTravel.length;
     btn.title=!canTravel.length?'Sin supervivientes disponibles en base':'';
-    btn.onclick=()=>openTravelPopup(instanceId);
+    btn.onclick=()=>openTravelPopup(null, instanceId);
     actionsEl.appendChild(btn);
   }
 
@@ -2964,7 +3178,7 @@ function resolveLocationExploration(){
         });
         if(loc.survivorChance&&Math.random()<loc.survivorChance&&!state._pendingSurvivor){
           const newSurv=pickSurvivorByRarity();
-          if(newSurv){ state._pendingSurvivor=newSurv; openSurvivorInvitePopup(newSurv); }
+          if(newSurv) attemptRecruitmentOffer(newSurv,'exploración');
         }
         loc.status='explored';
         if(loc.exhaustible) loc.exhausted=true;
@@ -3082,22 +3296,52 @@ function evaluateCondition(cond){
 
 // ── TRAVEL SYSTEM ──
 
-function openTravelPopup(locationId){
-  const loc=state.locations.find(l=>l.instanceId===locationId);
-  if(!loc) return;
+function openTravelPopup(survivorId=null, presetLocationId=null){
   const popup=document.getElementById('travelPopup');
   const info=document.getElementById('travelDestInfo');
   const list=document.getElementById('travelSurvivorList');
-  info.innerHTML=`${loc.icon} <b>${escapeHtml(loc.name)}</b> · Llegada: día ${state.day+1} · Regreso: día ${state.day+3}`;
-  list.innerHTML='';
-  const eligible=state.survivors.filter(s=>
+
+  const eligibleSurvivors=state.survivors.filter(s=>
     s.status==='activo'&&s.location==='base'&&s.status!=='muerto'&&
     (s.negativeSkill||'').toLowerCase()!=='miedoso'
   );
-  if(!eligible.length){
+
+  if(survivorId){
+    const selected=eligibleSurvivors.find(s=>s.id===survivorId);
+    if(!selected){ addLog('No hay supervivientes disponibles para viajar.'); return; }
+    const destinations=(state.locations||[]).filter(loc=>!presetLocationId||loc.instanceId===presetLocationId);
+    info.innerHTML=`🥾 <b>${escapeHtml(selected.name)}</b> · Selecciona destino · Llegada: día ${state.day+1}`;
+    list.innerHTML='';
+    destinations.forEach(loc=>{
+      const item=document.createElement('div');
+      item.style.cssText='display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px;border:1px solid var(--line2);background:var(--panel2);';
+      item.innerHTML=`
+        <div>
+          <div style="font-family:var(--font-display);font-size:13px;">${loc.icon||'📍'} ${escapeHtml(loc.name)}</div>
+          <div style="font-size:10px;color:var(--muted);">Llegada: día ${state.day+1}</div>
+        </div>
+        <button class="btn primary" style="font-size:11px;padding:5px 10px;" data-locid="${loc.instanceId}">Viajar</button>`;
+      item.querySelector('button').addEventListener('click',()=>{
+        travelToZone(selected.id, loc.instanceId);
+        popup.classList.remove('open');
+        renderSurvivors();
+        renderExteriorMap();
+      });
+      list.appendChild(item);
+    });
+    if(!destinations.length) list.innerHTML='<div style="color:var(--muted);font-size:11px;">No hay zonas disponibles.</div>';
+    popup.classList.add('open');
+    return;
+  }
+
+  const loc=state.locations.find(l=>l.instanceId===presetLocationId);
+  if(!loc) return;
+  info.innerHTML=`${loc.icon} <b>${escapeHtml(loc.name)}</b> · Llegada: día ${state.day+1}`;
+  list.innerHTML='';
+  if(!eligibleSurvivors.length){
     list.innerHTML='<div style="color:var(--muted);font-size:11px;">No hay supervivientes disponibles.</div>';
   }
-  eligible.forEach(s=>{
+  eligibleSurvivors.forEach(s=>{
     const item=document.createElement('div');
     item.style.cssText='display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:8px;border:1px solid var(--line2);background:var(--panel2);cursor:pointer;transition:border-color 0.15s;';
     item.innerHTML=`
@@ -3107,9 +3351,9 @@ function openTravelPopup(locationId){
         <div style="font-family:var(--font-display);font-size:13px;">${escapeHtml(s.name)}</div>
         <div style="font-size:10px;color:var(--muted);">⚡ ${s.fatigue}/${s.maxFatigue} · ${getMoraleEmoji(s)}</div>
       </div>
-      <button class="btn primary" style="font-size:11px;padding:5px 10px;" data-sid="${s.id}" data-locid="${locationId}">Enviar</button>`;
+      <button class="btn primary" style="font-size:11px;padding:5px 10px;" data-sid="${s.id}" data-locid="${presetLocationId}">Viajar</button>`;
     item.querySelector('button').addEventListener('click',()=>{
-      sendOnExpedition(s.id, locationId);
+      travelToZone(s.id, presetLocationId);
       popup.classList.remove('open');
       renderSurvivors();
       renderExteriorMap();
@@ -3123,7 +3367,7 @@ document.getElementById('travelCancel').addEventListener('click',()=>{
   document.getElementById('travelPopup').classList.remove('open');
 });
 
-function sendOnExpedition(survivorId, locationId){
+function travelToZone(survivorId, locationId){
   const s=state.survivors.find(x=>x.id===survivorId);
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!s||!loc) return;
@@ -3136,16 +3380,21 @@ function sendOnExpedition(survivorId, locationId){
   addLog(`🧭 ${s.name} parte hacia ${loc.name}. Llegará el día ${s.travelArrivalDay}.`);
 }
 
+// Legacy alias (kept for compatibility with older onclick hooks)
+function sendOnExpedition(survivorId, locationId){
+  travelToZone(survivorId, locationId);
+}
+
 function openTravelReturnPopup(survivorId){
   const s=state.survivors.find(x=>x.id===survivorId);
-  if(!s||s.location!=='exterior') return;
+  if(!s||!s.location||s.location==='base'||s.location==='travelling') return;
   if(confirm(`¿Enviar a ${s.name} de regreso a la base?`)){
     s.location='travelling';
+    s.travelDest='base';
     s.travelReturnDay=state.day+1;
     s.travelArrivalDay=null;
     s.status='ocupado';
-    s.action={type:'regresar'};
-    const loc=state.locations.find(l=>l.instanceId===s.travelDest);
+    s.action={type:'regresar',target:'base'};
     addLog(`🧭 ${s.name} emprende el regreso a la base. Llegará el día ${s.travelReturnDay}.`);
     renderSurvivors();
     renderExteriorMap();
@@ -3155,7 +3404,7 @@ function openTravelReturnPopup(survivorId){
 function openLootPopup(locationId){
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!loc) return;
-  const survivorsHere=state.survivors.filter(s=>s.travelDest===locationId&&s.location==='exterior');
+  const survivorsHere=state.survivors.filter(s=>s.location===locationId&&s.status!=='muerto');
   if(!survivorsHere.length){ addLog('No hay supervivientes en esa ubicación.'); return; }
   // Auto-loot with first survivor (or show picker if multiple)
   const s=survivorsHere[0];
@@ -3169,20 +3418,14 @@ function openLootPopup(locationId){
   }
   loc.status='explored';
   if(loc.exhaustible) loc.exhausted=true;
-  // Survivor starts return
-  s.location='travelling';
-  s.travelReturnDay=state.day+1;
-  s.travelArrivalDay=null;
-  s.status='ocupado';
-  s.action={type:'regresar'};
-  addLog(`📦 Saqueo completado. ${s.name} regresa a la base.`);
+  addLog(`📦 Saqueo completado por ${s.name} en ${loc.name}.`);
   render();
 }
 
 function openLocationRaiderAttack(locationId){
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!loc) return;
-  const survivorsHere=state.survivors.filter(s=>s.travelDest===locationId&&s.location==='exterior'&&(s.negativeSkill||'').toLowerCase()!=='cobarde');
+  const survivorsHere=state.survivors.filter(s=>s.location===locationId&&s.status!=='muerto'&&(s.negativeSkill||'').toLowerCase()!=='cobarde');
   if(!survivorsHere.length){ addLog('No hay supervivientes disponibles para atacar.'); return; }
   // Fight! Each survivor contributes +1, skill bonuses apply
   const skillBonus=survivorsHere.reduce((sum,s)=>{
@@ -3195,6 +3438,8 @@ function openLocationRaiderAttack(locationId){
   // Use stored hostile strength or fall back to riskLevel-based
   const baseHostileStr=loc.hostileStrength||(loc.riskLevel||1)*2;
   const totalDef=baseHostileStr+defRoll;
+  const ownBreakdown=`Atacantes ${survivorsHere.length}, habilidades +${skillBonus}, 1d6 (${atkRoll}) = ${totalAtk}`;
+  const enemyBreakdown=`${loc.hostileLabel||'Hostiles'}: fuerza ${baseHostileStr}, 1d4 (${defRoll}) = ${totalDef}`;
   addLog(`⚔ ATAQUE: ${survivorsHere.length} atacantes +${skillBonus} habilidades +${atkRoll}(d6) = ${totalAtk}`);
   addLog(`⚔ ${loc.hostileLabel||'Hostiles'}: fuerza ${baseHostileStr} +${defRoll}(d4) = ${totalDef}`);
   const hostileDef=getHostileDef(loc.hostileType);
@@ -3238,14 +3483,6 @@ function openLocationRaiderAttack(locationId){
       effects:[],
     });
   }
-  // Survivors start return
-  survivorsHere.forEach(s=>{
-    s.location='travelling';
-    s.travelReturnDay=state.day+1;
-    s.travelArrivalDay=null;
-    s.status='ocupado';
-    s.action={type:'regresar'};
-  });
   render();
 }
 
@@ -3255,19 +3492,21 @@ function resolveTravelMovement(){
     if(s.location!=='travelling') return;
     // Arriving at destination
     if(s.travelArrivalDay&&state.day>=s.travelArrivalDay){
-      s.location='exterior';
+      const destination=s.travelDest||'base';
+      s.location=destination;
       s.travelArrivalDay=null;
       s.status='activo';
       s.action=null;
-      const loc=state.locations.find(l=>l.instanceId===s.travelDest);
+      const loc=state.locations.find(l=>l.instanceId===destination);
       // Auto-discover location on arrival
       if(loc&&loc.status==='undiscovered') loc.status='discovered';
-      addLog(`📍 ${s.name} llega a ${loc?loc.name:'destino'}.`);
+      addLog(`📍 ${s.name} llega a ${destination==='base'?'la base':(loc?loc.name:'destino')}.`);
     }
     // Returning to base
     else if(s.travelReturnDay&&state.day>=s.travelReturnDay){
       s.location='base';
       s.travelDest=null;
+      s.travelArrivalDay=null;
       s.travelReturnDay=null;
       s.status='activo';
       s.action=null;
@@ -3295,7 +3534,9 @@ function checkLowMorale(){
 }
 
 function triggerSurvivorLeaving(s){
-  const betrays=Math.random()<0.4; // 40% chance betrayal, 60% just leaves
+  const stabilityAbandonBonus=Number(getStabilityModifiers().abandonChanceBonus||0);
+  const betrayChance=Math.max(0,Math.min(1,0.4+stabilityAbandonBonus));
+  const betrays=Math.random()<betrayChance; // base 40%, modified by estabilidad
   if(betrays){
     // Betrayal: sabotage event
     addLog(`💢 ${s.name} ha traicionado al asentamiento antes de marcharse!`);
@@ -3617,7 +3858,8 @@ function applyEffect(effect,delayed){
   switch(effect.type){
     case 'addResource':{
       const key=effect.resource,amt=Number(effect.amount||0);
-      if(key==='morale'||key==='stability'){ state.stability=Math.min(10,state.stability+amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad +${amt}.`); break; }
+      if(key==='stability'){ state.stability=Math.min(10,state.stability+amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad +${amt}.`); break; }
+      if(key==='morale'){ aliveSurvivors().forEach(s=>{ s.morale=Math.min(s.maxMorale??2, s.morale+amt); }); addLog(`${delayed?'[Retrasado] ':''}😊 Moral de todos +${amt}.`); break; }
       if(typeof state[key]==='number'){
         state[key]+=amt;
         addLog(`${delayed?'[Retrasado] ':''}${resourceLabel(key)} +${amt}.`);
@@ -3631,7 +3873,8 @@ function applyEffect(effect,delayed){
     }
     case 'removeResource':{
       const key=effect.resource,amt=Number(effect.amount||0);
-      if(key==='morale'||key==='stability'){ state.stability=Math.max(0,state.stability-amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad -${amt}.`); break; }
+      if(key==='stability'){ state.stability=Math.max(0,state.stability-amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad -${amt}.`); break; }
+      if(key==='morale'){ aliveSurvivors().forEach(s=>{ s.morale=Math.max(0, s.morale-amt); }); addLog(`${delayed?'[Retrasado] ':''}😞 Moral de todos -${amt}.`); break; }
       if(typeof state[key]==='number'){state[key]=Math.max(0,state[key]-amt);addLog(`${delayed?'[Retrasado] ':''}${resourceLabel(key)} -${amt}.`)}
       break;
     }
@@ -3679,11 +3922,6 @@ function applyEffect(effect,delayed){
         if(state.buildings.hospital) state.buildings.hospital.constructible=true;
         addLog('🏥 ¡El almacén conquistado! El Hospital ya puede construirse.');
       }
-      break;
-    }
-    case 'healInjured':{
-      const injured=state.survivors.find(s=>s.status==='herido');
-      if(injured){injured.status='activo';addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de sus heridas.`)}
       break;
     }
     case 'injureExplorer':{
@@ -3840,8 +4078,12 @@ function resetForNewDay(){
       s.status='ocupado';
       // action stays as-is
     } else {
-      if(s.status==='ocupado') s.status='activo';
-      if(s.status!=='muerto') s.action=null;
+      if(s.location==='travelling'&&s.status!=='muerto'){
+        s.status='ocupado';
+      } else {
+        if(s.status==='ocupado') s.status='activo';
+        if(s.status!=='muerto') s.action=null;
+      }
     }
   });
   Object.values(state.buildings).forEach(b=>{if(b.built&&!b.active)b.active=true});
@@ -3992,6 +4234,7 @@ function resetAssignments(){
   if(s.status==='muerto') return;
   const isLockedBuilder=s.action?.type==='construir'&&s.action?.target;
   if(isLockedBuilder) return;
+  if(s.location==='travelling') return;
   if(s.status==='ocupado') s.status='activo';
   s.action=null;
   });
@@ -4001,10 +4244,11 @@ function resetAssignments(){
 
 function getAvailableActions(s){
   if(s.status==='muerto') return [];
-  if(s.status==='herido'||s.fatigue<=0) return ['descansar'];
+  if(requiresForcedRest(s)||s.fatigue<=0) return ['descansar'];
   const neg=(s.negativeSkill||'').toLowerCase().trim();
   const arr=['forraje','reciclar','construir'];
   if(neg!=='miedoso') arr.push('explorar');
+  if((s.location||'base')==='base') arr.push('viajar');
   if(state.buildings.atalaya?.built&&state.buildings.atalaya?.active) arr.unshift('vigilar');
   if(state.buildings.hospital?.built&&state.buildings.hospital?.active) arr.push('investigar');
   if(state.attackThreat&&neg!=='cobarde'){
@@ -4022,10 +4266,11 @@ function isActionLimited(action){
   return hardLimit||tempLimit;
 }
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
-function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
+function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',viajar:'Viajar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
 function actionSummary(s){
   if(s.status==='muerto') return 'No disponible.';
-  if(s.status==='herido'&&!s.action) return 'Está herido. Solo puede descansar.';
+  if(requiresForcedRest(s)&&!s.action) return `Tiene herida ${injuryDisplayName(s.injuryLevel||'simple')}. Solo puede descansar.`;
+  if(s.status==='herido'&&!s.action) return `Está herido (${injuryDisplayName(s.injuryLevel||'simple')}).`;
   if(s.fatigue<=0&&!s.action) return 'Sin fatiga. Solo puede descansar.';
   if(!s.action) return 'Sin acción asignada.';
 
@@ -4068,6 +4313,12 @@ function ensureInjuryState(s){
   if(!s.injuryLevel) s.injuryLevel='simple';
   if(typeof s.injuryRestDays!=='number') s.injuryRestDays=0;
 }
+function requiresForcedRest(s){
+  if(!s||s.status!=='herido') return false;
+  ensureInjuryState(s);
+  const level=String(s.injuryLevel||'simple').toLowerCase();
+  return level==='seria' || level==='grave';
+}
 function injuredLabel(s){
   const level=s?.injuryLevel||'simple';
   return `herido/a (${injuryDisplayName(level)})`;
@@ -4089,7 +4340,7 @@ function getMoraleEmoji(s){
   if(m===1) return '😐';
   return '😞';
 }
-function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Estabilidad',stability:'Estabilidad',meds:'Medicamentos',electricity:'Electricidad'})[key]||key}
+function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Moral',stability:'Estabilidad',meds:'Medicamentos',electricity:'Electricidad'})[key]||key}
 function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
 function injureSurvivor(s,msg,opts={}){
@@ -4130,11 +4381,12 @@ function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No q
 function openGameOver(text){document.getElementById('gameOverText').textContent=text;gameOverWrap.classList.add('open')}
 function getBuildingCost(buildingId){const b=state.buildings[buildingId];const base=Number(b?.cost||0);const level=Number(b?.level||0);return Math.ceil(base*Math.pow(2,level))}
 function pickStartingSurvivors(count){
-  // Try rarity 4 first, fill with rarity 3 if needed
+  // Try rarity 4 first, then rarity 3; fallback to any rarity to avoid empty starts
   const all=gameData.survivors||[];
   const r4=all.filter(s=>Number(s.rarity??4)===4).sort(()=>Math.random()-0.5);
   const r3=all.filter(s=>Number(s.rarity??4)===3).sort(()=>Math.random()-0.5);
-  const pool=[...r4,...r3];
+  const other=all.filter(s=>![4,3].includes(Number(s.rarity??4))).sort(()=>Math.random()-0.5);
+  const pool=[...r4,...r3,...other];
   return pool.slice(0,count);
 }
 function pickSurvivorByRarity(forcedRarity){
@@ -4416,6 +4668,19 @@ function joinSurvivor(s){
   state._pendingSurvivor=null;
 }
 
+function attemptRecruitmentOffer(s, source='evento'){
+  if(!s) return false;
+  const recruitBonus=Number(getStabilityModifiers().recruitChanceBonus||0);
+  const chance=Math.max(0,Math.min(100,70+recruitBonus));
+  if(Math.random()*100>chance){
+    addLog(`🚪 ${s.name} no confía en la situación del asentamiento y decide no quedarse (${source}).`);
+    return false;
+  }
+  state._pendingSurvivor=s;
+  openSurvivorInvitePopup(s);
+  return true;
+}
+
 function openSurvivorInvitePopup(s){
   const popup=document.getElementById('survivorInvitePopup');
   const img=document.getElementById('inviteImg');
@@ -4471,7 +4736,6 @@ const combatMusic = document.getElementById('combatMusic');
 const musicBtn = document.getElementById('musicBtn');
 let musicMuted = false;
 let combatMusicActive = false;
-let activeMapTab = 'base';
 
 bgMusic.volume = 0.18;
 combatMusic.volume = 0.25;
@@ -4597,8 +4861,7 @@ function startIntro(){
   btn.addEventListener('click', endIntro);
 }
 
-loadFromFiles().then(() => initGame()).catch(() => initGame());
-startIntro();
+loadFromFiles().then(() => { const ok=initGame(); if(ok) startIntro(); }).catch((err) => { handleDataLoadError('Carga inicial', err?.message || 'Error inesperado'); initGame(); });
 document.getElementById('closeBuildingDetail').addEventListener('click',()=>{
   document.getElementById('buildingDetailPanel').style.display='none';
   state.currentDetail=null;

@@ -576,6 +576,17 @@
     #toast.show { opacity: 1; transform: translateY(0); }
     #toast.err { border-color: var(--danger); color: var(--danger-bright); }
 
+    .data-warning {
+      display:none;
+      background: rgba(90,16,16,0.92);
+      border-bottom: 1px solid rgba(196,78,78,0.45);
+      color: #f0c1c1;
+      padding: 10px 20px;
+      font-size: 11px;
+      line-height: 1.7;
+      letter-spacing: 0.04em;
+    }
+
     .hidden { display: none !important; }
 
     @media (max-width: 900px) {
@@ -595,6 +606,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:12px;"><a href="index.html" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#3d4a33;text-decoration:none;border:1px solid #2a3525;padding:3px 10px;letter-spacing:0.08em;" onmouseover="this.style.color='#72c44e';this.style.borderColor='#72c44e'" onmouseout="this.style.color='#3d4a33';this.style.borderColor='#2a3525'">← INICIO</a><span id="headerCount">0 supervivientes en sesión</span></div>
 </div>
+<div id="dataWarningBanner" class="data-warning"></div>
 
 <div class="app">
 
@@ -834,7 +846,23 @@ const defaultNegativeSkillDescriptions = {
   cobarde: 'No puede defender.',
 };
 
-const EMBEDDED_SURVIVORS = [{"id":"survivor_vw4cahg8","name":"Alex","fatigueCurrent":3,"fatigueMax":3,"story":"Enfermera antes del Ocaso.","image":{"url":"https://i.ibb.co/60Cz1spg/c002.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":4,"rarity":4},{"id":"survivor_kirk","name":"Kirk","fatigueCurrent":3,"fatigueMax":5,"story":"Mercenario que llegó herido al campamento.","moralCurrent":2,"moralMax":2,"image":{"url":"https://i.ibb.co/MDW8bfQ0/c003.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","rarity":4},{"id":"survivor_e34fokvp","name":"Marie","fatigueCurrent":3,"fatigueMax":3,"story":"Líder nata","image":{"url":"https://i.ibb.co/0jgTcNXR/c001.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":2,"rarity":4},{"id":"survivor_8d56p6ec","name":"Sullivan","fatigueCurrent":3,"fatigueMax":3,"story":"","image":{"url":"https://i.ibb.co/ZpwzD3Yk/c005.png","deleteUrl":""},"imageInjured":{"url":"https://i.ibb.co/HLbwsDdK/f1345b909bfb.png","deleteUrl":""},"skill":"chatarrero","skill2":"ninguna","negativeSkill":"glotón","moralCurrent":2,"moralMax":2,"rarity":3},{"id":"survivor_j7kvxd2z","name":"Takeshi","fatigueCurrent":3,"fatigueMax":3,"story":"Demasiado individualista.","image":{"url":"https://i.ibb.co/C5Wxqn9k/c004.png","deleteUrl":""},"imageInjured":{"url":"https://i.ibb.co/hF4qWXNJ/84c875635067.png","deleteUrl":""},"skill":"precavido","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":1,"moralMax":2,"rarity":3},{"id":"survivor_aiebwrdw","name":"Ellen","fatigueCurrent":1,"fatigueMax":4,"story":"Llega desde lejos, exhausta","image":{"url":"https://i.ibb.co/rKjZccHV/c006.png","deleteUrl":""},"imageInjured":{"url":"https://i.ibb.co/8DMm3tZj/2a6fb6b8062b.png","deleteUrl":""},"skill":"cazador","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":2,"rarity":3},{"id":"survivor_5xlsvhiv","name":"Tom Carlish","fatigueCurrent":3,"fatigueMax":3,"story":"Antiguo vendedor de coches","image":{"url":"https://i.ibb.co/vCgKF2pK/c007.png","deleteUrl":""},"imageInjured":{"url":"https://i.ibb.co/xS853Bp4/418915ee0140.png","deleteUrl":""},"skill":"ingeniero","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":3,"rarity":2},{"id":"survivor_y4o6r2gz","name":"Bobby","fatigueCurrent":2,"fatigueMax":2,"story":"El chaval del asentamiento","image":{"url":"https://i.ibb.co/MDRGCQLX/c008.png","deleteUrl":""},"imageInjured":{"url":"https://i.ibb.co/s722KP8/fbb7670bc797.png","deleteUrl":""},"skill":"explorador","skill2":"ninguna","negativeSkill":"miedoso","moralCurrent":2,"moralMax":4,"rarity":2}];
+const dataLoadWarnings = new Map();
+
+function renderDataWarnings(){
+  const el = document.getElementById('dataWarningBanner');
+  if(!el) return;
+  if(!dataLoadWarnings.size){ el.style.display='none'; el.innerHTML=''; return; }
+  const items = [...dataLoadWarnings.entries()].map(([file,msg])=>`• <strong>${file}</strong>: ${msg}`).join('<br>');
+  const hint = window.location.protocol==='file:'
+    ? '<br><span style="color:#ffd8a8">Estás abriendo el editor con file://. Muchos navegadores bloquean la lectura de JSON locales en ese modo. Usa un servidor local o la versión web.</span>'
+    : '<br><span style="color:#ffd8a8">Comprueba que survivors.json existe dentro de /data y que contiene un array JSON válido.</span>';
+  el.innerHTML = `<strong>ERROR DE DATOS</strong> — No se han cargado los datos correctos.<br>${items}${hint}`;
+  el.style.display='block';
+}
+function setDataWarning(file, msg){ dataLoadWarnings.set(file, msg); renderDataWarnings(); }
+function clearDataWarning(file){ dataLoadWarnings.delete(file); renderDataWarnings(); }
+
+const EMBEDDED_SURVIVORS = [];
 
 const state = {
   survivors: [],
@@ -1336,34 +1364,13 @@ async function autoLoadFromServer() {
       if (idx >= 0) { state.survivors[idx] = norm; updated++; }
       else { state.survivors.push(norm); added++; }
     });
+    clearDataWarning('survivors.json');
     render();
     showToast(`${added + updated} superviviente${added+updated!==1?'s':''} cargado${added+updated!==1?'s':''} desde /data/ ✓`);
   } catch(e) {
     console.warn('No se pudo cargar survivors.json:', e.message);
-    if (!state.survivors.length && Array.isArray(EMBEDDED_SURVIVORS) && EMBEDDED_SURVIVORS.length) {
-      EMBEDDED_SURVIVORS.forEach(item => {
-        const norm = {
-          id: item.id || uid(),
-          name: item.name || '',
-          fatigueCurrent: Number(item.fatigueCurrent ?? item.fatigue ?? 3),
-          fatigueMax: Number(item.fatigueMax ?? item.maxFatigue ?? 3),
-          story: item.story || '',
-          image: { url: item.image?.url || '', deleteUrl: '' },
-          imageInjured: { url: item.imageInjured?.url || item.imageUrlInjured || '', deleteUrl: '' },
-          skill: item.skill || 'ninguna',
-          skill2: item.skill2 || 'ninguna',
-          negativeSkill: item.negativeSkill || 'ninguna',
-          moralCurrent: Number(item.moralCurrent ?? item.morale ?? 2),
-          moralMax: Number(item.moralMax ?? 2),
-          rarity: Number(item.rarity ?? 4)
-        };
-        if (!state.survivors.find(s => s.id === norm.id)) state.survivors.push(norm);
-      });
-      render();
-      showToast(`${state.survivors.length} supervivientes cargados (fallback embebido) ✓`);
-      return;
-    }
-    showToast('No se pudo cargar survivors.json — trabajando en local', true);
+    setDataWarning('survivors.json', e.message || 'No se pudo cargar');
+    showToast('No se han cargado los datos correctos: survivors.json. Revisa /data o abre el editor desde un servidor local.', true);
   }
 }
 autoLoadFromServer();
