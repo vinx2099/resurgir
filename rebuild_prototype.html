@@ -1184,7 +1184,7 @@
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,_processingDay:false,survivors:[],buildings:{},delayedQueue:[],log:[],currentDetail:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},log:[],currentDetail:null};
 
 const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
 
@@ -1314,6 +1314,7 @@ function initGame(){
   state.locations=[];
   state._seenExplore=new Set();
   state.delayedQueue=[];
+  state.actionLimits={};
   state.log=[];
   state.currentDetail=null;
 
@@ -1581,8 +1582,8 @@ function openBuildModal(survivorId){
     let constructible=current?.constructible===true;
     // Hospital requires hospitalUnlocked
     if(def.id==='hospital'&&!state.hospitalUnlocked) constructible=false;
-    // Generador requires barracones level >= 2
-    if(def.id==='generador'&&(state.buildings.barracones?.level||0)<2) constructible=false;
+    // Generador requires taller level >= 2
+    if(def.id==='generador'&&(state.buildings.taller?.level||0)<2) constructible=false;
 
     const maxLevel=Number(def.maxLevel||5);
     const currentLevel=current?.level||0;
@@ -1596,7 +1597,7 @@ function openBuildModal(survivorId){
 
     const blocked=!constructible;
     const blockReason=def.id==='hospital'&&!state.hospitalUnlocked?'Requiere completar evento HOS001':
-                      def.id==='generador'&&(state.buildings.barracones?.level||0)<2?'Requiere Barracones nivel 2':'';
+                      def.id==='generador'&&(state.buildings.taller?.level||0)<2?'Requiere Taller nivel 2':'';
 
     const label=blocked?`${def.name} (bloqueado)`:current?.built?`Mejorar ${def.name}`:`Construir ${def.name}`;
     const displayCost=blocked?Number(def.cost||0):buildCost;
@@ -2491,14 +2492,14 @@ function getElectricityFree(){
   return Math.max(0, getElectricityCapacity()-getElectricityUsed());
 }
 
-// Called whenever barracones or generador levels up
+// Called whenever a building levels up
 function checkBuildingUnlocks(buildingId){
-  // Generador unlocks when Barracones reaches level 2
-  if(buildingId==='barracones'){
-    const lvl=state.buildings.barracones?.level||0;
+  // Generador unlocks when Taller reaches level 2
+  if(buildingId==='taller'){
+    const lvl=state.buildings.taller?.level||0;
     if(lvl>=2&&!state.buildings.generador?.built){
       state.buildings.generador.constructible=true;
-      addLog('⚡ Los Barracones han alcanzado nivel 2. El Generador ya puede construirse.');
+      addLog('⚡ El Taller ha alcanzado nivel 2. El Generador ya puede construirse.');
     }
   }
   // Update electricity capacity display
@@ -3571,13 +3572,17 @@ function applyEffect(effect,delayed){
     }
     case 'injureRandom':
     case 'injureSurvivor':{
-      const candidate=pick(state.survivors.filter(s=>s.status!=='muerto'));
+      const candidate=effect.targetId
+        ? state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto')
+        : pick(state.survivors.filter(s=>s.status!=='muerto'));
       if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`);
       break;
     }
     case 'healSurvivor':
     case 'healInjured':{
-      const injured=state.survivors.find(s=>s.status==='herido');
+      const injured=effect.targetId
+        ? state.survivors.find(s=>s.id===effect.targetId&&s.status==='herido')
+        : state.survivors.find(s=>s.status==='herido');
       if(injured){injured.status='activo';addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de sus heridas.`)}
       break;
     }
@@ -3590,16 +3595,18 @@ function applyEffect(effect,delayed){
       }
       if(!getHostileDef(hostileType)) hostileType='raiders';
       state.attackHostileType=hostileType;
-      if(effect.attackStrength) state.attackStrength=Number(effect.attackStrength);
+      const hostileDef=getHostileDef(hostileType);
+      const hostileAttackDice=hostileDef?.attackDice||'1d6';
+      // Attack strength now comes from the hostile definition, not from events.json
+      state.attackStrength=rollDiceString(hostileAttackDice, '1d6');
       if(effect.effectOnVictory?.length) state.attackEffectVictory=deepClone(effect.effectOnVictory);
       if(effect.effectOnDefeat?.length)  state.attackEffectDefeat=deepClone(effect.effectOnDefeat);
       const arrDays=Number(effect.arrivalDays||0);
       state.attackArrivalDay=arrDays>0?state.day+arrDays:state.day;
       const days=arrDays>0?`en ${arrDays} día${arrDays!==1?'s':''}. Día ${state.attackArrivalDay}.`:'¡inminente!';
-      const hostileDef=getHostileDef(hostileType);
       const hostileLabel=hostileDef?.label||hostileType;
       const hostileIcon=hostileDef?.icon?`${hostileDef.icon} `:'';
-      addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! ${hostileIcon}${hostileLabel} · Fuerza: ${state.attackStrength} · Llegada: ${days}`);
+      addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! ${hostileIcon}${hostileLabel} · Fuerza: ${state.attackStrength} (${hostileAttackDice}) · Llegada: ${days}`);
       if(typeof setCombatMusic==='function') setCombatMusic(true);
       break;
     }
@@ -3619,12 +3626,14 @@ function applyEffect(effect,delayed){
       break;
     }
     case 'limitAction':{
-      const days=Number(effect.days||1);
-      // Queue the limit for each day it should last
-      for(let d=1;d<=days;d++){
-        state.delayedQueue.push({day:state.day+(delayed?0:1)+d-1,effect:{type:'_internalLimitAction',action:effect.action}});
-      }
-      addLog(`${delayed?'[Retrasado] ':''}La acción ${actionLabel(effect.action)} queda inhabilitada ${days} día${days!==1?'s':''}.`);
+      const explicitDays=Math.max(1, Number(effect.days||1));
+      const eventWindow=Math.max(1, Number(state.eventDaysLeft||0), Number(state.eventTotalDays||0));
+      const totalDays=Math.max(explicitDays, (!delayed&&state.pendingEvent)?eventWindow:1);
+      const startDay=delayed?state.day+1:state.day;
+      const untilDay=startDay+totalDays-1;
+      if(!state.actionLimits) state.actionLimits={};
+      state.actionLimits[effect.action]=Math.max(Number(state.actionLimits[effect.action]||0), untilDay);
+      addLog(`${delayed?'[Retrasado] ':''}La acción ${actionLabel(effect.action)} queda inhabilitada ${totalDays} día${totalDays!==1?'s':''} (hasta el día ${untilDay}).`);
       break;
     }
     case 'modifyActionEffect':{
@@ -3682,8 +3691,9 @@ function applyEffect(effect,delayed){
       break;
     }
     case '_internalLimitAction':{
-      if(!window.tempActionLimits) window.tempActionLimits={};
-      window.tempActionLimits[effect.action]=true;
+      // Legacy compatibility for older queued limits
+      if(!state.actionLimits) state.actionLimits={};
+      state.actionLimits[effect.action]=Math.max(Number(state.actionLimits[effect.action]||0), state.day+1);
       break;
     }
     case '_internalModifyAction':{
@@ -3695,6 +3705,10 @@ function applyEffect(effect,delayed){
 }
 
 function resetForNewDay(){
+  if(!state.actionLimits) state.actionLimits={};
+  Object.keys(state.actionLimits).forEach(action=>{
+    if(Number(state.actionLimits[action])<state.day) delete state.actionLimits[action];
+  });
   window.tempActionLimits={};window.tempActionMods={};
   state.survivors.forEach(s=>{
     s._actionResolved=false;  // clear for next day
@@ -3876,7 +3890,11 @@ function getAvailableActions(s){
   return arr.filter(a=>!isActionLimited(a));
 }
 
-function isActionLimited(action){return !!(window.tempActionLimits&&window.tempActionLimits[action])}
+function isActionLimited(action){
+  const hardLimit=Number(state.actionLimits?.[action]||0)>=state.day;
+  const tempLimit=!!(window.tempActionLimits&&window.tempActionLimits[action]);
+  return hardLimit||tempLimit;
+}
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
 function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
 function actionSummary(s){
@@ -3969,6 +3987,16 @@ function pickSurvivorByRarity(forcedRarity){
 function weightedPick(items){const total=items.reduce((sum,i)=>sum+Number(i.weight||0),0);let r=Math.random()*total;for(const item of items){r-=Number(item.weight||0);if(r<=0)return item}return items[0]||null}
 function clamp(v,min,max){return Math.min(max,Math.max(min,v))}
 function roll(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function rollDiceString(expr,fallback='1d6'){
+  const source=String(expr||fallback).trim();
+  const m=source.match(/^(\d+)d(\d+)$/i);
+  const fb=String(fallback||'1d6').match(/^(\d+)d(\d+)$/i);
+  const count=Math.max(1, Number(m?.[1]||fb?.[1]||1));
+  const sides=Math.max(2, Number(m?.[2]||fb?.[2]||6));
+  let total=0;
+  for(let i=0;i<count;i++) total+=roll(1,sides);
+  return total;
+}
 function pick(arr){return arr.length?arr[Math.floor(Math.random()*arr.length)]:null}
 function escapeHtml(str){return String(str??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function escapeAttr(str){return escapeHtml(str)}
