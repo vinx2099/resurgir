@@ -207,6 +207,7 @@ textarea{resize:vertical;min-height:52px;}
 
 <script>
 const $ = id => document.getElementById(id);
+const EMBEDDED_HOSTILES = [{"id":"raiders","label":"Raiders","icon":"💀","description":"Grupos organizados de saqueadores. Peligrosos y bien armados.","attackDice":"1d6","defenseDice":"1d6","injuryChanceBonus":0,"fleeChance":0,"variants":[{"id":"raiders_light","label":"Raiders ligeros","strengthMod":-1},{"id":"raiders_heavy","label":"Raiders armados","strengthMod":2},{"id":"raiders_boss","label":"Banda de élite","strengthMod":4}],"lootOnVictory":[{"resource":"materials","chance":0.6,"amount":[1,3]},{"resource":"meds","chance":0.4,"amount":[1,2]}],"lootOnFlee":[{"resource":"materials","chance":0.3,"amount":[1,1]}],"lootOnDefeat":[{"resource":"food","chance":0.7,"amount":[2,5]},{"resource":"materials","chance":0.5,"amount":[1,3]}]},{"id":"sectarians","label":"Sectarios","icon":"🕯","description":"Fanáticos organizados bajo una ideología retorcida. No negocian.","attackDice":"1d6","defenseDice":"1d4","injuryChanceBonus":0.1,"fleeChance":0,"variants":[{"id":"sectarians_acolytes","label":"Acólitos","strengthMod":-1},{"id":"sectarians_zealots","label":"Sectarios agresivos","strengthMod":2},{"id":"sectarians_purgers","label":"Purificadores","strengthMod":3}],"lootOnVictory":[{"resource":"meds","chance":0.5,"amount":[1,3]},{"resource":"materials","chance":0.3,"amount":[1,2]}],"lootOnFlee":[],"lootOnDefeat":[{"resource":"food","chance":0.4,"amount":[1,3]},{"resource":"materials","chance":0.3,"amount":[1,2]}]},{"id":"wolves","label":"Lobos salvajes","icon":"🐺","description":"Manadas hambrientas. Más rápidos que los humanos, menos letales.","attackDice":"1d4","defenseDice":"1d6","injuryChanceBonus":0.15,"fleeChance":0.35,"variants":[{"id":"wolves_lone","label":"Lobo solitario","strengthMod":-1},{"id":"wolves_pack","label":"Manada de lobos","strengthMod":2},{"id":"wolves_alpha","label":"Manada con alfa","strengthMod":4}],"lootOnVictory":[{"resource":"food","chance":0.8,"amount":[1,3]}],"lootOnFlee":[],"lootOnDefeat":[]},{"id":"dogs","label":"Perros salvajes","icon":"🐕","description":"Perros asilvestrados que atacan en jauría. Menos peligrosos que los lobos.","attackDice":"1d4","defenseDice":"1d4","injuryChanceBonus":0.1,"fleeChance":0.5,"variants":[{"id":"dogs_stray","label":"Perro callejero","strengthMod":-2},{"id":"dogs_pack","label":"Jauría","strengthMod":1}],"lootOnVictory":[{"resource":"food","chance":0.5,"amount":[1,2]}],"lootOnFlee":[],"lootOnDefeat":[]}];
 const state = { hostiles: [], editingId: null };
 
 function uid(){ return 'hostile_'+Math.random().toString(36).slice(2,8); }
@@ -403,7 +404,14 @@ async function autoLoad(){
     if(!Array.isArray(data)) return;
     data.forEach(h=>{ if(!state.hostiles.find(x=>x.id===h.id)) state.hostiles.push(h); });
     render(); showToast(`${data.length} hostiles cargados desde /data/ ✓`);
-  } catch(e){}
+  } catch(e){
+    if(!state.hostiles.length && Array.isArray(EMBEDDED_HOSTILES) && EMBEDDED_HOSTILES.length){
+      EMBEDDED_HOSTILES.forEach(h=>{ if(!state.hostiles.find(x=>x.id===h.id)) state.hostiles.push(h); });
+      render();
+      showToast(`${state.hostiles.length} hostiles cargados (fallback embebido) ✓`);
+      return;
+    }
+  }
 }
 
 $('saveBtn').addEventListener('click',saveHostile);

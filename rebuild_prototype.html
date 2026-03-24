@@ -1358,7 +1358,7 @@ function initGame(){
   state.currentDetail=null;
   state._lastStabilityTier=getStabilityTier();
 
-  const starterCount=Number(gameData.config?.starting?.survivors??3);
+  const starterCount=Math.max(1, Number(gameData.config?.starting?.survivors??3) || 3);
   const starters=pickStartingSurvivors(starterCount);
   state.survivors=starters.map((s,idx)=>({
     id:s.id||idx+1,
@@ -4235,11 +4235,12 @@ function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No q
 function openGameOver(text){document.getElementById('gameOverText').textContent=text;gameOverWrap.classList.add('open')}
 function getBuildingCost(buildingId){const b=state.buildings[buildingId];const base=Number(b?.cost||0);const level=Number(b?.level||0);return Math.ceil(base*Math.pow(2,level))}
 function pickStartingSurvivors(count){
-  // Try rarity 4 first, fill with rarity 3 if needed
+  // Try rarity 4 first, then rarity 3; fallback to any rarity to avoid empty starts
   const all=gameData.survivors||[];
   const r4=all.filter(s=>Number(s.rarity??4)===4).sort(()=>Math.random()-0.5);
   const r3=all.filter(s=>Number(s.rarity??4)===3).sort(()=>Math.random()-0.5);
-  const pool=[...r4,...r3];
+  const other=all.filter(s=>![4,3].includes(Number(s.rarity??4))).sort(()=>Math.random()-0.5);
+  const pool=[...r4,...r3,...other];
   return pool.slice(0,count);
 }
 function pickSurvivorByRarity(forcedRarity){
