@@ -1602,8 +1602,9 @@ function buildEventObject() {
     condition = condition ? {type:'and',conditions:[condition,dayRangeCond]} : dayRangeCond;
   }
   const priority=document.getElementById('f-priority')?.checked||false;
-  const skipWhenAttackActive=document.getElementById('f-skipWhenAttackActive')?.checked||false;
+  const subtitle = document.getElementById('f-subtitle')?.value.trim()||undefined;
   const ev = { id, name, image: imgUrl, text: story, days, weight: (type==='weekly'||type==='story')?0:weight, type };
+  if(subtitle) ev.subtitle = subtitle;
   if(condition) ev.condition=condition;
   if(priority) ev.priority=true;
   if(skipWhenAttackActive) ev.skipWhenAttackActive=true;
@@ -2199,6 +2200,7 @@ function clearForm() {
   if(document.getElementById('f-dayMin')) document.getElementById('f-dayMin').value = '';
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = '';
   setRepeatable(false);
+  if(document.getElementById('f-subtitle')) document.getElementById('f-subtitle').value='';
   document.getElementById('f-condType').value='';
   updateConditionUI();
   if(document.getElementById('f-condJson')) document.getElementById('f-condJson').value='';

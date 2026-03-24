@@ -466,59 +466,6 @@
     ]
   },
   {
-    "id": "KIRK001",
-    "name": "El muro",
-    "image": "",
-    "text": "Kirk quiere tomarse el día libre.",
-    "days": 1,
-    "weight": 8,
-    "type": "city",
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "survivor",
-          "id": "survivor_vw4cahg8"
-        },
-        {
-          "type": "and",
-          "conditions": [
-            {
-              "type": "day_min",
-              "value": 2
-            },
-            {
-              "type": "day_max",
-              "value": 5
-            }
-          ]
-        }
-      ]
-    },
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Negarle el descanso. No es buen momento.",
-        "effects": [
-          {
-            "type": "moraleSurvivor",
-            "amount": 1
-          }
-        ]
-      },
-      "B": {
-        "label": "Permitir su descanso",
-        "effects": [
-          {
-            "type": "addFatigue",
-            "target": "random",
-            "amount": 1
-          }
-        ]
-      }
-    }
-  },
-  {
     "id": "noche_tranquila",
     "name": "Noche tranquila",
     "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
@@ -536,6 +483,125 @@
       {
         "type": "healSurvivor",
         "target": "random"
+      }
+    ]
+  },
+  {
+    "id": "kirk001",
+    "name": "Un par de manos más",
+    "image": "",
+    "text": "Kirk conoce a un superviviente que está viviendo por su cuenta en una caravana. Podría ser útil tener un par de manos más en el asentamiento, pero hay que demostrarle al superviviente que somos de fiar.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "condition": {
+      "type": "survivor",
+      "id": "survivor_kirk"
+    },
+    "priority": true,
+    "day": 3,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Dale a Kirk alimento para convencer al superviviente.",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addSurvivorRandom"
+          }
+        ]
+      },
+      "B": {
+        "label": "Es mejor guardar recursos por ahora... nunca se sabe.",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": -1,
+            "targetId": "survivor_kirk"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "raiders_cerca",
+    "name": "Raiders en la zona",
+    "image": "https://i.ibb.co/HDgKccWm/raiders001.jpg",
+    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de raiders parece estar vigilando el asentamiento.",
+    "days": 1,
+    "weight": 9,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "raiders",
+        "attackStrength": 3,
+        "arrivalDays": 2,
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "injureSurvivor"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fanatic_cerca",
+    "name": "Fanáticos en la zona",
+    "image": "https://i.ibb.co/prrvDWJY/fanatic001.jpg",
+    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de fanáticos parece estar vigilando el asentamiento.",
+    "days": 1,
+    "weight": 6,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "sectarians",
+        "attackStrength": 3,
+        "arrivalDays": 2,
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "injureSurvivor"
+          }
+        ]
       }
     ]
   }
