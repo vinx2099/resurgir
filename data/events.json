@@ -74,6 +74,45 @@
     }
   },
   {
+    "id": "raiders_cerca",
+    "name": "Raiders en la zona",
+    "type": "city",
+    "weight": 9,
+    "days": 1,
+    "repeatable": true,
+    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de raiders parece estar vigilando el asentamiento.",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "random",
+        "arrivalDays": 2,
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "lluvia_acida",
     "name": "Lluvia ácida",
     "image": "https://i.ibb.co/HfTD9shg/lluvia-acida.jpg",

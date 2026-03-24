@@ -875,6 +875,32 @@
                 </select>
               </div>
             </div>
+            <div class="form-grid" style="margin-top:4px;">
+              <div class="field">
+                <label>Popup victoria · Título</label>
+                <input type="text" id="f-attackPopupVictoryTitle" placeholder="✅ Ataque repelido" />
+              </div>
+              <div class="field">
+                <label>Popup derrota · Título</label>
+                <input type="text" id="f-attackPopupDefeatTitle" placeholder="❌ Derrota en combate" />
+              </div>
+              <div class="field">
+                <label>Popup victoria · Texto</label>
+                <input type="text" id="f-attackPopupVictoryText" placeholder="Resumen corto del resultado..." />
+              </div>
+              <div class="field">
+                <label>Popup derrota · Texto</label>
+                <input type="text" id="f-attackPopupDefeatText" placeholder="Resumen corto del resultado..." />
+              </div>
+              <div class="field">
+                <label>Popup victoria · Icono (emoji)</label>
+                <input type="text" id="f-attackPopupVictoryIcon" placeholder="🛡" />
+              </div>
+              <div class="field">
+                <label>Popup derrota · Icono (emoji)</label>
+                <input type="text" id="f-attackPopupDefeatIcon" placeholder="☠" />
+              </div>
+            </div>
           </div>
 
           <div class="section-divider"><span>Efectos si los defensores ganan</span></div>
@@ -1540,6 +1566,16 @@ function buildEventObject() {
       hostileType: document.getElementById('f-attackHostile')?.value || 'random',
       attackStrength: Number(document.getElementById('f-attackStrength').value) || 3,
       arrivalDays: Number(document.getElementById('f-attackArrival').value) || 1,
+      combatPopupVictory: {
+        title: document.getElementById('f-attackPopupVictoryTitle')?.value?.trim() || undefined,
+        text: document.getElementById('f-attackPopupVictoryText')?.value?.trim() || undefined,
+        icon: document.getElementById('f-attackPopupVictoryIcon')?.value?.trim() || undefined,
+      },
+      combatPopupDefeat: {
+        title: document.getElementById('f-attackPopupDefeatTitle')?.value?.trim() || undefined,
+        text: document.getElementById('f-attackPopupDefeatText')?.value?.trim() || undefined,
+        icon: document.getElementById('f-attackPopupDefeatIcon')?.value?.trim() || undefined,
+      },
       effectOnVictory: readEffectRows('attackVictoryRows'),
       effectOnDefeat: readEffectRows('attackDefeatRows'),
     }];
@@ -1737,9 +1773,12 @@ function onTypeChange(){
 });
 const attackStrengthInput=document.getElementById('f-attackStrength');
 if(attackStrengthInput) attackStrengthInput.addEventListener('input', updatePreview);
-['f-attackHostile','f-attackArrival'].forEach(id=>{
+['f-attackHostile','f-attackArrival','f-attackPopupVictoryTitle','f-attackPopupVictoryText','f-attackPopupVictoryIcon','f-attackPopupDefeatTitle','f-attackPopupDefeatText','f-attackPopupDefeatIcon'].forEach(id=>{
   const el=document.getElementById(id);
-  if(el) el.addEventListener('change', updatePreview);
+  if(el){
+    el.addEventListener('change', updatePreview);
+    el.addEventListener('input', updatePreview);
+  }
 });
 
 // ── ADD EVENT ──
@@ -1915,6 +1954,12 @@ function loadEventForEditing(idx) {
       if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = atk.hostileType || 'random';
       document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
       document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
+      if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = atk.combatPopupVictory?.title || '';
+      if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = atk.combatPopupVictory?.text || '';
+      if(document.getElementById('f-attackPopupVictoryIcon')) document.getElementById('f-attackPopupVictoryIcon').value = atk.combatPopupVictory?.icon || '';
+      if(document.getElementById('f-attackPopupDefeatTitle')) document.getElementById('f-attackPopupDefeatTitle').value = atk.combatPopupDefeat?.title || '';
+      if(document.getElementById('f-attackPopupDefeatText')) document.getElementById('f-attackPopupDefeatText').value = atk.combatPopupDefeat?.text || '';
+      if(document.getElementById('f-attackPopupDefeatIcon')) document.getElementById('f-attackPopupDefeatIcon').value = atk.combatPopupDefeat?.icon || '';
       ['attackVictoryRows','attackDefeatRows'].forEach(id => { document.getElementById(id).innerHTML=''; });
       (atk.effectOnVictory||[]).forEach(eff => { addEffectRow('attackVictory'); const rows=document.getElementById('attackVictoryRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
       (atk.effectOnDefeat||[]).forEach(eff => { addEffectRow('attackDefeat'); const rows=document.getElementById('attackDefeatRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
@@ -1985,6 +2030,12 @@ function loadStoryEventForEditing(idx) {
       if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = atk.hostileType || 'random';
       document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
       document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
+      if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = atk.combatPopupVictory?.title || '';
+      if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = atk.combatPopupVictory?.text || '';
+      if(document.getElementById('f-attackPopupVictoryIcon')) document.getElementById('f-attackPopupVictoryIcon').value = atk.combatPopupVictory?.icon || '';
+      if(document.getElementById('f-attackPopupDefeatTitle')) document.getElementById('f-attackPopupDefeatTitle').value = atk.combatPopupDefeat?.title || '';
+      if(document.getElementById('f-attackPopupDefeatText')) document.getElementById('f-attackPopupDefeatText').value = atk.combatPopupDefeat?.text || '';
+      if(document.getElementById('f-attackPopupDefeatIcon')) document.getElementById('f-attackPopupDefeatIcon').value = atk.combatPopupDefeat?.icon || '';
       ['attackVictoryRows','attackDefeatRows'].forEach(id => { document.getElementById(id).innerHTML=''; });
       (atk.effectOnVictory||[]).forEach(eff => { addEffectRow('attackVictory'); const rows=document.getElementById('attackVictoryRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
       (atk.effectOnDefeat||[]).forEach(eff => { addEffectRow('attackDefeat'); const rows=document.getElementById('attackDefeatRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
@@ -2090,6 +2141,12 @@ function clearForm() {
   if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = 'random';
   if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
   if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';
+  if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = '';
+  if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = '';
+  if(document.getElementById('f-attackPopupVictoryIcon')) document.getElementById('f-attackPopupVictoryIcon').value = '';
+  if(document.getElementById('f-attackPopupDefeatTitle')) document.getElementById('f-attackPopupDefeatTitle').value = '';
+  if(document.getElementById('f-attackPopupDefeatText')) document.getElementById('f-attackPopupDefeatText').value = '';
+  if(document.getElementById('f-attackPopupDefeatIcon')) document.getElementById('f-attackPopupDefeatIcon').value = '';
   ['attackVictoryRows','attackDefeatRows'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=''; });
   ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows'].forEach(id => {
     document.getElementById(id).innerHTML = '';

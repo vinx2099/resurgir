@@ -434,6 +434,33 @@
 
     .skill-chip:hover { border-color: var(--danger); color: var(--danger-bright); }
     .skill-chip .chip-del { opacity: 0.5; font-size: 11px; }
+    .skill-catalog {
+      margin-top: 10px;
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      max-height: 220px;
+      overflow: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .skill-catalog-item {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+      padding: 6px 8px;
+      font-size: 10px;
+      line-height: 1.55;
+    }
+    .skill-catalog-item b { color: var(--ok-bright); }
+    .skill-catalog-item.neg b { color: var(--danger-bright); }
+    .skill-catalog-title {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
 
     /* ── MODAL ── */
     .modal-backdrop {
@@ -694,11 +721,19 @@
     <div class="panel">
       <div class="panel-header">Habilidades disponibles</div>
       <div class="panel-body">
-        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;margin-bottom:8px;">
+          <select id="f-newSkillType">
+            <option value="positive">Positiva</option>
+            <option value="negative">Negativa</option>
+          </select>
           <input id="f-newSkill" type="text" placeholder="Nueva habilidad…" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
+          <input id="f-newSkillDesc" type="text" placeholder="Qué hace esta habilidad…" />
           <button class="btn accent" id="addSkillBtn">+ Añadir</button>
         </div>
         <div class="skill-chips" id="skillChips"></div>
+        <div class="skill-catalog" id="skillCatalog"></div>
       </div>
     </div>
 
@@ -770,6 +805,17 @@ const defaultSkills = [
   'chatarrero',   // +1 material al reciclar
   'combatiente',  // +1 en ataque preventivo
 ];
+const defaultSkillDescriptions = {
+  ninguna: 'Sin bonificación especial.',
+  ingeniero: 'Edificios cuestan -1 recurso.',
+  explorador: '+10% probabilidad de evento positivo.',
+  precavido: '-10% probabilidad de evento negativo.',
+  rastreador: 'Mayor probabilidad de encontrar supervivientes.',
+  recolector: '+1 recurso al explorar.',
+  cazador: '+1 comida al explorar.',
+  chatarrero: '+1 material al reciclar.',
+  combatiente: '+1 en ataque preventivo.',
+};
 
 const defaultNegativeSkills = [
   'ninguna',
@@ -779,11 +825,21 @@ const defaultNegativeSkills = [
   'glotón',       // consume 2 comida en lugar de 1
   'cobarde',      // no puede defender
 ];
+const defaultNegativeSkillDescriptions = {
+  ninguna: 'Sin penalización especial.',
+  miedoso: 'No puede explorar.',
+  torpe: '+10% probabilidad de heridas en exteriores.',
+  desconfiado: '-1 moral al unirse nuevo superviviente.',
+  glotón: 'Consume 2 comida en lugar de 1.',
+  cobarde: 'No puede defender.',
+};
 
 const state = {
   survivors: [],
   skills: [...defaultSkills],
   negativeSkills: [...defaultNegativeSkills],
+  skillDescriptions: {...defaultSkillDescriptions},
+  negativeSkillDescriptions: {...defaultNegativeSkillDescriptions},
   editingId: null,
   selectedRarity: 4
 };
@@ -919,23 +975,50 @@ function renderSkills() {
     .filter(s => s !== 'ninguna')
     .map(s => `<div class="skill-chip" onclick="removeSkill('${escapeJs(s)}')" title="Eliminar '${escapeAttr(s)}'"><span>${escapeHtml(s)}</span><span class="chip-del">✕</span></div>`)
     .join('');
+
+  const positive=state.skills.filter(s=>s!=='ninguna').map(s=>
+    `<div class="skill-catalog-item"><b>${escapeHtml(s)}</b><br>${escapeHtml(state.skillDescriptions[s]||'Sin descripción')}</div>`
+  ).join('')||'<div style="color:var(--dim);font-size:10px;">Sin habilidades positivas.</div>';
+  const negative=state.negativeSkills.filter(s=>s!=='ninguna').map(s=>
+    `<div class="skill-catalog-item neg"><b>${escapeHtml(s)}</b><br>${escapeHtml(state.negativeSkillDescriptions[s]||'Sin descripción')}</div>`
+  ).join('')||'<div style="color:var(--dim);font-size:10px;">Sin habilidades negativas.</div>';
+  $('skillCatalog').innerHTML=
+    `<div class="skill-catalog-title">Positivas</div>${positive}<div class="skill-catalog-title">Negativas</div>${negative}`;
 }
 
 window.removeSkill = function(s) {
+  if (s === 'ninguna') return;
   if (!confirm(`¿Eliminar la habilidad "${s}"?`)) return;
-  state.skills = state.skills.filter(x => x !== s);
+  if (state.skills.includes(s)) {
+    state.skills = state.skills.filter(x => x !== s);
+    delete state.skillDescriptions[s];
+  }
+  if (state.negativeSkills.includes(s)) {
+    state.negativeSkills = state.negativeSkills.filter(x => x !== s);
+    delete state.negativeSkillDescriptions[s];
+  }
   renderSkills();
   showToast(`Habilidad "${s}" eliminada`);
 };
 
 $('addSkillBtn').addEventListener('click', () => {
+  const kind = $('f-newSkillType').value;
   const val = $('f-newSkill').value.trim().toLowerCase();
+  const desc = $('f-newSkillDesc').value.trim();
   if (!val) return;
-  if (state.skills.includes(val)) { showToast(`"${val}" ya existe`, true); return; }
-  state.skills.push(val);
+  if (state.skills.includes(val) || state.negativeSkills.includes(val)) { showToast(`"${val}" ya existe`, true); return; }
+  if (kind === 'negative') {
+    state.negativeSkills.push(val);
+    state.negativeSkillDescriptions[val] = desc || 'Sin descripción.';
+    if($('f-negskill')) $('f-negskill').value = val;
+  } else {
+    state.skills.push(val);
+    state.skillDescriptions[val] = desc || 'Sin descripción.';
+    $('f-skill').value = val;
+  }
   renderSkills();
-  $('f-skill').value = val;
   $('f-newSkill').value = '';
+  $('f-newSkillDesc').value = '';
   showToast(`Habilidad "${val}" añadida`);
 });
 
