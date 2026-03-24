@@ -172,44 +172,6 @@
     ]
   },
   {
-    "id": "noche_tranquila",
-    "name": "Noche tranquila",
-    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
-    "text": "Por una vez, todo está en calma. El grupo aprovecha para descansar y recuperar fuerzas. (HACER CONDICION ALL)",
-    "days": 1,
-    "weight": 9,
-    "type": "city",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "removeFatigue",
-        "target": "random",
-        "amount": 1
-      },
-      {
-        "type": "healSurvivor",
-        "target": "random"
-      }
-    ]
-  },
-  {
-    "id": "accidente_construccion",
-    "name": "Accidente en la construcción",
-    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
-    "text": "Durante los trabajos del día, se produce un accidente. Alguien resulta herido.",
-    "days": 1,
-    "weight": 7,
-    "type": "city",
-    "relatedAction": "construir",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "injureActionSurvivor"
-      }
-    ]
-  },
-  {
     "id": "incendio_almacen",
     "name": "Incendio en el almacén",
     "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
@@ -500,6 +462,80 @@
             "target": "random"
           }
         ]
+      }
+    ]
+  },
+  {
+    "id": "KIRK001",
+    "name": "El muro",
+    "image": "",
+    "text": "Kirk quiere tomarse el día libre.",
+    "days": 1,
+    "weight": 8,
+    "type": "city",
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "survivor",
+          "id": "survivor_vw4cahg8"
+        },
+        {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "day_min",
+              "value": 2
+            },
+            {
+              "type": "day_max",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Negarle el descanso. No es buen momento.",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Permitir su descanso",
+        "effects": [
+          {
+            "type": "addFatigue",
+            "target": "random",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "noche_tranquila",
+    "name": "Noche tranquila",
+    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
+    "text": "Por una vez, todo está en calma. El grupo aprovecha para descansar y recuperar fuerzas. (HACER CONDICION ALL)",
+    "days": 1,
+    "weight": 9,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "fatigueAll",
+        "amount": 1
+      },
+      {
+        "type": "healSurvivor",
+        "target": "random"
       }
     ]
   }
