@@ -1280,7 +1280,9 @@ function getMissingRequiredData(){
   REQUIRED_GAME_DATA.forEach(req=>{
     const value = req.type==='events'
       ? ([...(gameData.events||[]), ...(gameData.story_events||[])])
-      : gameData[req.type];
+      : req.type==='locations'
+        ? (gameData.locationTemplates||[])
+        : gameData[req.type];
     if(!req.validate(value)) missing.push({file:req.label, reason:req.reason});
   });
   return missing;
@@ -1334,7 +1336,19 @@ function importGameJSON(type, jsonData, silent=false){
     else if(type==='survivors'){ if(!Array.isArray(data)) throw new Error('survivors.json no contiene un array'); gameData.survivors=data; clearDataLoadErrorFor('survivors.json'); if(!silent) addLog(`survivors.json importado: ${data.length} supervivientes.`); }
     else if(type==='buildings'){ if(!Array.isArray(data)) throw new Error('buildings.json no contiene un array'); gameData.buildings=data; clearDataLoadErrorFor('buildings.json'); if(!silent) addLog(`buildings.json importado: ${data.length} edificios.`); }
     else if(type==='config')  { if(!data || typeof data!=='object' || Array.isArray(data)) throw new Error('config.json no contiene un objeto'); gameData.config=data; clearDataLoadErrorFor('config.json'); if(!silent) addLog('config.json importado.'); }
-    else if(type==='locations'){ if(!Array.isArray(data)) throw new Error('locations.json no contiene un array'); gameData.locationTemplates=data; clearDataLoadErrorFor('locations.json'); if(!silent) addLog(`locations.json importado: ${data.length} tipos.`); }
+    else if(type==='locations'){
+      const normalized = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.locations)
+          ? data.locations
+          : Array.isArray(data?.locationTemplates)
+            ? data.locationTemplates
+            : null;
+      if(!Array.isArray(normalized)) throw new Error('locations.json debe contener un array o un objeto con "locations" o "locationTemplates"');
+      gameData.locationTemplates=normalized;
+      clearDataLoadErrorFor('locations.json');
+      if(!silent) addLog(`locations.json importado: ${normalized.length} tipos.`);
+    }
     else if(type==='hostiles')  { if(!Array.isArray(data)) throw new Error('hostiles.json no contiene un array'); gameData.hostiles=data; clearDataLoadErrorFor('hostiles.json'); if(!silent) addLog(`hostiles.json importado: ${data.length} tipos.`); }
     else if(type==='zones')     { if(!Array.isArray(data)) throw new Error('zones.json no contiene un array'); gameData.zones=data; clearDataLoadErrorFor('zones.json'); if(!silent) addLog(`zones.json importado: ${data.length} zonas.`); }
     if(!silent) render();
@@ -1354,29 +1368,42 @@ function handleJSONFile(type, file){
 async function loadFromFiles(){
   clearDataLoadErrors();
   const files = [
-    ['events',    './data/events.json'],
-    ['survivors', './data/survivors.json'],
-    ['buildings', './data/buildings.json'],
-    ['config',    './data/config.json'],
-    ['locations', './data/locations.json'],
-    ['hostiles',  './data/hostiles.json'],
-    ['zones',     './data/zones.json'],
+    ['events',    ['./data/events.json']],
+    ['survivors', ['./data/survivors.json']],
+    ['buildings', ['./data/buildings.json']],
+    ['config',    ['./data/config.json']],
+    ['locations', ['./data/locations.json','./data/location.json','./data/Locations.json']],
+    ['hostiles',  ['./data/hostiles.json']],
+    ['zones',     ['./data/zones.json']],
   ];
+
+  async function fetchJsonFromCandidates(paths){
+    let lastError = null;
+    for(const path of paths){
+      try{
+        const r = await fetch(path, {cache:'no-store'});
+        if(!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        return {data, path};
+      }catch(err){
+        lastError = {path, message: err?.message || 'No se pudo cargar'};
+      }
+    }
+    throw new Error(lastError ? `${lastError.message} (${lastError.path})` : 'No se pudo cargar');
+  }
+
   const results = await Promise.allSettled(
-    files.map(([,path]) => fetch(path).then(async r => {
-      if(!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    }))
+    files.map(([,paths]) => fetchJsonFromCandidates(paths))
   );
   const loaded = [];
   results.forEach(({status, value, reason}, i) => {
-    const [type, path] = files[i];
-    const name = path.split('/').pop();
+    const [type, paths] = files[i];
+    const primaryName = paths[0].split('/').pop();
     if(status === 'fulfilled'){
-      importGameJSON(type, value, true);
-      loaded.push(name);
+      importGameJSON(type, value.data, true);
+      loaded.push(value.path.split('/').pop());
     } else {
-      handleDataLoadError(name, reason?.message || 'No se pudo cargar');
+      handleDataLoadError(primaryName, reason?.message || 'No se pudo cargar');
     }
   });
   if(loaded.length) addLog(`Cargado desde /data: ${loaded.join(', ')}.`);
