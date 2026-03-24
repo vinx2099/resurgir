@@ -1360,7 +1360,12 @@ function initGame(){
   state._lastStabilityTier=getStabilityTier();
 
   const starterCount=Math.max(1, Number(gameData.config?.starting?.survivors??3) || 3);
-  const starters=pickStartingSurvivors(starterCount);
+  let starters=pickStartingSurvivors(starterCount);
+  // Fallback: if not enough starters found, use whatever is available
+  if(starters.length===0&&(gameData.survivors||[]).length>0){
+    starters=(gameData.survivors||[]).sort(()=>Math.random()-0.5).slice(0,starterCount);
+    addLog(`⚠ Sin supervivientes de rareza 4/3 — usando fallback.`);
+  }
   state.survivors=starters.map((s,idx)=>({
     id:s.id||idx+1,
     name:s.name||`Superviviente ${idx+1}`,
@@ -1498,7 +1503,9 @@ function renderSurvivors(){
     }
   }
   // Base panel: only survivors currently in the settlement
-  const tabFilter = s => s.status!=='muerto' && (s.location==='base'||!s.location);
+  const tabFilter = activeMapTab==='exterior'
+    ? s => s.status!=='muerto' && (s.location==='exterior'||s.location==='travelling')
+    : s => s.status!=='muerto' && (s.location==='base'||s.location===undefined||s.location===null||s.location==='');
   state.survivors.filter(tabFilter).forEach(s=>{
     const canAct=s.status!=='muerto'&&(!state.pendingEvent||state.pendingEvent._multiDayPassive);
     const actions=getAvailableActions(s);
