@@ -1217,6 +1217,7 @@
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
 const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},log:[],currentDetail:null};
+let activeMapTab='base';
 
 const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
 
@@ -1307,7 +1308,12 @@ function loadDefaults(){
   gameData.events=[];
   gameData.story_events=[];
   // Survivors, buildings, config keep embedded defaults as fallback
-  const realSurvivors=[];
+  // (important for opening the HTML directly via file:// where fetch(/data/*.json) fails)
+  const realSurvivors=[
+    {"id":"survivor_vw4cahg8","name":"Alex","fatigueCurrent":3,"fatigueMax":3,"story":"Enfermera antes del Ocaso.","image":{"url":"https://i.ibb.co/60Cz1spg/c002.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":4,"rarity":4},
+    {"id":"survivor_kirk","name":"Kirk","fatigueCurrent":3,"fatigueMax":5,"story":"Mercenario que llegó herido al campamento.","image":{"url":"https://i.ibb.co/MDW8bfQ0/c003.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":2,"rarity":4},
+    {"id":"survivor_e34fokvp","name":"Marie","fatigueCurrent":3,"fatigueMax":3,"story":"Líder nata","image":{"url":"https://i.ibb.co/0jgTcNXR/c001.png","deleteUrl":""},"imageInjured":{"url":"","deleteUrl":""},"skill":"ninguna","skill2":"ninguna","negativeSkill":"ninguna","moralCurrent":2,"moralMax":2,"rarity":4}
+  ];
   const realBuildings=[{"id": "huerto", "name": "Huerto", "cost": 3, "effect": "+1 comida por día", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "atalaya", "name": "Atalaya", "cost": 4, "effect": "+1 defensa si se usa Vigilar", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "muros", "name": "Muros", "cost": 5, "effect": "+1 defensa pasiva", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "barracones", "name": "Barracones", "cost": 4, "effect": "4 espacios", "initial": true, "constructible": true, "maxLevel": 5}, {"id": "taller", "name": "Taller", "cost": 5, "effect": "+1 material por día", "initial": false, "constructible": true, "maxLevel": 5}, {"id": "hospital", "name": "Hospital", "cost": 5, "effect": "Desbloquea medicamentos e Investigar. Requiere 2⚡", "initial": false, "constructible": false, "maxLevel": 5}, {"id": "generador", "name": "Generador", "cost": 3, "effect": "Produce electricidad (3/4/5 por nivel)", "initial": false, "constructible": false, "maxLevel": 3}, {"id": "pozo", "name": "Pozo de Agua", "cost": 2, "effect": "Reduce el consumo de comida en 1 por día", "initial": false, "constructible": true, "maxLevel": 3}, {"id": "almacen", "name": "Almacén", "cost": 3, "effect": "Guarda hasta 4 objetos fabricados", "initial": false, "constructible": true, "maxLevel": 1}];
   const realConfig={"starting": {"food": 5, "materials": 5, "survivors": 3, "morale": 5}, "rules": {"foodPerSurvivor": 1, "barracksCapacity": 4, "recycleValue": 1}};
   gameData.survivors=deepClone(realSurvivors);
@@ -1353,7 +1359,7 @@ function initGame(){
   state.currentDetail=null;
   state._lastStabilityTier=getStabilityTier();
 
-  const starterCount=Number(gameData.config?.starting?.survivors??3);
+  const starterCount=Math.max(1, Number(gameData.config?.starting?.survivors??3) || 3);
   const starters=pickStartingSurvivors(starterCount);
   state.survivors=starters.map((s,idx)=>({
     id:s.id||idx+1,
@@ -1372,7 +1378,11 @@ function initGame(){
     maxMorale:Number(s.moralMax??2),
     fed:true,
     status:'activo',
-    action:null
+    action:null,
+    location:'base',
+    travelDest:null,
+    travelArrivalDay:null,
+    travelReturnDay:null
   }));
 
   state.buildings={};
@@ -1487,10 +1497,8 @@ function renderSurvivors(){
       threatBanner.style.display='none';
     }
   }
-  // Filter survivors by active map tab
-  const tabFilter = activeMapTab === 'exterior'
-    ? s => s.status!=='muerto' && (s.location==='exterior'||s.location==='travelling')
-    : s => s.status!=='muerto' && (s.location==='base'||!s.location);
+  // Base panel: only survivors currently in the settlement
+  const tabFilter = s => s.status!=='muerto' && s.location==='base';
   state.survivors.filter(tabFilter).forEach(s=>{
     const canAct=s.status!=='muerto'&&(!state.pendingEvent||state.pendingEvent._multiDayPassive);
     const actions=getAvailableActions(s);
@@ -1523,11 +1531,6 @@ function renderSurvivors(){
         <div style="margin-top:8px;border:1px solid var(--amber);padding:6px 8px;font-size:10px;background:rgba(184,124,42,0.06);">
           <span style="color:var(--amber-bright);">🧭 En tránsito</span>
           <span style="color:var(--muted);margin-left:6px;">${s.travelArrivalDay&&s.travelArrivalDay>state.day?'Llega día '+s.travelArrivalDay:s.travelReturnDay?'Regresa día '+s.travelReturnDay:'...'}</span>
-        </div>`:
-        s.location==='exterior'?`
-        <div style="margin-top:8px;border:1px solid var(--ok);padding:6px 8px;font-size:10px;background:rgba(74,138,53,0.06);">
-          <span style="color:var(--ok-bright);">📍 En exterior</span>
-          <button onclick="openTravelReturnPopup('${s.id}')" style="margin-left:8px;font-size:9px;background:none;border:1px solid var(--muted);color:var(--muted);cursor:pointer;padding:2px 6px;">↩ Regresar</button>
         </div>`:
         `<div class="action-bar" id="actionbar-${s.id}">
           ${ALL_ACTIONS.map(a=>{
@@ -1650,6 +1653,7 @@ function assignAction(id,type){
   if(isActionLimited(type)){addLog(`La acción ${actionLabel(type)} está limitada temporalmente.`);render();return}
   if(type==='vigilar'&&(!state.buildings.atalaya?.built||!state.buildings.atalaya?.active)){addLog('Necesitas una Atalaya activa para vigilar.');render();return}
   if(type==='defender'&&!state.attackThreat){addLog('No hay grupo hostil cercano para atacar.');render();return}
+  if(type==='viajar'){openTravelPopup(id);render();return}
   if(type==='construir'){openBuildModal(id);render();return}
   s.action={type};s.status='ocupado';addLog(`${s.name} ha sido asignado a ${actionLabel(type)}.`);render();
 }
@@ -2614,6 +2618,7 @@ const ACTION_ICONS = {
   reciclar:  { icon:'⚙', label:'Reciclar' },
   construir: { icon:'🔨', label:'Construir' },
   explorar:  { icon:'🧭', label:'Explorar' },
+  viajar:    { icon:'🥾', label:'Viajar' },
   vigilar:   { icon:'👁', label:'Vigilar' },
   defender:  { icon:'🛡', label:'Defender' },
   atacar:    { icon:'⚔', label:'Atacar' },
@@ -2621,7 +2626,7 @@ const ACTION_ICONS = {
   investigar:{ icon:'🔬', label:'Investigar' },
 };
 // All possible actions in display order
-const ALL_ACTIONS = ['vigilar','forraje','reciclar','construir','explorar','atacar','defender','investigar','descansar'];
+const ALL_ACTIONS = ['vigilar','forraje','reciclar','construir','explorar','viajar','atacar','defender','investigar','descansar'];
 const ALL_ACTIONS_EXTERIOR = []; // exterior actions shown in location detail, not in card
 // ── CONSTRUCTION TIMES (days per building) ──
 const BUILDING_CONSTRUCTION_DAYS = {
@@ -2919,7 +2924,7 @@ function renderExteriorMap(){
     else if(loc.hasRaiders) btn.classList.add('has-raiders');
     else if(loc.exhausted) btn.classList.add('exhausted');
     // Survivors present
-    const survivorsHere=state.survivors.filter(s=>s.travelDest===loc.instanceId&&s.location==='exterior');
+    const survivorsHere=state.survivors.filter(s=>s.location===loc.instanceId&&s.status!=='muerto');
     if(survivorsHere.length) btn.classList.add('has-survivors');
     btn.style.cssText=`left:${loc.x}%;top:${loc.y}%;position:absolute;`;
     const statusText=loc.status==='undiscovered'?'Sin explorar':
@@ -2943,7 +2948,7 @@ function showLocationDetail(instanceId){
   state.currentDetail='location_'+instanceId;
 
   const riskLabel=['✅ Seguro','⚠ Bajo','⚠⚠ Medio','⚠⚠⚠ Alto','💀 Extremo'][Math.min(loc.riskLevel||0,4)];
-  const survivorsHere=state.survivors.filter(s=>s.travelDest===instanceId&&s.location==='exterior');
+  const survivorsHere=state.survivors.filter(s=>s.location===instanceId&&s.status!=='muerto');
   const travellingHere=state.survivors.filter(s=>s.travelDest===instanceId&&s.location==='travelling');
 
   let html=`<div class="loc-detail-header">${loc.status==='undiscovered'?'❓ Ubicación desconocida':loc.icon+' '+escapeHtml(loc.name)}</div>`;
@@ -2961,6 +2966,9 @@ function showLocationDetail(instanceId){
   }
   if(survivorsHere.length){
     html+=`<div style="font-size:11px;color:var(--ok-bright);margin-bottom:6px;">👤 Aquí: ${survivorsHere.map(s=>escapeHtml(s.name)).join(', ')}</div>`;
+    html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${
+      survivorsHere.map(s=>`<button class="btn secondary" style="font-size:10px;padding:4px 8px;" onclick="openTravelReturnPopup('${s.id}')">↩ ${escapeHtml(s.name)} volver a base</button>`).join('')
+    }</div>`;
   }
   if(travellingHere.length){
     html+=`<div style="font-size:11px;color:var(--amber-bright);margin-bottom:6px;">🧭 En camino: ${travellingHere.map(s=>escapeHtml(s.name)+' (día '+s.travelArrivalDay+')').join(', ')}</div>`;
@@ -2983,7 +2991,7 @@ function showLocationDetail(instanceId){
     btn.innerHTML='🧭 Viajar aquí';
     btn.disabled=!canTravel.length;
     btn.title=!canTravel.length?'Sin supervivientes disponibles en base':'';
-    btn.onclick=()=>openTravelPopup(instanceId);
+    btn.onclick=()=>openTravelPopup(null, instanceId);
     actionsEl.appendChild(btn);
   }
 
@@ -3180,22 +3188,52 @@ function evaluateCondition(cond){
 
 // ── TRAVEL SYSTEM ──
 
-function openTravelPopup(locationId){
-  const loc=state.locations.find(l=>l.instanceId===locationId);
-  if(!loc) return;
+function openTravelPopup(survivorId=null, presetLocationId=null){
   const popup=document.getElementById('travelPopup');
   const info=document.getElementById('travelDestInfo');
   const list=document.getElementById('travelSurvivorList');
-  info.innerHTML=`${loc.icon} <b>${escapeHtml(loc.name)}</b> · Llegada: día ${state.day+1} · Regreso: día ${state.day+3}`;
-  list.innerHTML='';
-  const eligible=state.survivors.filter(s=>
+
+  const eligibleSurvivors=state.survivors.filter(s=>
     s.status==='activo'&&s.location==='base'&&s.status!=='muerto'&&
     (s.negativeSkill||'').toLowerCase()!=='miedoso'
   );
-  if(!eligible.length){
+
+  if(survivorId){
+    const selected=eligibleSurvivors.find(s=>s.id===survivorId);
+    if(!selected){ addLog('No hay supervivientes disponibles para viajar.'); return; }
+    const destinations=(state.locations||[]).filter(loc=>!presetLocationId||loc.instanceId===presetLocationId);
+    info.innerHTML=`🥾 <b>${escapeHtml(selected.name)}</b> · Selecciona destino · Llegada: día ${state.day+1}`;
+    list.innerHTML='';
+    destinations.forEach(loc=>{
+      const item=document.createElement('div');
+      item.style.cssText='display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px;border:1px solid var(--line2);background:var(--panel2);';
+      item.innerHTML=`
+        <div>
+          <div style="font-family:var(--font-display);font-size:13px;">${loc.icon||'📍'} ${escapeHtml(loc.name)}</div>
+          <div style="font-size:10px;color:var(--muted);">Llegada: día ${state.day+1}</div>
+        </div>
+        <button class="btn primary" style="font-size:11px;padding:5px 10px;" data-locid="${loc.instanceId}">Viajar</button>`;
+      item.querySelector('button').addEventListener('click',()=>{
+        travelToZone(selected.id, loc.instanceId);
+        popup.classList.remove('open');
+        renderSurvivors();
+        renderExteriorMap();
+      });
+      list.appendChild(item);
+    });
+    if(!destinations.length) list.innerHTML='<div style="color:var(--muted);font-size:11px;">No hay zonas disponibles.</div>';
+    popup.classList.add('open');
+    return;
+  }
+
+  const loc=state.locations.find(l=>l.instanceId===presetLocationId);
+  if(!loc) return;
+  info.innerHTML=`${loc.icon} <b>${escapeHtml(loc.name)}</b> · Llegada: día ${state.day+1}`;
+  list.innerHTML='';
+  if(!eligibleSurvivors.length){
     list.innerHTML='<div style="color:var(--muted);font-size:11px;">No hay supervivientes disponibles.</div>';
   }
-  eligible.forEach(s=>{
+  eligibleSurvivors.forEach(s=>{
     const item=document.createElement('div');
     item.style.cssText='display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:8px;border:1px solid var(--line2);background:var(--panel2);cursor:pointer;transition:border-color 0.15s;';
     item.innerHTML=`
@@ -3205,9 +3243,9 @@ function openTravelPopup(locationId){
         <div style="font-family:var(--font-display);font-size:13px;">${escapeHtml(s.name)}</div>
         <div style="font-size:10px;color:var(--muted);">⚡ ${s.fatigue}/${s.maxFatigue} · ${getMoraleEmoji(s)}</div>
       </div>
-      <button class="btn primary" style="font-size:11px;padding:5px 10px;" data-sid="${s.id}" data-locid="${locationId}">Enviar</button>`;
+      <button class="btn primary" style="font-size:11px;padding:5px 10px;" data-sid="${s.id}" data-locid="${presetLocationId}">Viajar</button>`;
     item.querySelector('button').addEventListener('click',()=>{
-      sendOnExpedition(s.id, locationId);
+      travelToZone(s.id, presetLocationId);
       popup.classList.remove('open');
       renderSurvivors();
       renderExteriorMap();
@@ -3221,7 +3259,7 @@ document.getElementById('travelCancel').addEventListener('click',()=>{
   document.getElementById('travelPopup').classList.remove('open');
 });
 
-function sendOnExpedition(survivorId, locationId){
+function travelToZone(survivorId, locationId){
   const s=state.survivors.find(x=>x.id===survivorId);
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!s||!loc) return;
@@ -3234,16 +3272,21 @@ function sendOnExpedition(survivorId, locationId){
   addLog(`🧭 ${s.name} parte hacia ${loc.name}. Llegará el día ${s.travelArrivalDay}.`);
 }
 
+// Legacy alias (kept for compatibility with older onclick hooks)
+function sendOnExpedition(survivorId, locationId){
+  travelToZone(survivorId, locationId);
+}
+
 function openTravelReturnPopup(survivorId){
   const s=state.survivors.find(x=>x.id===survivorId);
-  if(!s||s.location!=='exterior') return;
+  if(!s||!s.location||s.location==='base'||s.location==='travelling') return;
   if(confirm(`¿Enviar a ${s.name} de regreso a la base?`)){
     s.location='travelling';
+    s.travelDest='base';
     s.travelReturnDay=state.day+1;
     s.travelArrivalDay=null;
     s.status='ocupado';
-    s.action={type:'regresar'};
-    const loc=state.locations.find(l=>l.instanceId===s.travelDest);
+    s.action={type:'regresar',target:'base'};
     addLog(`🧭 ${s.name} emprende el regreso a la base. Llegará el día ${s.travelReturnDay}.`);
     renderSurvivors();
     renderExteriorMap();
@@ -3253,7 +3296,7 @@ function openTravelReturnPopup(survivorId){
 function openLootPopup(locationId){
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!loc) return;
-  const survivorsHere=state.survivors.filter(s=>s.travelDest===locationId&&s.location==='exterior');
+  const survivorsHere=state.survivors.filter(s=>s.location===locationId&&s.status!=='muerto');
   if(!survivorsHere.length){ addLog('No hay supervivientes en esa ubicación.'); return; }
   // Auto-loot with first survivor (or show picker if multiple)
   const s=survivorsHere[0];
@@ -3267,20 +3310,14 @@ function openLootPopup(locationId){
   }
   loc.status='explored';
   if(loc.exhaustible) loc.exhausted=true;
-  // Survivor starts return
-  s.location='travelling';
-  s.travelReturnDay=state.day+1;
-  s.travelArrivalDay=null;
-  s.status='ocupado';
-  s.action={type:'regresar'};
-  addLog(`📦 Saqueo completado. ${s.name} regresa a la base.`);
+  addLog(`📦 Saqueo completado por ${s.name} en ${loc.name}.`);
   render();
 }
 
 function openLocationRaiderAttack(locationId){
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!loc) return;
-  const survivorsHere=state.survivors.filter(s=>s.travelDest===locationId&&s.location==='exterior'&&(s.negativeSkill||'').toLowerCase()!=='cobarde');
+  const survivorsHere=state.survivors.filter(s=>s.location===locationId&&s.status!=='muerto'&&(s.negativeSkill||'').toLowerCase()!=='cobarde');
   if(!survivorsHere.length){ addLog('No hay supervivientes disponibles para atacar.'); return; }
   // Fight! Each survivor contributes +1, skill bonuses apply
   const skillBonus=survivorsHere.reduce((sum,s)=>{
@@ -3338,14 +3375,6 @@ function openLocationRaiderAttack(locationId){
       effects:[],
     });
   }
-  // Survivors start return
-  survivorsHere.forEach(s=>{
-    s.location='travelling';
-    s.travelReturnDay=state.day+1;
-    s.travelArrivalDay=null;
-    s.status='ocupado';
-    s.action={type:'regresar'};
-  });
   render();
 }
 
@@ -3355,19 +3384,21 @@ function resolveTravelMovement(){
     if(s.location!=='travelling') return;
     // Arriving at destination
     if(s.travelArrivalDay&&state.day>=s.travelArrivalDay){
-      s.location='exterior';
+      const destination=s.travelDest||'base';
+      s.location=destination;
       s.travelArrivalDay=null;
       s.status='activo';
       s.action=null;
-      const loc=state.locations.find(l=>l.instanceId===s.travelDest);
+      const loc=state.locations.find(l=>l.instanceId===destination);
       // Auto-discover location on arrival
       if(loc&&loc.status==='undiscovered') loc.status='discovered';
-      addLog(`📍 ${s.name} llega a ${loc?loc.name:'destino'}.`);
+      addLog(`📍 ${s.name} llega a ${destination==='base'?'la base':(loc?loc.name:'destino')}.`);
     }
     // Returning to base
     else if(s.travelReturnDay&&state.day>=s.travelReturnDay){
       s.location='base';
       s.travelDest=null;
+      s.travelArrivalDay=null;
       s.travelReturnDay=null;
       s.status='activo';
       s.action=null;
@@ -3939,8 +3970,12 @@ function resetForNewDay(){
       s.status='ocupado';
       // action stays as-is
     } else {
-      if(s.status==='ocupado') s.status='activo';
-      if(s.status!=='muerto') s.action=null;
+      if(s.location==='travelling'&&s.status!=='muerto'){
+        s.status='ocupado';
+      } else {
+        if(s.status==='ocupado') s.status='activo';
+        if(s.status!=='muerto') s.action=null;
+      }
     }
   });
   Object.values(state.buildings).forEach(b=>{if(b.built&&!b.active)b.active=true});
@@ -4091,6 +4126,7 @@ function resetAssignments(){
   if(s.status==='muerto') return;
   const isLockedBuilder=s.action?.type==='construir'&&s.action?.target;
   if(isLockedBuilder) return;
+  if(s.location==='travelling') return;
   if(s.status==='ocupado') s.status='activo';
   s.action=null;
   });
@@ -4104,6 +4140,7 @@ function getAvailableActions(s){
   const neg=(s.negativeSkill||'').toLowerCase().trim();
   const arr=['forraje','reciclar','construir'];
   if(neg!=='miedoso') arr.push('explorar');
+  if((s.location||'base')==='base') arr.push('viajar');
   if(state.buildings.atalaya?.built&&state.buildings.atalaya?.active) arr.unshift('vigilar');
   if(state.buildings.hospital?.built&&state.buildings.hospital?.active) arr.push('investigar');
   if(state.attackThreat&&neg!=='cobarde'){
@@ -4121,7 +4158,7 @@ function isActionLimited(action){
   return hardLimit||tempLimit;
 }
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
-function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
+function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',viajar:'Viajar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
 function actionSummary(s){
   if(s.status==='muerto') return 'No disponible.';
   if(requiresForcedRest(s)&&!s.action) return `Tiene herida ${injuryDisplayName(s.injuryLevel||'simple')}. Solo puede descansar.`;
@@ -4230,11 +4267,12 @@ function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No q
 function openGameOver(text){document.getElementById('gameOverText').textContent=text;gameOverWrap.classList.add('open')}
 function getBuildingCost(buildingId){const b=state.buildings[buildingId];const base=Number(b?.cost||0);const level=Number(b?.level||0);return Math.ceil(base*Math.pow(2,level))}
 function pickStartingSurvivors(count){
-  // Try rarity 4 first, fill with rarity 3 if needed
+  // Try rarity 4 first, then rarity 3; fallback to any rarity to avoid empty starts
   const all=gameData.survivors||[];
   const r4=all.filter(s=>Number(s.rarity??4)===4).sort(()=>Math.random()-0.5);
   const r3=all.filter(s=>Number(s.rarity??4)===3).sort(()=>Math.random()-0.5);
-  const pool=[...r4,...r3];
+  const other=all.filter(s=>![4,3].includes(Number(s.rarity??4))).sort(()=>Math.random()-0.5);
+  const pool=[...r4,...r3,...other];
   return pool.slice(0,count);
 }
 function pickSurvivorByRarity(forcedRarity){
@@ -4584,7 +4622,6 @@ const combatMusic = document.getElementById('combatMusic');
 const musicBtn = document.getElementById('musicBtn');
 let musicMuted = false;
 let combatMusicActive = false;
-let activeMapTab = 'base';
 
 bgMusic.volume = 0.18;
 combatMusic.volume = 0.25;

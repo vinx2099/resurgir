@@ -975,7 +975,7 @@ function initGame(){
   state.log=[];
   state.currentDetail=null;
 
-  const starterCount=Number(gameData.config?.starting?.survivors??3);
+  const starterCount=Math.max(1, Number(gameData.config?.starting?.survivors??3) || 3);
   const starters=pickStartingSurvivors(starterCount);
   state.survivors=starters.map((s,idx)=>({
     id:s.id||idx+1,
@@ -1645,7 +1645,13 @@ function addLog(text){state.log.unshift(`Día ${state.day}: ${text}`);state.log=
 function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No queda ningún superviviente con vida.');if(state.morale<=0)return openGameOver('La moral del asentamiento ha llegado a cero.')}
 function openGameOver(text){document.getElementById('gameOverText').textContent=text;gameOverWrap.classList.add('open')}
 function getBuildingCost(buildingId){const b=state.buildings[buildingId];const base=Number(b?.cost||0);const level=Number(b?.level||0);return Math.ceil(base*Math.pow(2,level))}
-function pickStartingSurvivors(count){const pool=(gameData.survivors||[]).filter(s=>Number(s.rarity??4)===4);const shuffled=[...pool].sort(()=>Math.random()-0.5);return shuffled.slice(0,count)}
+function pickStartingSurvivors(count){
+  const all=gameData.survivors||[];
+  const r4=all.filter(s=>Number(s.rarity??4)===4).sort(()=>Math.random()-0.5);
+  const r3=all.filter(s=>Number(s.rarity??4)===3).sort(()=>Math.random()-0.5);
+  const other=all.filter(s=>![4,3].includes(Number(s.rarity??4))).sort(()=>Math.random()-0.5);
+  return [...r4,...r3,...other].slice(0,count);
+}
 function pickSurvivorByRarity(){const weights={1:5,2:15,3:30,4:50};const candidates=(gameData.survivors||[]).filter(Boolean);if(!candidates.length)return null;const expanded=candidates.map(s=>({item:s,weight:weights[Number(s.rarity??4)]||50}));const total=expanded.reduce((sum,x)=>sum+x.weight,0);let r=Math.random()*total;for(const x of expanded){r-=x.weight;if(r<=0)return x.item}return expanded[0].item}
 function weightedPick(items){const total=items.reduce((sum,i)=>sum+Number(i.weight||0),0);let r=Math.random()*total;for(const item of items){r-=Number(item.weight||0);if(r<=0)return item}return items[0]||null}
 function clamp(v,min,max){return Math.min(max,Math.max(min,v))}
