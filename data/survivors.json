@@ -5,8 +5,6 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Enfermera antes del Ocaso.",
-    "moralCurrent": 2,
-    "moralMax": 4,
     "image": {
       "url": "https://i.ibb.co/60Cz1spg/c002.png",
       "deleteUrl": ""
@@ -18,14 +16,18 @@
     "skill": "ninguna",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
+    "moralCurrent": 2,
+    "moralMax": 4,
     "rarity": 4
   },
   {
-    "id": "survivor_6l305iiv",
+    "id": "survivor_kirk",
     "name": "Kirk",
     "fatigueCurrent": 3,
     "fatigueMax": 5,
     "story": "Mercenario que llegó herido al campamento.",
+    "moralCurrent": 2,
+    "moralMax": 2,
     "image": {
       "url": "https://i.ibb.co/MDW8bfQ0/c003.png",
       "deleteUrl": ""
@@ -37,8 +39,6 @@
     "skill": "ninguna",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "rarity": 4
   },
   {
