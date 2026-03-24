@@ -1045,6 +1045,28 @@
     </div>
   </div>
 
+  <!-- Combat result popup -->
+  <div class="overlay" id="combatResultPopup">
+    <div class="modal" style="width:min(560px,100%);background:var(--panel);">
+      <div class="modal-header" id="combatResultTitle" style="color:var(--danger-bright);background:#0f0808;border-bottom:1px solid #3a1010;">
+        ⚔ Resultado de combate
+      </div>
+      <div class="modal-body" style="padding:14px;">
+        <div style="display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:start;">
+          <div id="combatResultImg" style="width:88px;height:88px;border:1px solid var(--line2);overflow:hidden;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:34px;">⚔</div>
+          <div>
+            <div id="combatResultText" style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px;"></div>
+            <div id="combatResultSummary" style="font-size:11px;color:var(--ok-bright);line-height:1.6;"></div>
+            <div id="combatResultEffects" style="font-size:11px;color:var(--amber-bright);line-height:1.6;margin-top:8px;"></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+          <button class="btn primary" id="combatResultClose">Continuar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- HOS001 survivor selector popup -->
   <div class="overlay" id="hos001Popup">
     <div class="modal" style="width:min(520px,100%);background:var(--panel);">
@@ -1082,26 +1104,6 @@
       <div class="modal-footer" style="gap:8px;">
         <button class="btn primary" id="inviteYes">✅ Invitar al asentamiento</button>
         <button class="btn secondary" id="inviteNo">🚪 Dejarle ir</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Meds save popup -->
-  <div class="overlay" id="medsSavePopup">
-    <div class="modal" style="width:min(480px,100%);background:var(--panel);">
-      <div class="modal-header" style="color:var(--ok-bright);background:#080f08;border-bottom:1px solid #1a3a1a;">
-        💊 Situación crítica
-      </div>
-      <div class="modal-body" style="padding:16px;display:grid;grid-template-columns:80px 1fr;gap:14px;align-items:center;">
-        <div id="medsSaveImg" style="width:80px;height:80px;overflow:hidden;border:1px solid var(--line2);background:var(--panel2);"></div>
-        <div>
-          <div id="medsSaveName" style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;letter-spacing:0.06em;color:var(--danger-bright);margin-bottom:6px;"></div>
-          <div id="medsSaveText" style="font-size:12px;color:var(--text);line-height:1.6;"></div>
-        </div>
-      </div>
-      <div class="modal-footer" style="gap:8px;">
-        <button class="btn primary" id="medsSaveYes">💊 Usar medicamentos</button>
-        <button class="btn danger" id="medsSaveNo">✕ Dejar morir</button>
       </div>
     </div>
   </div>
@@ -1184,7 +1186,7 @@
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,_processingDay:false,survivors:[],buildings:{},delayedQueue:[],log:[],currentDetail:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},deferredStoryEventIds:[],log:[],currentDetail:null};
 
 const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
 
@@ -1302,6 +1304,8 @@ function initGame(){
   state.attackArrivalDay=0;
   state.attackEffectVictory=[];
   state.attackEffectDefeat=[];
+  state.attackPopupVictory=null;
+  state.attackPopupDefeat=null;
   state.pendingEvent=null;
   state.eventDaysLeft=0;
   state.eventTotalDays=1;
@@ -1314,6 +1318,8 @@ function initGame(){
   state.locations=[];
   state._seenExplore=new Set();
   state.delayedQueue=[];
+  state.actionLimits={};
+  state.deferredStoryEventIds=[];
   state.log=[];
   state.currentDetail=null;
 
@@ -1414,6 +1420,9 @@ function renderSurvivors(){
     const card=document.createElement('div');
     card.className='survivor-card';
     const loreBtn=`<button class="lore-btn" title="Historia de ${escapeHtml(s.name)}">📖</button>`;
+    const statusText=s.status==='herido'
+      ? `${statusLabel(s.status)} (${injuryDisplayName(s.injuryLevel||'simple')})`
+      : statusLabel(s.status);
     card.innerHTML=`
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
         <div class="avatar">${avatarInner}</div>
@@ -1422,7 +1431,7 @@ function renderSurvivors(){
       <div style="min-width:0;">
         <div class="survivor-top">
           <div class="survivor-name">${escapeHtml(s.name)}</div>
-          <div class="badge ${s.status}">${statusLabel(s.status)}</div>
+          <div class="badge ${s.status}">${statusText}</div>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:2px;">
           <div class="mini"><span style="color:var(--ok)">⚡</span>${s.fatigue}/${s.maxFatigue}</div>
@@ -1555,14 +1564,7 @@ function assignAction(id,type){
   if(type==='explorar'&&neg2==='miedoso'){addLog(`${s.name} tiene miedo de salir a explorar.`);render();return}
   if(type==='defender'&&neg2==='cobarde'){addLog(`${s.name} es cobarde y no puede defender.`);render();return}
   if(s.status==='herido'&&type!=='descansar'){
-    // Can spend 1 med to act while injured
-    if(state.meds>0&&state.unlocked.meds){
-      if(!confirm(`${s.name} está herido/a. ¿Gastar 1 medicamento para actuar igualmente?`)) { render(); return; }
-      state.meds-=1;
-      addLog(`💊 ${s.name} usa 1 medicamento para actuar herido/a.`);
-    } else {
-      addLog(`${s.name} está herido/a y solo puede descansar.`);render();return;
-    }
+    addLog(`${s.name} está herido/a y solo puede descansar.`);render();return;
   }
   if(s.fatigue<=0&&type!=='descansar'){addLog(`${s.name} no tiene fatiga suficiente.`);render();return}
   if(isActionLimited(type)){addLog(`La acción ${actionLabel(type)} está limitada temporalmente.`);render();return}
@@ -1581,8 +1583,8 @@ function openBuildModal(survivorId){
     let constructible=current?.constructible===true;
     // Hospital requires hospitalUnlocked
     if(def.id==='hospital'&&!state.hospitalUnlocked) constructible=false;
-    // Generador requires barracones level >= 2
-    if(def.id==='generador'&&(state.buildings.barracones?.level||0)<2) constructible=false;
+    // Generador requires taller level >= 2
+    if(def.id==='generador'&&(state.buildings.taller?.level||0)<2) constructible=false;
 
     const maxLevel=Number(def.maxLevel||5);
     const currentLevel=current?.level||0;
@@ -1596,7 +1598,7 @@ function openBuildModal(survivorId){
 
     const blocked=!constructible;
     const blockReason=def.id==='hospital'&&!state.hospitalUnlocked?'Requiere completar evento HOS001':
-                      def.id==='generador'&&(state.buildings.barracones?.level||0)<2?'Requiere Barracones nivel 2':'';
+                      def.id==='generador'&&(state.buildings.taller?.level||0)<2?'Requiere Taller nivel 2':'';
 
     const label=blocked?`${def.name} (bloqueado)`:current?.built?`Mejorar ${def.name}`:`Construir ${def.name}`;
     const displayCost=blocked?Number(def.cost||0):buildCost;
@@ -1664,6 +1666,7 @@ function endDay(){
     applyFoodConsumption();
     applyBarracksPenalty();
     applyDailyMoraleDecay();
+    processInjuriesEndOfDay();
     regenerateLocations();
     processDelayedEffects();
     // Handle food shortage choice popup if needed
@@ -1725,6 +1728,11 @@ function resolveActions(){
   state.survivors.forEach(s=>{
     if(!s.action||s.status==='muerto') return;
     if(s._actionResolved) return;  // prevent double-processing
+    if(requiresForcedRest(s)&&s.action.type!=='descansar'){
+      addLog(`⚠ ${s.name} tiene herida ${injuryDisplayName(s.injuryLevel)} y solo puede descansar.`);
+      s.action={type:'descansar'};
+      s.status='ocupado';
+    }
     s._actionResolved=true;
     const type=s.action.type;
     if(type!=='descansar') s.fatigue=Math.max(0,s.fatigue-1);
@@ -1733,19 +1741,18 @@ function resolveActions(){
       state.food+=found;
       addLog(`${s.name} forrajea y consigue ${found} comida.`);
       trackActionXP(s,'forraje');
-      if(Math.random()<outsideRiskChance(s)) injureSurvivor(s,`Durante el forrajeo, ${s.name} resulta ${injuredLabel(s)}.`);
+      if(Math.random()<outsideRiskChance(s)) injureSurvivor(s,(surv)=>`Durante el forrajeo, ${surv.name} resulta ${injuredLabel(surv)}.`,{source:'forage'});
     }else if(type==='reciclar'){
       const value=Math.max(0,Number(gameData.config?.rules?.recycleValue??1)+getActionModifier('reciclar'));
       const chatarBonus=getSkillBonus(s,'reciclar').bonus||0;
       state.materials+=value+chatarBonus;
       addLog(`${s.name} recicla y obtiene ${value+chatarBonus} materiales.${chatarBonus?' (⛏+'+chatarBonus+')':''}`);
       trackActionXP(s,'reciclar');
-      if(Math.random()<outsideRiskChance(s)) injureSurvivor(s,`Reciclando fuera del asentamiento, ${s.name} resulta ${injuredLabel(s)}.`);
+      if(Math.random()<outsideRiskChance(s)) injureSurvivor(s,(surv)=>`Reciclando fuera del asentamiento, ${surv.name} resulta ${injuredLabel(surv)}.`,{source:'outside'});
     }else if(type==='vigilar'){
       addLog(`${s.name} vigila desde la Atalaya.`);
     }else if(type==='descansar'){
       s.fatigue=s.maxFatigue;
-      if(s.status==='herido') s.status='activo';
       // Resting with food restores morale
       if(state.food>0&&s.morale<(s.maxMorale??2)){
         s.morale=Math.min(s.maxMorale??2, s.morale+1);
@@ -1830,6 +1837,8 @@ function checkAttackArrival(){
     state.attackEffectVictory=[];
     applyEffectList(state.attackEffectDefeat||[]);
     state.attackEffectDefeat=[];
+    state.attackPopupVictory=null;
+    state.attackPopupDefeat=null;
   }
 }
 
@@ -1841,6 +1850,8 @@ function resolveGroupAttack(){
   const isPreemptive=attackers.length>0;
 
   let totalDef, totalAtk, diff, defRoll, atkRoll;
+  let ownBreakdown='', enemyBreakdown='';
+  const hostileLabel=getHostileLabel(state.attackHostileType||'raiders');
 
   if(isPreemptive){
     // ── PREEMPTIVE STRIKE ──
@@ -1855,6 +1866,8 @@ function resolveGroupAttack(){
     totalDef=attackers.length+skillBonus+emboscadaBonus+defRoll;
     totalAtk=state.attackStrength+atkRoll;
     diff=totalAtk-totalDef;
+    ownBreakdown=`Atacantes ${attackers.length}, habilidades +${skillBonus}, emboscada +${emboscadaBonus}, 1d6 (${defRoll}) = ${totalDef}`;
+    enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, 1d4 (${atkRoll}) = ${totalAtk}`;
     addLog(`⚔ EMBOSCADA: ${attackers.length} atacantes +${skillBonus} habilidades +${emboscadaBonus} emboscada +${defRoll}(d6) = ${totalDef}`);
     addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d4) = ${totalAtk}`);
   } else {
@@ -1873,6 +1886,8 @@ function resolveGroupAttack(){
     totalDef=defCount+atalajaBonus+murosBonus+vallaBonus+defRoll;
     totalAtk=state.attackStrength+atkRoll;
     diff=totalAtk-totalDef;
+    ownBreakdown=`Defensores ${defCount}, Muro +${murosBonus}, Atalaya +${atalajaBonus}${vallaBonus?`, Valla +${vallaBonus}`:''}, 1d6 (${defRoll}) = ${totalDef}`;
+    enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, 1d6 (${atkRoll}) = ${totalAtk}`;
     addLog(`⚔ DEFENSA: ${defCount} defensores +${murosBonus} muros +${atalajaBonus} atalaya +${defRoll}(d6) = ${totalDef}`);
     addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d6) = ${totalAtk}`);
   }
@@ -1884,6 +1899,7 @@ function resolveGroupAttack(){
     state.attackThreat=false;
     state.stability=Math.min(10,state.stability+1);
     if(isPreemptive){
+      const rewardLines=[];
       const loot=[
         {resource:'materials',amount:Math.floor(Math.random()*2)+1},
         {resource:'food',amount:Math.floor(Math.random()*2)+1},
@@ -1892,15 +1908,28 @@ function resolveGroupAttack(){
       loot.forEach(l=>{
         state[l.resource]=(state[l.resource]||0)+l.amount;
         addLog(`✅ Emboscada exitosa! +${l.amount} ${resourceLabel(l.resource)}.`);
+        rewardLines.push(`+${l.amount} ${resourceLabel(l.resource)}`);
       });
       addLog(`✅ Los raiders han sido eliminados antes de llegar. +1 estabilidad.`);
       if(typeof setCombatMusic==='function') setCombatMusic(false);
       // Injury risk even on victory
       attackers.forEach(s=>{
-        if(Math.random()<0.35) injureSurvivor(s,`🩸 ${s.name} resulta ${injuredLabel(s)} en la emboscada.`);
+        if(Math.random()<0.35) injureSurvivor(s,(surv)=>`🩸 ${surv.name} resulta ${injuredLabel(surv)} en la emboscada.`,{source:'ambush'});
       });
+      openCombatResultPopup(attackPopupPayload('victory',{
+        title:'✅ Emboscada exitosa',
+        icon:'⚔',
+        text:`El grupo elimina a ${getHostileLabel(state.attackHostileType||'raiders')} antes de que lleguen al asentamiento.`,
+        summary:[ownBreakdown,enemyBreakdown,`Resultado: ${totalDef} vs ${totalAtk}`,'+1 estabilidad',...rewardLines],
+      }));
     } else {
       addLog(`✅ ¡Ataque repelido! (${totalDef} vs ${totalAtk}). +1 estabilidad.`);
+      openCombatResultPopup(attackPopupPayload('victory',{
+        title:'✅ Ataque repelido',
+        icon:'🛡',
+        text:`La defensa del asentamiento resiste el ataque de ${getHostileLabel(state.attackHostileType||'raiders')}.`,
+        summary:[ownBreakdown,enemyBreakdown,`Resultado: ${totalDef} vs ${totalAtk}`,'+1 estabilidad'],
+      }));
     }
     applyEffectList(state.attackEffectVictory||[]);
   } else {
@@ -1908,13 +1937,19 @@ function resolveGroupAttack(){
     if(isPreemptive){
       addLog(`❌ La emboscada fracasó (${totalDef} vs ${totalAtk}). Los raiders siguen avanzando.`);
       attackers.forEach(s=>{
-        if(Math.random()<0.6) injureSurvivor(s,`🩸 ${s.name} resulta ${injuredLabel(s)} en la emboscada fallida.`);
+        if(Math.random()<0.6) injureSurvivor(s,(surv)=>`🩸 ${surv.name} resulta ${injuredLabel(surv)} en la emboscada fallida.`,{source:'ambush'});
       });
       // Raiders still coming — arrive next day
       state.attackArrivalDay=state.day+1;
       state.stability=Math.max(0,state.stability-1);
       addLog('🏛 -1 estabilidad. Los raiders se reorganizan y atacarán mañana.');
       applyEffectList(state.attackEffectDefeat||[]);
+      openCombatResultPopup(attackPopupPayload('defeat',{
+        title:'❌ Emboscada fallida',
+        icon:'💥',
+        text:'El ataque preventivo no logró frenar al enemigo. El asalto llegará al día siguiente.',
+        summary:[ownBreakdown,enemyBreakdown,`Resultado: ${totalDef} vs ${totalAtk}`,'-1 estabilidad','El ataque enemigo continúa'],
+      }));
       // Don't clear threat, don't reset attack state
       return; // return without resetting state.attackThreat
     }
@@ -1943,7 +1978,7 @@ function resolveGroupAttack(){
         killSurvivor(s,`💀 ${s.name} muere durante el ataque.`);
         casualtyCount++;
       } else if(r<injureChance){
-        injureSurvivor(s,`🩸 ${s.name} resulta ${injuredLabel(s)} durante el ataque.`);
+        injureSurvivor(s,(surv)=>`🩸 ${surv.name} resulta ${injuredLabel(surv)} durante el ataque.`,{source:'combat'});
         casualtyCount++;
       }
     }
@@ -1957,6 +1992,12 @@ function resolveGroupAttack(){
     // Apply hostile lootOnDefeat
     const defHostileDef=getHostileDef(state.attackHostileType||'raiders');
     applyLootList(defHostileDef?.lootOnDefeat||[]);
+    openCombatResultPopup(attackPopupPayload('defeat',{
+      title:'❌ Derrota en combate',
+      icon:'☠',
+      text:`El asentamiento no resistió el ataque de ${getHostileLabel(state.attackHostileType||'raiders')}.`,
+      summary:[ownBreakdown,enemyBreakdown,`Resultado: ${totalDef} vs ${totalAtk}`,`-${moralPenalty} estabilidad`],
+    }));
   }
 
   // Reset attack state
@@ -1966,6 +2007,8 @@ function resolveGroupAttack(){
   state.attackArrivalDay=0;
   state.attackEffectVictory=[];
   state.attackEffectDefeat=[];
+  state.attackPopupVictory=null;
+  state.attackPopupDefeat=null;
   if(typeof setCombatMusic==='function') setCombatMusic(false);
 }
 
@@ -2171,8 +2214,30 @@ function checkStoryEvent(){
                (gameData.story_events||[]).find(e=>e.id==='HOS001');
     if(hos){ state._hos001.active=true; setEvent(buildEventFromSchema(hos)); return true; }
   }
+  if(!Array.isArray(state.deferredStoryEventIds)) state.deferredStoryEventIds=[];
+  // First, try deferred story events that were postponed in previous days
+  for(let i=0;i<state.deferredStoryEventIds.length;i++){
+    const deferredId=state.deferredStoryEventIds[i];
+    const deferredEv=(gameData.story_events||[]).find(x=>x.id===deferredId);
+    if(!deferredEv){
+      state.deferredStoryEventIds.splice(i,1);
+      i--;
+      continue;
+    }
+    if(state.attackThreat&&deferredEv.skipWhenAttackActive) continue;
+    if(deferredEv.condition&&!evaluateCondition(deferredEv.condition)) continue;
+    state.deferredStoryEventIds.splice(i,1);
+    addLog(`📖 Evento de historia aplazado activado: ${deferredEv.name||deferredEv.id}.`);
+    setEvent(buildEventFromSchema(deferredEv));
+    return true;
+  }
   const ev=(gameData.story_events||[]).find(x=>Number(x.day)===state.day&&x.id!=='HOS001');
   if(!ev) return false;
+  if(state.attackThreat&&ev.skipWhenAttackActive){
+    if(!state.deferredStoryEventIds.includes(ev.id)) state.deferredStoryEventIds.push(ev.id);
+    addLog(`📖 ${ev.name||ev.id} se aplaza: hay amenaza de ataque activa.`);
+    return false;
+  }
   // Check condition even for story events
   if(ev.condition&&!evaluateCondition(ev.condition)) return false;
   setEvent(buildEventFromSchema(ev));
@@ -2186,6 +2251,7 @@ function checkPriorityEvent(){
     if(!e||e.type==='weekly'||e.type==='explore'||e.type==='story') return false;
     if(!e.priority) return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(!evaluateCondition(e.condition)) return false;
     return true;
   });
@@ -2205,7 +2271,9 @@ function checkWeeklyEvent(){
   const weeklyPool=(gameData.events||[]).filter(e=>e&&e.type==='weekly');
   if(!weeklyPool.length) return false;
   // Try to match exact week number, else cycle through pool
-  const ev=weeklyPool.find(e=>Number(e.week)===week)||weeklyPool[(week-1)%weeklyPool.length];
+  const eligibleWeekly=weeklyPool.filter(e=>!(state.attackThreat&&e.skipWhenAttackActive));
+  if(!eligibleWeekly.length) return false;
+  const ev=eligibleWeekly.find(e=>Number(e.week)===week)||eligibleWeekly[(week-1)%eligibleWeekly.length];
   if(!ev) return false;
   addLog(`Evento semanal (semana ${week}): ${ev.name||ev.title||ev.id}.`);
   setEvent(buildEventFromSchema(ev));
@@ -2217,6 +2285,7 @@ function chooseEvent(){
   const pool=(gameData.events||[]).filter(e=>{
     if(!e||e.type==='weekly'||e.type==='explore') return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
     const isRaiderEvent=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(isRaiderEvent&&state.attackThreat) return false;
@@ -2234,6 +2303,7 @@ function chooseEvent(){
   const activePool=(gameData.events||[]).filter(e=>{
     if(!e||e.type==='weekly'||e.type==='explore') return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
     const _isRaider=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(_isRaider&&state.attackThreat) return false;
@@ -2491,14 +2561,14 @@ function getElectricityFree(){
   return Math.max(0, getElectricityCapacity()-getElectricityUsed());
 }
 
-// Called whenever barracones or generador levels up
+// Called whenever a building levels up
 function checkBuildingUnlocks(buildingId){
-  // Generador unlocks when Barracones reaches level 2
-  if(buildingId==='barracones'){
-    const lvl=state.buildings.barracones?.level||0;
+  // Generador unlocks when Taller reaches level 2
+  if(buildingId==='taller'){
+    const lvl=state.buildings.taller?.level||0;
     if(lvl>=2&&!state.buildings.generador?.built){
       state.buildings.generador.constructible=true;
-      addLog('⚡ Los Barracones han alcanzado nivel 2. El Generador ya puede construirse.');
+      addLog('⚡ El Taller ha alcanzado nivel 2. El Generador ya puede construirse.');
     }
   }
   // Update electricity capacity display
@@ -2897,7 +2967,7 @@ function resolveLocationExploration(){
       }
       // Injury risk based on riskLevel
       const injChance=loc.riskLevel*0.12;
-      if(Math.random()<injChance) injureSurvivor(s,`🩸 ${s?s.name:'Alguien'} resulta ${injuredLabel(s)} explorando ${loc.name}.`);
+      if(Math.random()<injChance) injureSurvivor(s,(surv)=>`🩸 ${surv?surv.name:'Alguien'} resulta ${injuredLabel(surv)} explorando ${loc.name}.`,{source:'explore'});
     } else if(mode==='attack'){
       // Simple raider combat at location
       const atkRoll=roll(1,6);
@@ -2908,7 +2978,7 @@ function resolveLocationExploration(){
         addLog(`✅ ${s?s.name:'El grupo'} elimina a los raiders de ${loc.name}.`);
         state.stability=Math.min(10,state.stability+1);
       } else {
-        if(s) injureSurvivor(s,`🩸 ${s.name} fracasa y resulta ${injuredLabel(s)} en el intento.`);
+        if(s) injureSurvivor(s,(surv)=>`🩸 ${surv.name} fracasa y resulta ${injuredLabel(surv)} en el intento.`,{source:'outside'});
         addLog(`❌ No se pudo limpiar ${loc.name} de raiders.`);
       }
     }
@@ -3091,7 +3161,7 @@ function openLootPopup(locationId){
   });
   // Injury risk based on riskLevel
   if(Math.random()<(loc.riskLevel||0)*0.10){
-    injureSurvivor(s,`🩸 ${s.name} resulta ${injuredLabel(s)} saqueando ${loc.name}.`);
+    injureSurvivor(s,(surv)=>`🩸 ${surv.name} resulta ${injuredLabel(surv)} saqueando ${loc.name}.`,{source:'combat'});
   }
   loc.status='explored';
   if(loc.exhaustible) loc.exhausted=true;
@@ -3121,6 +3191,8 @@ function openLocationRaiderAttack(locationId){
   // Use stored hostile strength or fall back to riskLevel-based
   const baseHostileStr=loc.hostileStrength||(loc.riskLevel||1)*2;
   const totalDef=baseHostileStr+defRoll;
+  const ownBreakdown=`Atacantes ${survivorsHere.length}, habilidades +${skillBonus}, 1d6 (${atkRoll}) = ${totalAtk}`;
+  const enemyBreakdown=`${loc.hostileLabel||'Hostiles'}: fuerza ${baseHostileStr}, 1d4 (${defRoll}) = ${totalDef}`;
   addLog(`⚔ ATAQUE: ${survivorsHere.length} atacantes +${skillBonus} habilidades +${atkRoll}(d6) = ${totalAtk}`);
   addLog(`⚔ ${loc.hostileLabel||'Hostiles'}: fuerza ${baseHostileStr} +${defRoll}(d4) = ${totalDef}`);
   const hostileDef=getHostileDef(loc.hostileType);
@@ -3133,15 +3205,33 @@ function openLocationRaiderAttack(locationId){
     if(fled){
       addLog(`🏃 Los ${loc.hostileLabel||'hostiles'} huyen de ${loc.name}.`);
       applyLootList(hostileDef?.lootOnFlee||[]);
+      openCombatResultPopup({
+        title:'✅ Enemigos en retirada',
+        icon:'🏃',
+        text:`Los ${loc.hostileLabel||'hostiles'} huyen de ${loc.name}.`,
+        summary:[ownBreakdown,enemyBreakdown,`Resultado: ${totalAtk} vs ${totalDef}`],
+      });
     } else {
       addLog(`✅ ${survivorsHere.map(s=>s.name).join(', ')} eliminan a los ${loc.hostileLabel||'hostiles'} de ${loc.name}.`);
       applyLootList(hostileDef?.lootOnVictory||[]);
       state.stability=Math.min(10,state.stability+1);
+      openCombatResultPopup({
+        title:'✅ Victoria en incursión',
+        icon:'⚔',
+        text:`${survivorsHere.map(s=>s.name).join(', ')} limpian ${loc.name} de hostiles.`,
+        summary:[ownBreakdown,enemyBreakdown,`Resultado: ${totalAtk} vs ${totalDef}`,'+1 estabilidad'],
+      });
     }
-    survivorsHere.forEach(s=>{ if(Math.random()<0.25+injBonus) injureSurvivor(s,`🩸 ${s.name} resulta ${injuredLabel(s)} en el combate.`); });
+    survivorsHere.forEach(s=>{ if(Math.random()<0.25+injBonus) injureSurvivor(s,(surv)=>`🩸 ${surv.name} resulta ${injuredLabel(surv)} en el combate.`,{source:'combat'}); });
   } else {
     addLog(`❌ El ataque fracasó. Los ${loc.hostileLabel||'hostiles'} siguen en ${loc.name}.`);
-    survivorsHere.forEach(s=>{ if(Math.random()<0.5+injBonus) injureSurvivor(s,`🩸 ${s.name} resulta ${injuredLabel(s)} en el combate.`); });
+    survivorsHere.forEach(s=>{ if(Math.random()<0.5+injBonus) injureSurvivor(s,(surv)=>`🩸 ${surv.name} resulta ${injuredLabel(surv)} en el combate.`,{source:'combat'}); });
+    openCombatResultPopup({
+      title:'❌ Ataque fallido',
+      icon:'💥',
+      text:`El grupo no consigue expulsar a los ${loc.hostileLabel||'hostiles'} de ${loc.name}.`,
+      summary:[ownBreakdown,enemyBreakdown,`Resultado: ${totalAtk} vs ${totalDef}`],
+    });
   }
   // Survivors start return
   survivorsHere.forEach(s=>{
@@ -3250,6 +3340,48 @@ function applyDailyMoraleDecay(){
     if(s.status==='herido'&&s.action?.type!=='descansar'){
       s.morale=Math.max(0,s.morale-1);
       if(s.morale<=0) addLog(`😞 ${s.name} está herido y desmoralizado.`);
+    }
+  });
+}
+
+function processInjuriesEndOfDay(){
+  aliveSurvivors().forEach(s=>{
+    if(s.status!=='herido') return;
+    ensureInjuryState(s);
+    const level=s.injuryLevel;
+    const needed=INJURY_REST_DAYS[level]||1;
+    if(s.action?.type==='descansar') s.injuryRestDays=Math.min(needed, Number(s.injuryRestDays||0)+1);
+    const readyToHeal=s.injuryRestDays>=needed;
+    if(!readyToHeal) return;
+
+    if(level==='simple'){
+      s.status='activo';
+      s.injuryLevel=null;
+      s.injuryRestDays=0;
+      addLog(`✅ ${s.name} se recupera de su herida simple tras descansar.`);
+      return;
+    }
+
+    if(state.meds>0){
+      state.meds=Math.max(0,state.meds-1);
+      s.status='activo';
+      s.injuryLevel=null;
+      s.injuryRestDays=0;
+      addLog(`💊 ${s.name} recibe tratamiento para herida ${injuryDisplayName(level)} (-1 medicamento).`);
+      addLog(`✅ ${s.name} se recupera de sus heridas tras el tratamiento.`);
+      return;
+    }
+
+    if(Math.random()<INJURY_ESCALATE_RISK){
+      if(level==='seria'){
+        s.injuryLevel='grave';
+        s.injuryRestDays=0;
+        addLog(`⚠ Sin medicamentos, la herida de ${s.name} empeora a grave.`);
+      } else {
+        killSurvivor(s,`💀 ${s.name} muere por una herida grave sin tratamiento.`);
+      }
+    } else {
+      addLog(`⚠ ${s.name} no tiene medicamentos para tratar su herida ${injuryDisplayName(level)}.`);
     }
   });
 }
@@ -3543,18 +3675,13 @@ function applyEffect(effect,delayed){
       }
       break;
     }
-    case 'healInjured':{
-      const injured=state.survivors.find(s=>s.status==='herido');
-      if(injured){injured.status='activo';addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de sus heridas.`)}
-      break;
-    }
     case 'injureExplorer':{
       // Injure the specific survivor who triggered this explore event
       const target=state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto');
-      if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}${target.name} resulta ${injuredLabel(target)} durante la exploración.`);
+      if(target) injureSurvivor(target,(surv)=>`${delayed?'[Retrasado] ':''}${surv.name} resulta ${injuredLabel(surv)} durante la exploración.`,{source:'event',level:effect.injuryLevel});
       else {
         const candidate=pick(state.survivors.filter(s=>s.status!=='muerto'));
-        if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`);
+        if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`,{source:'event',level:effect.injuryLevel});
       }
       break;
     }
@@ -3566,19 +3693,39 @@ function applyEffect(effect,delayed){
         ? state.survivors.filter(s=>ids.includes(s.id)&&s.status!=='muerto')
         : state.survivors.filter(s=>s.status!=='muerto');
       const target=pick(pool);
-      if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}🩸 ${target.name} resulta herido.`);
+      const sourceByAction={forraje:'forage',explorar:'explore',reciclar:'outside',defender:'combat',atacar:'combat'};
+      const injurySource=sourceByAction[action]||'event';
+      if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}🩸 ${target.name} resulta herido.`,{source:injurySource,level:effect.injuryLevel});
       break;
     }
     case 'injureRandom':
     case 'injureSurvivor':{
-      const candidate=pick(state.survivors.filter(s=>s.status!=='muerto'));
-      if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`);
+      const candidate=effect.targetId
+        ? state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto')
+        : pick(state.survivors.filter(s=>s.status!=='muerto'));
+      if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`,{source:'event',level:effect.injuryLevel});
       break;
     }
     case 'healSurvivor':
     case 'healInjured':{
-      const injured=state.survivors.find(s=>s.status==='herido');
-      if(injured){injured.status='activo';addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de sus heridas.`)}
+      const desiredLevel=normalizeInjuryLevel(effect.injuryLevel);
+      const candidates=state.survivors.filter(s=>{
+        if(s.status!=='herido') return false;
+        if(!desiredLevel) return true;
+        return (s.injuryLevel||'simple')===desiredLevel;
+      });
+      const injured=effect.targetId
+        ? candidates.find(s=>s.id===effect.targetId)
+        : pick(candidates);
+      if(injured){
+        const curedLevel=injuryDisplayName(injured.injuryLevel||'simple');
+        injured.status='activo';
+        injured.injuryLevel=null;
+        injured.injuryRestDays=0;
+        addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de una herida ${curedLevel}.`);
+      } else if(desiredLevel){
+        addLog(`${delayed?'[Retrasado] ':''}No hay supervivientes con herida ${injuryDisplayName(desiredLevel)} para curar.`);
+      }
       break;
     }
     case 'setAttackThreat':{
@@ -3590,16 +3737,20 @@ function applyEffect(effect,delayed){
       }
       if(!getHostileDef(hostileType)) hostileType='raiders';
       state.attackHostileType=hostileType;
-      if(effect.attackStrength) state.attackStrength=Number(effect.attackStrength);
+      const hostileDef=getHostileDef(hostileType);
+      const hostileAttackDice=hostileDef?.attackDice||'1d6';
+      // Attack strength now comes from the hostile definition, not from events.json
+      state.attackStrength=rollDiceString(hostileAttackDice, '1d6');
       if(effect.effectOnVictory?.length) state.attackEffectVictory=deepClone(effect.effectOnVictory);
       if(effect.effectOnDefeat?.length)  state.attackEffectDefeat=deepClone(effect.effectOnDefeat);
+      state.attackPopupVictory=effect.combatPopupVictory?deepClone(effect.combatPopupVictory):null;
+      state.attackPopupDefeat=effect.combatPopupDefeat?deepClone(effect.combatPopupDefeat):null;
       const arrDays=Number(effect.arrivalDays||0);
       state.attackArrivalDay=arrDays>0?state.day+arrDays:state.day;
       const days=arrDays>0?`en ${arrDays} día${arrDays!==1?'s':''}. Día ${state.attackArrivalDay}.`:'¡inminente!';
-      const hostileDef=getHostileDef(hostileType);
       const hostileLabel=hostileDef?.label||hostileType;
       const hostileIcon=hostileDef?.icon?`${hostileDef.icon} `:'';
-      addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! ${hostileIcon}${hostileLabel} · Fuerza: ${state.attackStrength} · Llegada: ${days}`);
+      addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! ${hostileIcon}${hostileLabel} · Fuerza: ${state.attackStrength} (${hostileAttackDice}) · Llegada: ${days}`);
       if(typeof setCombatMusic==='function') setCombatMusic(true);
       break;
     }
@@ -3619,12 +3770,14 @@ function applyEffect(effect,delayed){
       break;
     }
     case 'limitAction':{
-      const days=Number(effect.days||1);
-      // Queue the limit for each day it should last
-      for(let d=1;d<=days;d++){
-        state.delayedQueue.push({day:state.day+(delayed?0:1)+d-1,effect:{type:'_internalLimitAction',action:effect.action}});
-      }
-      addLog(`${delayed?'[Retrasado] ':''}La acción ${actionLabel(effect.action)} queda inhabilitada ${days} día${days!==1?'s':''}.`);
+      const explicitDays=Math.max(1, Number(effect.days||1));
+      const eventWindow=Math.max(1, Number(state.eventDaysLeft||0), Number(state.eventTotalDays||0));
+      const totalDays=Math.max(explicitDays, (!delayed&&state.pendingEvent)?eventWindow:1);
+      const startDay=delayed?state.day+1:state.day;
+      const untilDay=startDay+totalDays-1;
+      if(!state.actionLimits) state.actionLimits={};
+      state.actionLimits[effect.action]=Math.max(Number(state.actionLimits[effect.action]||0), untilDay);
+      addLog(`${delayed?'[Retrasado] ':''}La acción ${actionLabel(effect.action)} queda inhabilitada ${totalDays} día${totalDays!==1?'s':''} (hasta el día ${untilDay}).`);
       break;
     }
     case 'modifyActionEffect':{
@@ -3637,41 +3790,13 @@ function applyEffect(effect,delayed){
     case 'addSurvivorRandom':{
       // Don't open a second popup if one is already pending
       if(state._pendingSurvivor) break;
-      const newSurvivor=pickSurvivorByRarity();
+      const forcedRarity = effect.type==='addSurvivorByRarity' ? Number(effect.rarity||4) : null;
+      const newSurvivor=pickSurvivorByRarity(forcedRarity);
       if(newSurvivor){
         state._pendingSurvivor=newSurvivor;
         openSurvivorInvitePopup(newSurvivor);
-      }
-      break;
-    }
-    case 'addSurvivorRandom':{
-      const pool = effect.type==='addSurvivorRandom'
-        ? (window.SURVIVORS||[]).filter(s=>s&&s.name)
-        : [];
-      const newSurvivor = effect.type==='addSurvivorRandom'
-        ? (pool.length ? pick(pool) : null)
-        : pickSurvivorByRarity(effect.rarity);
-      if(newSurvivor){
-        const nextId=Math.max(0,...state.survivors.map(s=>Number(s.id)||0))+1;
-        state.survivors.push({
-          id:newSurvivor.id||nextId,
-          name:newSurvivor.name,
-          fatigue:Number(newSurvivor.fatigueCurrent??newSurvivor.fatigue??newSurvivor.fatigueMax??newSurvivor.maxFatigue??3),
-          maxFatigue:Number(newSurvivor.fatigueMax??newSurvivor.maxFatigue??3),
-          rarity:Number(newSurvivor.rarity??4),
-          imageUrl:newSurvivor.image?.url||'',
-          imageUrlInjured:newSurvivor.imageInjured?.url||newSurvivor.imageUrlInjured||'',
-          imageUrlDead:'',
-          story:newSurvivor.story||'',
-          skill:newSurvivor.skill||'ninguna',
-          morale:Number(newSurvivor.moralCurrent??newSurvivor.morale??2),
-          maxMorale:Number(newSurvivor.moralMax??2),
-          fed:true,
-          status:'activo',
-          action:null
-        });
-        state._pendingSurvivor=newSurvivor;
-        openSurvivorInvitePopup(newSurvivor);
+      } else {
+        addLog(`${delayed?'[Retrasado] ':''}No hay supervivientes disponibles para añadir (todos ya están en juego).`);
       }
       break;
     }
@@ -3682,8 +3807,9 @@ function applyEffect(effect,delayed){
       break;
     }
     case '_internalLimitAction':{
-      if(!window.tempActionLimits) window.tempActionLimits={};
-      window.tempActionLimits[effect.action]=true;
+      // Legacy compatibility for older queued limits
+      if(!state.actionLimits) state.actionLimits={};
+      state.actionLimits[effect.action]=Math.max(Number(state.actionLimits[effect.action]||0), state.day+1);
       break;
     }
     case '_internalModifyAction':{
@@ -3695,6 +3821,10 @@ function applyEffect(effect,delayed){
 }
 
 function resetForNewDay(){
+  if(!state.actionLimits) state.actionLimits={};
+  Object.keys(state.actionLimits).forEach(action=>{
+    if(Number(state.actionLimits[action])<state.day) delete state.actionLimits[action];
+  });
   window.tempActionLimits={};window.tempActionMods={};
   state.survivors.forEach(s=>{
     s._actionResolved=false;  // clear for next day
@@ -3861,7 +3991,7 @@ function resetAssignments(){
 
 function getAvailableActions(s){
   if(s.status==='muerto') return [];
-  if(s.status==='herido'||s.fatigue<=0) return ['descansar'];
+  if(requiresForcedRest(s)||s.fatigue<=0) return ['descansar'];
   const neg=(s.negativeSkill||'').toLowerCase().trim();
   const arr=['forraje','reciclar','construir'];
   if(neg!=='miedoso') arr.push('explorar');
@@ -3876,12 +4006,17 @@ function getAvailableActions(s){
   return arr.filter(a=>!isActionLimited(a));
 }
 
-function isActionLimited(action){return !!(window.tempActionLimits&&window.tempActionLimits[action])}
+function isActionLimited(action){
+  const hardLimit=Number(state.actionLimits?.[action]||0)>=state.day;
+  const tempLimit=!!(window.tempActionLimits&&window.tempActionLimits[action]);
+  return hardLimit||tempLimit;
+}
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
 function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
 function actionSummary(s){
   if(s.status==='muerto') return 'No disponible.';
-  if(s.status==='herido'&&!s.action) return 'Está herido. Solo puede descansar.';
+  if(requiresForcedRest(s)&&!s.action) return `Tiene herida ${injuryDisplayName(s.injuryLevel||'simple')}. Solo puede descansar.`;
+  if(s.status==='herido'&&!s.action) return `Está herido (${injuryDisplayName(s.injuryLevel||'simple')}).`;
   if(s.fatigue<=0&&!s.action) return 'Sin fatiga. Solo puede descansar.';
   if(!s.action) return 'Sin acción asignada.';
 
@@ -3904,7 +4039,54 @@ function getSurvivorImage(s){
   return s.imageUrl||'';
 }
 
-function injuredLabel(){return 'herido/a'}
+const INJURY_REST_DAYS={simple:1,seria:2,grave:3};
+const INJURY_ESCALATE_RISK=0.5;
+const INJURY_LEVEL_RULES={
+  generic:{simple:0.7, seria:0.22, grave:0.08},
+  outside:{simple:0.82, seria:0.15, grave:0.03},
+  forage:{simple:0.93, seria:0.06, grave:0.01},
+  explore:{simple:0.88, seria:0.10, grave:0.02},
+  combat:{simple:0.5, seria:0.32, grave:0.18},
+  ambush:{simple:0.55, seria:0.30, grave:0.15},
+  event:{simple:0.7, seria:0.23, grave:0.07},
+};
+function injuryDisplayName(level){
+  return ({simple:'simple',seria:'seria',grave:'grave'})[level]||'simple';
+}
+function normalizeInjuryLevel(level){
+  const raw=String(level||'').toLowerCase().trim();
+  if(raw==='simple'||raw==='leve') return 'simple';
+  if(raw==='seria'||raw==='serio') return 'seria';
+  if(raw==='grave') return 'grave';
+  return null;
+}
+function nextInjuryLevel(level){
+  return level==='simple'?'seria':level==='seria'?'grave':'grave';
+}
+function ensureInjuryState(s){
+  if(s.status!=='herido') return;
+  if(!s.injuryLevel) s.injuryLevel='simple';
+  if(typeof s.injuryRestDays!=='number') s.injuryRestDays=0;
+}
+function requiresForcedRest(s){
+  if(s?.status!=='herido') return false;
+  const level=s.injuryLevel||'simple';
+  return level==='seria'||level==='grave';
+}
+function injuredLabel(s){
+  const level=s?.injuryLevel||'simple';
+  return `herido/a (${injuryDisplayName(level)})`;
+}
+function rollInjuryLevel(source='generic', forcedLevel){
+  if(forcedLevel&&INJURY_REST_DAYS[forcedLevel]) return forcedLevel;
+  const rules=INJURY_LEVEL_RULES[source]||INJURY_LEVEL_RULES.generic;
+  const r=Math.random();
+  const sCut=Number(rules.simple||0.7);
+  const seCut=sCut+Number(rules.seria||0.22);
+  if(r<=sCut) return 'simple';
+  if(r<=seCut) return 'seria';
+  return 'grave';
+}
 
 function getMoraleEmoji(s){
   const m=s.morale??2;
@@ -3915,19 +4097,26 @@ function getMoraleEmoji(s){
 function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Estabilidad',stability:'Estabilidad',meds:'Medicamentos',electricity:'Electricidad'})[key]||key}
 function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
-function injureSurvivor(s,msg){if(s.status!=='muerto')s.status='herido';addLog(msg)}
-
-function killSurvivor(s,msg,skipMedsCheck){
+function injureSurvivor(s,msg,opts={}){
   if(s.status==='muerto') return;
-  // Intercept with meds if available
-  if(!skipMedsCheck&&state.meds>0){
-    const cost=Math.random()<0.5?1:2; // random 1 or 2
-    const affordable=state.meds>=cost;
-    // Show save popup
-    state._pendingDeath={s, msg:msg||`${s.name} ha muerto.`, cost, affordable};
-    openMedsSavePopup();
-    return;
+  if(s.status==='herido'){
+    ensureInjuryState(s);
+    const prev=s.injuryLevel;
+    s.injuryLevel=nextInjuryLevel(s.injuryLevel);
+    s.injuryRestDays=0;
+    addLog(`⚠ La herida de ${s.name} empeora: ${injuryDisplayName(prev)} → ${injuryDisplayName(s.injuryLevel)}.`);
+  } else {
+    s.status='herido';
+    s.injuryLevel=rollInjuryLevel(opts.source||'generic', opts.level);
+    s.injuryRestDays=0;
+    addLog(`🩸 ${s.name} sufre una herida ${injuryDisplayName(s.injuryLevel)}.`);
   }
+  const resolvedMsg=(typeof msg==='function')?msg(s):msg;
+  if(resolvedMsg) addLog(resolvedMsg);
+}
+
+function killSurvivor(s,msg){
+  if(s.status==='muerto') return;
   _doKill(s, msg);
 }
 
@@ -3955,7 +4144,8 @@ function pickStartingSurvivors(count){
   return pool.slice(0,count);
 }
 function pickSurvivorByRarity(forcedRarity){
-  const pool=(gameData.survivors||[]).filter(Boolean);
+  const existingIds=new Set((state.survivors||[]).map(s=>s.id).filter(Boolean));
+  const pool=(gameData.survivors||[]).filter(s=>s&&s.id&&!existingIds.has(s.id));
   if(!pool.length) return null;
   const rarityWeights=forcedRarity ? { [Number(forcedRarity)]: 1 } : {1:1,2:3,3:6,4:12};
   const rarities=Object.keys(rarityWeights).map(Number).filter(r=>pool.some(s=>Number(s.rarity||4)===r));
@@ -3969,9 +4159,59 @@ function pickSurvivorByRarity(forcedRarity){
 function weightedPick(items){const total=items.reduce((sum,i)=>sum+Number(i.weight||0),0);let r=Math.random()*total;for(const item of items){r-=Number(item.weight||0);if(r<=0)return item}return items[0]||null}
 function clamp(v,min,max){return Math.min(max,Math.max(min,v))}
 function roll(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function rollDiceString(expr,fallback='1d6'){
+  const source=String(expr||fallback).trim();
+  const m=source.match(/^(\d+)d(\d+)$/i);
+  const fb=String(fallback||'1d6').match(/^(\d+)d(\d+)$/i);
+  const count=Math.max(1, Number(m?.[1]||fb?.[1]||1));
+  const sides=Math.max(2, Number(m?.[2]||fb?.[2]||6));
+  let total=0;
+  for(let i=0;i<count;i++) total+=roll(1,sides);
+  return total;
+}
 function pick(arr){return arr.length?arr[Math.floor(Math.random()*arr.length)]:null}
 function escapeHtml(str){return String(str??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 function escapeAttr(str){return escapeHtml(str)}
+
+function combatEffectSummary(e){
+  if(!e||!e.type) return '';
+  if(e.type==='addResource') return `+${e.amount||0} ${resourceLabel(e.resource)}`;
+  if(e.type==='removeResource') return `-${e.amount||0} ${resourceLabel(e.resource)}`;
+  if(e.type==='stabilityChange') return `${(e.amount||0)>=0?'+':''}${e.amount||0} estabilidad`;
+  if(e.type==='moraleAll') return `${(e.amount||0)>=0?'+':''}${e.amount||0} moral (todos)`;
+  if(e.type==='moraleSurvivor') return `${(e.amount||0)>=0?'+':''}${e.amount||0} moral (1 superviviente)`;
+  if(e.type==='injureSurvivor') return '1 superviviente herido';
+  if(e.type==='healSurvivor'||e.type==='healInjured') return '1 superviviente curado';
+  if(e.type==='unlockBuilding') return `Desbloquea ${e.building||'edificio'}`;
+  return e.type;
+}
+
+function openCombatResultPopup({title,text,icon='⚔',summary=[]}){
+  const popup=document.getElementById('combatResultPopup');
+  const titleEl=document.getElementById('combatResultTitle');
+  const imgEl=document.getElementById('combatResultImg');
+  const textEl=document.getElementById('combatResultText');
+  const summaryEl=document.getElementById('combatResultSummary');
+  const effectsEl=document.getElementById('combatResultEffects');
+  titleEl.textContent=title||'⚔ Resultado de combate';
+  imgEl.textContent=icon||'⚔';
+  textEl.textContent=text||'El combate ha terminado.';
+  summaryEl.innerHTML=(summary||[]).length
+    ? '<b>Desglose:</b><br>'+summary.map(s=>`• ${escapeHtml(s)}`).join('<br>')
+    : '';
+  effectsEl.innerHTML='';
+  popup.classList.add('open');
+}
+function attackPopupPayload(side, payload){
+  const cfg=side==='victory'?state.attackPopupVictory:state.attackPopupDefeat;
+  if(!cfg) return payload;
+  return {
+    ...payload,
+    title:cfg.title||payload.title,
+    text:cfg.text||payload.text,
+    icon:cfg.icon||payload.icon,
+  };
+}
 
 
 
@@ -4062,22 +4302,6 @@ function openHOS001AttackPopup(atkEffect){
   };
 }
 
-function openMedsSavePopup(){
-  const {s, msg, cost, affordable}=state._pendingDeath;
-  const popup=document.getElementById('medsSavePopup');
-  const imgEl=document.getElementById('medsSaveImg');
-  const _medsImg=s.imageUrlInjured||s.imageUrl||'';
-  imgEl.innerHTML=_medsImg?`<img src="${escapeAttr(_medsImg)}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(40%);">` : '';
-  document.getElementById('medsSaveName').textContent=s.name;
-  document.getElementById('medsSaveText').textContent=
-    affordable
-      ? `Va a morir. Puedes gastar ${cost} medicamento${cost>1?'s':''} para salvarle. Quedarán ${state.meds-cost} medicamento${state.meds-cost!==1?'s':''}.`
-      : `Va a morir. Necesitarías ${cost} medicamento${cost>1?'s':''} pero solo tienes ${state.meds}. No puedes salvarle.`;
-  document.getElementById('medsSaveYes').disabled=!affordable;
-  popup.classList.add('open');
-}
-
-
 document.getElementById('inviteYes').addEventListener('click',()=>{
   const btn=document.getElementById('inviteYes');
   if(btn.disabled) return;
@@ -4095,25 +4319,9 @@ document.getElementById('inviteNo').addEventListener('click',()=>{
   document.getElementById('survivorInvitePopup').classList.remove('open');
   render();
 });
-document.getElementById('medsSaveYes').addEventListener('click',()=>{
-  const {s, cost}=state._pendingDeath;
-  state.meds-=cost;
-  s.status='herido';  // saved but injured
-  addLog(`💊 ${s.name} salvado gracias a ${cost} medicamento${cost>1?'s':''}. Queda herido.`);
-  state._pendingDeath=null;
-  document.getElementById('medsSavePopup').classList.remove('open');
-  render();
+document.getElementById('combatResultClose').addEventListener('click',()=>{
+  document.getElementById('combatResultPopup').classList.remove('open');
 });
-
-document.getElementById('medsSaveNo').addEventListener('click',()=>{
-  const {s, msg}=state._pendingDeath;
-  _doKill(s, msg);
-  state._pendingDeath=null;
-  document.getElementById('medsSavePopup').classList.remove('open');
-  render();
-});
-
-
 function showCemeteryDetail(){
   state.currentDetail='cementerio';
   const deadOnly=state.cemetery.filter(s=>!s.departed);
@@ -4320,11 +4528,31 @@ function startIntro(){
   const textEl=document.getElementById('introText');
   const btn=document.getElementById('introContinueBtn');
   if(!overlay) return;
+  const params = new URLSearchParams(window.location.search);
+  const skipIntro = params.get('skipIntro') === '1';
+  let introEnded = false;
+  let forceFinishTimer = null;
 
   let lineIdx=0;
   let charIdx=0;
   let fullText='';
   let typing=true;
+
+  function endIntro(){
+    if(introEnded) return;
+    introEnded = true;
+    if(forceFinishTimer) clearTimeout(forceFinishTimer);
+    overlay.style.transition='opacity 0.8s';
+    overlay.style.opacity='0';
+    setTimeout(()=>{ overlay.style.display='none'; }, 800);
+    startMusic();
+  }
+
+  if(skipIntro){
+    overlay.style.display='none';
+    startMusic();
+    return;
+  }
 
   // Click anywhere to skip to end
   overlay.addEventListener('click', ()=>{
@@ -4367,13 +4595,10 @@ function startIntro(){
   }
 
   setTimeout(typeNextChar, 600);
+  // Safety fallback: avoid permanent black screen if intro flow gets stuck.
+  forceFinishTimer = setTimeout(endIntro, 10000);
 
-  btn.addEventListener('click', ()=>{
-    overlay.style.transition='opacity 0.8s';
-    overlay.style.opacity='0';
-    setTimeout(()=>{ overlay.style.display='none'; }, 800);
-    startMusic();
-  });
+  btn.addEventListener('click', endIntro);
 }
 
 loadFromFiles().then(() => initGame()).catch(() => initGame());
