@@ -538,5 +538,46 @@
         "target": "random"
       }
     ]
+  },
+  {
+    "id": "kirk001",
+    "name": "Un par de manos más",
+    "image": "",
+    "text": "Kirk conoce a un superviviente que está viviendo por su cuenta en una caravana. Podría ser útil tener un par de manos más en el asentamiento, pero hay que demostrarle al superviviente que somos de fiar.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "condition": {
+      "type": "survivor",
+      "id": "survivor_kirk"
+    },
+    "priority": true,
+    "day": 3,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Dale a Kirk alimento para convencer al superviviente.",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addSurvivorRandom"
+          }
+        ]
+      },
+      "B": {
+        "label": "Es mejor guardar recursos por ahora... nunca se sabe.",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": -1,
+            "targetId": "survivor_kirk"
+          }
+        ]
+      }
+    }
   }
 ]
