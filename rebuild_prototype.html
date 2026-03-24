@@ -1449,6 +1449,9 @@ function renderSurvivors(){
     const card=document.createElement('div');
     card.className='survivor-card';
     const loreBtn=`<button class="lore-btn" title="Historia de ${escapeHtml(s.name)}">📖</button>`;
+    const statusText=s.status==='herido'
+      ? `${statusLabel(s.status)} (${injuryDisplayName(s.injuryLevel||'simple')})`
+      : statusLabel(s.status);
     card.innerHTML=`
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
         <div class="avatar">${avatarInner}</div>
@@ -1457,7 +1460,7 @@ function renderSurvivors(){
       <div style="min-width:0;">
         <div class="survivor-top">
           <div class="survivor-name">${escapeHtml(s.name)}</div>
-          <div class="badge ${s.status}">${statusLabel(s.status)}</div>
+          <div class="badge ${s.status}">${statusText}</div>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:2px;">
           <div class="mini"><span style="color:var(--ok)">⚡</span>${s.fatigue}/${s.maxFatigue}</div>
@@ -1754,6 +1757,11 @@ function resolveActions(){
   state.survivors.forEach(s=>{
     if(!s.action||s.status==='muerto') return;
     if(s._actionResolved) return;  // prevent double-processing
+    if(requiresForcedRest(s)&&s.action.type!=='descansar'){
+      addLog(`⚠ ${s.name} tiene herida ${injuryDisplayName(s.injuryLevel)} y solo puede descansar.`);
+      s.action={type:'descansar'};
+      s.status='ocupado';
+    }
     s._actionResolved=true;
     const type=s.action.type;
     if(type!=='descansar') s.fatigue=Math.max(0,s.fatigue-1);
@@ -1871,6 +1879,8 @@ function resolveGroupAttack(){
   const isPreemptive=attackers.length>0;
 
   let totalDef, totalAtk, diff, defRoll, atkRoll;
+  let ownBreakdown='', enemyBreakdown='';
+  const hostileLabel=getHostileLabel(state.attackHostileType||'raiders');
 
   if(isPreemptive){
     // ── PREEMPTIVE STRIKE ──
@@ -1885,6 +1895,8 @@ function resolveGroupAttack(){
     totalDef=attackers.length+skillBonus+emboscadaBonus+defRoll;
     totalAtk=state.attackStrength+atkRoll;
     diff=totalAtk-totalDef;
+    ownBreakdown=`Atacantes ${attackers.length}, habilidades +${skillBonus}, emboscada +${emboscadaBonus}, 1d6 (${defRoll}) = ${totalDef}`;
+    enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, 1d4 (${atkRoll}) = ${totalAtk}`;
     addLog(`⚔ EMBOSCADA: ${attackers.length} atacantes +${skillBonus} habilidades +${emboscadaBonus} emboscada +${defRoll}(d6) = ${totalDef}`);
     addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d4) = ${totalAtk}`);
   } else {
@@ -1903,6 +1915,8 @@ function resolveGroupAttack(){
     totalDef=defCount+atalajaBonus+murosBonus+vallaBonus+defRoll;
     totalAtk=state.attackStrength+atkRoll;
     diff=totalAtk-totalDef;
+    ownBreakdown=`Defensores ${defCount}, Muro +${murosBonus}, Atalaya +${atalajaBonus}${vallaBonus?`, Valla +${vallaBonus}`:''}, 1d6 (${defRoll}) = ${totalDef}`;
+    enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, 1d6 (${atkRoll}) = ${totalAtk}`;
     addLog(`⚔ DEFENSA: ${defCount} defensores +${murosBonus} muros +${atalajaBonus} atalaya +${defRoll}(d6) = ${totalDef}`);
     addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d6) = ${totalAtk}`);
   }
@@ -2233,8 +2247,30 @@ function checkStoryEvent(){
                (gameData.story_events||[]).find(e=>e.id==='HOS001');
     if(hos){ state._hos001.active=true; setEvent(buildEventFromSchema(hos)); return true; }
   }
+  if(!Array.isArray(state.deferredStoryEventIds)) state.deferredStoryEventIds=[];
+  // First, try deferred story events that were postponed in previous days
+  for(let i=0;i<state.deferredStoryEventIds.length;i++){
+    const deferredId=state.deferredStoryEventIds[i];
+    const deferredEv=(gameData.story_events||[]).find(x=>x.id===deferredId);
+    if(!deferredEv){
+      state.deferredStoryEventIds.splice(i,1);
+      i--;
+      continue;
+    }
+    if(state.attackThreat&&deferredEv.skipWhenAttackActive) continue;
+    if(deferredEv.condition&&!evaluateCondition(deferredEv.condition)) continue;
+    state.deferredStoryEventIds.splice(i,1);
+    addLog(`📖 Evento de historia aplazado activado: ${deferredEv.name||deferredEv.id}.`);
+    setEvent(buildEventFromSchema(deferredEv));
+    return true;
+  }
   const ev=(gameData.story_events||[]).find(x=>Number(x.day)===state.day&&x.id!=='HOS001');
   if(!ev) return false;
+  if(state.attackThreat&&ev.skipWhenAttackActive){
+    if(!state.deferredStoryEventIds.includes(ev.id)) state.deferredStoryEventIds.push(ev.id);
+    addLog(`📖 ${ev.name||ev.id} se aplaza: hay amenaza de ataque activa.`);
+    return false;
+  }
   // Check condition even for story events
   if(ev.condition&&!evaluateCondition(ev.condition)) return false;
   setEvent(buildEventFromSchema(ev));
@@ -2248,6 +2284,7 @@ function checkPriorityEvent(){
     if(!e||e.type==='weekly'||e.type==='explore'||e.type==='story') return false;
     if(!e.priority) return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(!evaluateCondition(e.condition)) return false;
     return true;
   });
@@ -2267,7 +2304,9 @@ function checkWeeklyEvent(){
   const weeklyPool=(gameData.events||[]).filter(e=>e&&e.type==='weekly');
   if(!weeklyPool.length) return false;
   // Try to match exact week number, else cycle through pool
-  const ev=weeklyPool.find(e=>Number(e.week)===week)||weeklyPool[(week-1)%weeklyPool.length];
+  const eligibleWeekly=weeklyPool.filter(e=>!(state.attackThreat&&e.skipWhenAttackActive));
+  if(!eligibleWeekly.length) return false;
+  const ev=eligibleWeekly.find(e=>Number(e.week)===week)||eligibleWeekly[(week-1)%eligibleWeekly.length];
   if(!ev) return false;
   addLog(`Evento semanal (semana ${week}): ${ev.name||ev.title||ev.id}.`);
   setEvent(buildEventFromSchema(ev));
@@ -2279,6 +2318,7 @@ function chooseEvent(){
   const pool=(gameData.events||[]).filter(e=>{
     if(!e||e.type==='weekly'||e.type==='explore') return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
     const isRaiderEvent=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(isRaiderEvent&&state.attackThreat) return false;
@@ -2296,6 +2336,7 @@ function chooseEvent(){
   const activePool=(gameData.events||[]).filter(e=>{
     if(!e||e.type==='weekly'||e.type==='explore') return false;
     if(state.seenEvents.has(e.id)) return false;
+    if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
     const _isRaider=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(_isRaider&&state.attackThreat) return false;
@@ -3183,6 +3224,8 @@ function openLocationRaiderAttack(locationId){
   // Use stored hostile strength or fall back to riskLevel-based
   const baseHostileStr=loc.hostileStrength||(loc.riskLevel||1)*2;
   const totalDef=baseHostileStr+defRoll;
+  const ownBreakdown=`Atacantes ${survivorsHere.length}, habilidades +${skillBonus}, 1d6 (${atkRoll}) = ${totalAtk}`;
+  const enemyBreakdown=`${loc.hostileLabel||'Hostiles'}: fuerza ${baseHostileStr}, 1d4 (${defRoll}) = ${totalDef}`;
   addLog(`⚔ ATAQUE: ${survivorsHere.length} atacantes +${skillBonus} habilidades +${atkRoll}(d6) = ${totalAtk}`);
   addLog(`⚔ ${loc.hostileLabel||'Hostiles'}: fuerza ${baseHostileStr} +${defRoll}(d4) = ${totalDef}`);
   const hostileDef=getHostileDef(loc.hostileType);
@@ -3669,11 +3712,6 @@ function applyEffect(effect,delayed){
       }
       break;
     }
-    case 'healInjured':{
-      const injured=state.survivors.find(s=>s.status==='herido');
-      if(injured){injured.status='activo';addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de sus heridas.`)}
-      break;
-    }
     case 'injureExplorer':{
       // Injure the specific survivor who triggered this explore event
       const target=state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto');
@@ -3989,7 +4027,7 @@ function resetAssignments(){
 
 function getAvailableActions(s){
   if(s.status==='muerto') return [];
-  if(s.status==='herido'||s.fatigue<=0) return ['descansar'];
+  if(requiresForcedRest(s)||s.fatigue<=0) return ['descansar'];
   const neg=(s.negativeSkill||'').toLowerCase().trim();
   const arr=['forraje','reciclar','construir'];
   if(neg!=='miedoso') arr.push('explorar');
@@ -4013,7 +4051,8 @@ function getActionModifier(action){return Number(window.tempActionMods?.[action]
 function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',construir:'Construir',defender:'Defender',explorar:'Explorar',investigar:'Investigar',atacar:'Atacar (preventivo)'})[type]||type}
 function actionSummary(s){
   if(s.status==='muerto') return 'No disponible.';
-  if(s.status==='herido'&&!s.action) return 'Está herido. Solo puede descansar.';
+  if(requiresForcedRest(s)&&!s.action) return `Tiene herida ${injuryDisplayName(s.injuryLevel||'simple')}. Solo puede descansar.`;
+  if(s.status==='herido'&&!s.action) return `Está herido (${injuryDisplayName(s.injuryLevel||'simple')}).`;
   if(s.fatigue<=0&&!s.action) return 'Sin fatiga. Solo puede descansar.';
   if(!s.action) return 'Sin acción asignada.';
 
