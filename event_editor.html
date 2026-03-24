@@ -875,32 +875,6 @@
                 </select>
               </div>
             </div>
-            <div class="form-grid" style="margin-top:4px;">
-              <div class="field">
-                <label>Popup victoria · Título</label>
-                <input type="text" id="f-attackPopupVictoryTitle" placeholder="✅ Ataque repelido" />
-              </div>
-              <div class="field">
-                <label>Popup derrota · Título</label>
-                <input type="text" id="f-attackPopupDefeatTitle" placeholder="❌ Derrota en combate" />
-              </div>
-              <div class="field">
-                <label>Popup victoria · Texto</label>
-                <input type="text" id="f-attackPopupVictoryText" placeholder="Resumen corto del resultado..." />
-              </div>
-              <div class="field">
-                <label>Popup derrota · Texto</label>
-                <input type="text" id="f-attackPopupDefeatText" placeholder="Resumen corto del resultado..." />
-              </div>
-              <div class="field">
-                <label>Popup victoria · Icono (emoji)</label>
-                <input type="text" id="f-attackPopupVictoryIcon" placeholder="🛡" />
-              </div>
-              <div class="field">
-                <label>Popup derrota · Icono (emoji)</label>
-                <input type="text" id="f-attackPopupDefeatIcon" placeholder="☠" />
-              </div>
-            </div>
           </div>
 
           <div class="section-divider"><span>Efectos si los defensores ganan</span></div>
@@ -1009,15 +983,15 @@ function populateHostileSelect(){
 const EFFECT_TYPES = [
   { group: '📦 Recursos', value: 'modifyResource',     label: '📦 Recurso (+/-)' },
   { group: '🙂 Estado del grupo', value: 'fatigueAll', label: '⚡ Fatiga a todos (+/-)' },
-  { group: '🙂 Estado del grupo', value: 'modifyFatigue', label: '😮 Fatiga de un superviviente (+/- · aleatorio o por ID)' },
+  { group: '🙂 Estado del grupo', value: 'modifyFatigue', label: '😮 Fatiga de un superviviente (+/-)' },
   { group: '🙂 Estado del grupo', value: 'moraleAll',  label: '😊 Moral a todos (+/-)' },
-  { group: '🙂 Estado del grupo', value: 'moraleSurvivor', label: '😐 Moral a un superviviente (+/- · aleatorio o por ID)' },
+  { group: '🙂 Estado del grupo', value: 'moraleSurvivor', label: '😐 Moral a un superviviente (+/-)' },
   { group: '🏚 Base y construcciones', value: 'stabilityChange', label: '🏛 Cambiar estabilidad de la base (+/-)' },
   { group: '🏚 Base y construcciones', value: 'disableBuilding', label: '🚧 Inhabilitar edificio (X días)' },
   { group: '🏚 Base y construcciones', value: 'destroyBuilding', label: '💥 Destruir edificio' },
   { group: '👥 Supervivientes', value: 'addSurvivor', label: '🧲 Añadir superviviente' },
   { group: '👥 Supervivientes', value: 'healSurvivor', label: '🩹 Curar superviviente herido' },
-  { group: '👥 Supervivientes', value: 'injureSurvivor', label: '🩸 Herir superviviente (aleatorio o por ID)' },
+  { group: '👥 Supervivientes', value: 'injureSurvivor', label: '🩸 Herir superviviente aleatorio' },
   { group: '👥 Supervivientes', value: 'injureExplorer', label: '🧭 Herir al explorador' },
   { group: '👥 Supervivientes', value: 'injureActionSurvivor', label: '🎯 Herir a quien realizó la acción relacionada' },
   { group: '⚔ Riesgo y restricciones', value: 'setAttackThreat', label: '⚔ Activar amenaza de ataque' },
@@ -1271,12 +1245,9 @@ function updateEffectRowFields(row, type) {
     amt.value = 1;
     amt.min = -10; amt.max = 10;
     p1.style.display = '';
-    const oRandom = document.createElement('option');
-    oRandom.value = 'random'; oRandom.textContent = 'Superviviente aleatorio';
-    p1.appendChild(oRandom);
-    const oById = document.createElement('option');
-    oById.value = '__by_id__'; oById.textContent = 'Elegir por ID…';
-    p1.appendChild(oById);
+    const o = document.createElement('option');
+    o.value = 'random'; o.textContent = 'Superviviente aleatorio';
+    p1.appendChild(o);
   } else if (type === 'fatigueAll') {
     amt.style.display = '';
     amt.placeholder = 'Fatiga +/- (ej: 1 o -1)';
@@ -1314,9 +1285,6 @@ function updateEffectRowFields(row, type) {
     const oRandom = document.createElement('option');
     oRandom.value = 'random'; oRandom.textContent = 'Superviviente aleatorio';
     p1.appendChild(oRandom);
-    const oById = document.createElement('option');
-    oById.value = '__by_id__'; oById.textContent = 'Elegir por ID…';
-    p1.appendChild(oById);
   } else if (type === 'injureExplorer') {
     // No params — always targets the survivor who triggered the explore event
   } else if (type === 'injureActionSurvivor') {
@@ -1350,15 +1318,6 @@ function updateEffectRowFields(row, type) {
     amt.placeholder = type === 'stabilityChange' ? 'Cantidad (+/-)' : 'Moral +/- (ej: 1 o -1)';
     amt.value = type === 'stabilityChange' ? 1 : 1;
     amt.min = -10; amt.max = 10;
-    if (type === 'moraleSurvivor') {
-      p1.style.display = '';
-      const oRandom = document.createElement('option');
-      oRandom.value = 'random'; oRandom.textContent = 'Superviviente aleatorio';
-      p1.appendChild(oRandom);
-      const oById = document.createElement('option');
-      oById.value = '__by_id__'; oById.textContent = 'Elegir por ID…';
-      p1.appendChild(oById);
-    }
   } else if (type === 'setAttackThreat') {
     // Show attack config panel
     p1.style.display = '';
@@ -1397,32 +1356,6 @@ function updateEffectRowFields(row, type) {
       p1.appendChild(o);
     });
   }
-  if (['modifyFatigue','moraleSurvivor','healSurvivor','injureSurvivor'].includes(type)) {
-    attachManualTargetIdPrompt(row);
-  }
-}
-
-function attachManualTargetIdPrompt(row){
-  const p1 = row.querySelector('.effect-param1-select');
-  if(!p1 || p1._hasManualTargetHook) return;
-  p1.addEventListener('change', () => {
-    if (p1.value !== '__by_id__') return;
-    const previous = row.dataset.customTargetId || '';
-    const entered = window.prompt('ID del survivor objetivo:', previous);
-    const clean = String(entered || '').trim();
-    if (clean) {
-      row.dataset.customTargetId = clean;
-      const byIdOpt = [...p1.options].find(o => o.value === '__by_id__');
-      if (byIdOpt) byIdOpt.textContent = `Por ID: ${clean}`;
-      p1.value = '__by_id__';
-    } else if (previous) {
-      p1.value = '__by_id__';
-    } else {
-      p1.value = 'random';
-    }
-    updatePreview();
-  });
-  p1._hasManualTargetHook = true;
 }
 
 function readEffectRows(containerId) {
@@ -1440,7 +1373,7 @@ function readEffectRows(containerId) {
       effect.type = finalAmount >= 0 ? 'addResource' : 'removeResource';
       effect.amount = Math.abs(finalAmount);
     } else if (type === 'modifyFatigue') {
-      if (p1.value === '__by_id__' && row.dataset.customTargetId) effect.targetId = row.dataset.customTargetId;
+      effect.target = p1.value || 'random';
       const signedAmount = Number(amt.value);
       const finalAmount = Number.isFinite(signedAmount) && signedAmount !== 0 ? signedAmount : 1;
       effect.type = finalAmount >= 0 ? 'addFatigue' : 'removeFatigue';
@@ -1461,7 +1394,7 @@ function readEffectRows(containerId) {
         effect.rarity = Number(p1.value) || 4;
       }
     } else if (type === 'healSurvivor' || type === 'injureSurvivor') {
-      if (p1.value === '__by_id__' && row.dataset.customTargetId) effect.targetId = row.dataset.customTargetId;
+      effect.target = p1.value || 'random';
     } else if (type === 'injureExplorer') {
       // no extra params
     } else if (type === 'injureActionSurvivor') {
@@ -1472,9 +1405,6 @@ function readEffectRows(containerId) {
       effect.building = p1.value;
     } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
       effect.amount = Number(amt.value) || 1;
-      if (type === 'moraleSurvivor' && p1.value === '__by_id__' && row.dataset.customTargetId) {
-        effect.targetId = row.dataset.customTargetId;
-      }
     } else if (type === 'setAttackThreat') {
       effect.arrivalDays = Number(p1.value) || 1;
       effect.attackStrength = Number(amt.value) || 3;
@@ -1498,15 +1428,15 @@ function readEffectRows(containerId) {
 function effectToString(e) {
   if (e.type === 'addResource') return `📦 +${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
   if (e.type === 'removeResource') return `📦 -${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
-  if (e.type === 'addFatigue') return `😮 +${e.amount} fatiga (${e.targetId||'aleatorio'})`;
-  if (e.type === 'removeFatigue') return `😌 -${e.amount} fatiga (${e.targetId||'aleatorio'})`;
+  if (e.type === 'addFatigue') return `😮 +${e.amount} fatiga (${e.target||'aleatorio'})`;
+  if (e.type === 'removeFatigue') return `😌 -${e.amount} fatiga (${e.target||'aleatorio'})`;
   if (e.type === 'fatigueAll') return `⚡ Fatiga todos ${e.amount>0?'+':''}${e.amount}`;
   if (e.type === 'disableBuilding') return `🚧 Inhabilitar ${BUILDING_LABELS[e.building]||e.building} ${e.days}d`;
   if (e.type === 'destroyBuilding') return `💥 Destruir ${BUILDING_LABELS[e.building]||e.building}`;
   if (e.type === 'addSurvivorRandom') return `🎲 Nuevo superviviente totalmente aleatorio`;
   if (e.type === 'addSurvivor' || e.type === 'addSurvivorByRarity') return `🧲 Nuevo superviviente (rareza ${e.rarity})`;
   if (e.type === 'healSurvivor') return `Curar superviviente herido`;
-  if (e.type === 'injureSurvivor') return `Herir superviviente (${e.targetId||'aleatorio'})`;
+  if (e.type === 'injureSurvivor') return `Herir superviviente (${e.target||'aleatorio'})`;
   if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
   if (e.type === 'injureActionSurvivor') return `🩸 Herir a quien realizó la acción relacionada`;
   if (e.type === 'setAttackThreat') {
@@ -1517,7 +1447,7 @@ function effectToString(e) {
   }
   if (e.type === 'limitAction') return `🚫 Inhabilitar acción: ${e.action} (${e.days||1}d)`;
   if (e.type === 'moraleAll') return `${e.amount>0?'😊':'😞'} Moral todos ${e.amount>0?'+':''}${e.amount}`;
-  if (e.type === 'moraleSurvivor') return `${e.amount>0?'😊':'😞'} Moral superviviente ${e.amount>0?'+':''}${e.amount} (${e.targetId||'aleatorio'})`;
+  if (e.type === 'moraleSurvivor') return `${e.amount>0?'😊':'😞'} Moral superviviente ${e.amount>0?'+':''}${e.amount}`;
   if (e.type === 'stabilityChange') return `🏛 Estabilidad ${e.amount>0?'+':''}${e.amount}`;
   if (e.type === 'decide') return `🎭 DECIDIR (${(e.options||[]).length} opciones)`;
   if (e.type === 'unlockBuilding') return `🏗 Desbloquear: ${e.building||'?'}`;
@@ -1548,7 +1478,9 @@ function buildEventObject() {
     condition = condition ? {type:'and',conditions:[condition,dayRangeCond]} : dayRangeCond;
   }
   const priority=document.getElementById('f-priority')?.checked||false;
+  const subtitle = document.getElementById('f-subtitle')?.value.trim()||undefined;
   const ev = { id, name, image: imgUrl, text: story, days, weight: (type==='weekly'||type==='story')?0:weight, type };
+  if(subtitle) ev.subtitle = subtitle;
   if(condition) ev.condition=condition;
   if(priority) ev.priority=true;
   if(week!==undefined) ev.week=week;
@@ -1566,16 +1498,6 @@ function buildEventObject() {
       hostileType: document.getElementById('f-attackHostile')?.value || 'random',
       attackStrength: Number(document.getElementById('f-attackStrength').value) || 3,
       arrivalDays: Number(document.getElementById('f-attackArrival').value) || 1,
-      combatPopupVictory: {
-        title: document.getElementById('f-attackPopupVictoryTitle')?.value?.trim() || undefined,
-        text: document.getElementById('f-attackPopupVictoryText')?.value?.trim() || undefined,
-        icon: document.getElementById('f-attackPopupVictoryIcon')?.value?.trim() || undefined,
-      },
-      combatPopupDefeat: {
-        title: document.getElementById('f-attackPopupDefeatTitle')?.value?.trim() || undefined,
-        text: document.getElementById('f-attackPopupDefeatText')?.value?.trim() || undefined,
-        icon: document.getElementById('f-attackPopupDefeatIcon')?.value?.trim() || undefined,
-      },
       effectOnVictory: readEffectRows('attackVictoryRows'),
       effectOnDefeat: readEffectRows('attackDefeatRows'),
     }];
@@ -1773,12 +1695,9 @@ function onTypeChange(){
 });
 const attackStrengthInput=document.getElementById('f-attackStrength');
 if(attackStrengthInput) attackStrengthInput.addEventListener('input', updatePreview);
-['f-attackHostile','f-attackArrival','f-attackPopupVictoryTitle','f-attackPopupVictoryText','f-attackPopupVictoryIcon','f-attackPopupDefeatTitle','f-attackPopupDefeatText','f-attackPopupDefeatIcon'].forEach(id=>{
+['f-attackHostile','f-attackArrival'].forEach(id=>{
   const el=document.getElementById(id);
-  if(el){
-    el.addEventListener('change', updatePreview);
-    el.addEventListener('input', updatePreview);
-  }
+  if(el) el.addEventListener('change', updatePreview);
 });
 
 // ── ADD EVENT ──
@@ -1954,12 +1873,6 @@ function loadEventForEditing(idx) {
       if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = atk.hostileType || 'random';
       document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
       document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
-      if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = atk.combatPopupVictory?.title || '';
-      if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = atk.combatPopupVictory?.text || '';
-      if(document.getElementById('f-attackPopupVictoryIcon')) document.getElementById('f-attackPopupVictoryIcon').value = atk.combatPopupVictory?.icon || '';
-      if(document.getElementById('f-attackPopupDefeatTitle')) document.getElementById('f-attackPopupDefeatTitle').value = atk.combatPopupDefeat?.title || '';
-      if(document.getElementById('f-attackPopupDefeatText')) document.getElementById('f-attackPopupDefeatText').value = atk.combatPopupDefeat?.text || '';
-      if(document.getElementById('f-attackPopupDefeatIcon')) document.getElementById('f-attackPopupDefeatIcon').value = atk.combatPopupDefeat?.icon || '';
       ['attackVictoryRows','attackDefeatRows'].forEach(id => { document.getElementById(id).innerHTML=''; });
       (atk.effectOnVictory||[]).forEach(eff => { addEffectRow('attackVictory'); const rows=document.getElementById('attackVictoryRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
       (atk.effectOnDefeat||[]).forEach(eff => { addEffectRow('attackDefeat'); const rows=document.getElementById('attackDefeatRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
@@ -2030,12 +1943,6 @@ function loadStoryEventForEditing(idx) {
       if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = atk.hostileType || 'random';
       document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
       document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
-      if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = atk.combatPopupVictory?.title || '';
-      if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = atk.combatPopupVictory?.text || '';
-      if(document.getElementById('f-attackPopupVictoryIcon')) document.getElementById('f-attackPopupVictoryIcon').value = atk.combatPopupVictory?.icon || '';
-      if(document.getElementById('f-attackPopupDefeatTitle')) document.getElementById('f-attackPopupDefeatTitle').value = atk.combatPopupDefeat?.title || '';
-      if(document.getElementById('f-attackPopupDefeatText')) document.getElementById('f-attackPopupDefeatText').value = atk.combatPopupDefeat?.text || '';
-      if(document.getElementById('f-attackPopupDefeatIcon')) document.getElementById('f-attackPopupDefeatIcon').value = atk.combatPopupDefeat?.icon || '';
       ['attackVictoryRows','attackDefeatRows'].forEach(id => { document.getElementById(id).innerHTML=''; });
       (atk.effectOnVictory||[]).forEach(eff => { addEffectRow('attackVictory'); const rows=document.getElementById('attackVictoryRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
       (atk.effectOnDefeat||[]).forEach(eff => { addEffectRow('attackDefeat'); const rows=document.getElementById('attackDefeatRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
@@ -2080,12 +1987,7 @@ function loadEffectIntoRow(row, eff) {
     p1.value = eff.resource || 'food';
     amt.value = eff.type === 'removeResource' ? -(eff.amount || 1) : (eff.amount || 1);
   } else if (eff.type === 'addFatigue' || eff.type === 'removeFatigue') {
-    if (eff.targetId) {
-      row.dataset.customTargetId = eff.targetId;
-      const byIdOpt = [...p1.options].find(o => o.value === '__by_id__');
-      if (byIdOpt) byIdOpt.textContent = `Por ID: ${eff.targetId}`;
-      p1.value = '__by_id__';
-    } else p1.value = 'random';
+    p1.value = eff.target || 'random';
     amt.value = eff.type === 'removeFatigue' ? -(eff.amount || 1) : (eff.amount || 1);
   } else if (eff.type === 'fatigueAll') {
     amt.value = (eff.amount ?? 1);
@@ -2099,25 +2001,12 @@ function loadEffectIntoRow(row, eff) {
   } else if (eff.type === 'addSurvivorRandom') {
     p1.value = 'any';
   } else if (eff.type === 'healSurvivor' || eff.type === 'injureSurvivor') {
-    if (eff.targetId) {
-      row.dataset.customTargetId = eff.targetId;
-      const byIdOpt = [...p1.options].find(o => o.value === '__by_id__');
-      if (byIdOpt) byIdOpt.textContent = `Por ID: ${eff.targetId}`;
-      p1.value = '__by_id__';
-    } else p1.value = 'random';
+    p1.value = eff.target || 'random';
   } else if (eff.type === 'limitAction') {
     p1.value = eff.action || 'forraje';
     amt.value = eff.days || 1;
   } else if (eff.type === 'moraleAll' || eff.type === 'moraleSurvivor' || eff.type === 'stabilityChange') {
     amt.value = eff.amount || 1;
-    if (eff.type === 'moraleSurvivor') {
-      if (eff.targetId) {
-        row.dataset.customTargetId = eff.targetId;
-        const byIdOpt = [...p1.options].find(o => o.value === '__by_id__');
-        if (byIdOpt) byIdOpt.textContent = `Por ID: ${eff.targetId}`;
-        p1.value = '__by_id__';
-      } else p1.value = 'random';
-    }
   }
 }
 
@@ -2133,6 +2022,7 @@ function clearForm() {
   if(document.getElementById('f-dayMin')) document.getElementById('f-dayMin').value = '';
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = '';
   setRepeatable(false);
+  if(document.getElementById('f-subtitle')) document.getElementById('f-subtitle').value='';
   document.getElementById('f-condType').value='';
   updateConditionUI();
   if(document.getElementById('f-condJson')) document.getElementById('f-condJson').value='';
@@ -2141,12 +2031,6 @@ function clearForm() {
   if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = 'random';
   if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
   if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';
-  if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = '';
-  if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = '';
-  if(document.getElementById('f-attackPopupVictoryIcon')) document.getElementById('f-attackPopupVictoryIcon').value = '';
-  if(document.getElementById('f-attackPopupDefeatTitle')) document.getElementById('f-attackPopupDefeatTitle').value = '';
-  if(document.getElementById('f-attackPopupDefeatText')) document.getElementById('f-attackPopupDefeatText').value = '';
-  if(document.getElementById('f-attackPopupDefeatIcon')) document.getElementById('f-attackPopupDefeatIcon').value = '';
   ['attackVictoryRows','attackDefeatRows'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=''; });
   ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows'].forEach(id => {
     document.getElementById(id).innerHTML = '';

@@ -503,41 +503,64 @@
     }
 
     /* EVENTS */
+    /* ── EVENT PANEL: image left, content right ── */
+    .event-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 0;
+      min-height: 180px;
+    }
+    .event-layout.no-image {
+      grid-template-columns: 1fr;
+    }
     .event-image {
-      width: 100%;
-      height: 160px;
+      width: 200px;
+      min-height: 180px;
       border: 1px solid var(--line2);
+      border-right: none;
       background: linear-gradient(135deg, var(--panel2), var(--panel));
       overflow: hidden;
       position: relative;
+      flex-shrink: 0;
     }
-
-    .event-image::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.8));
+    .event-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(20%) contrast(1.1);
     }
-
-    .event-image img { width: 100%; height: 160px; object-fit: cover; display: block; filter: grayscale(30%) contrast(1.1); }
-
+    .event-content {
+      padding: 14px 16px;
+      border: 1px solid var(--line2);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
     .event-title {
       font-family: var(--font-display);
       font-size: 22px;
       font-weight: 700;
-      margin: 10px 0 6px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--amber-bright);
       text-shadow: 0 0 12px rgba(232,168,62,0.3);
+      margin-bottom: 4px;
     }
-
+    .event-subtitle {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      font-family: var(--font-mono);
+      margin-bottom: 10px;
+    }
     .event-text {
-      line-height: 1.6;
-      font-size: 13px;
+      line-height: 1.7;
+      font-size: 14px;
       color: var(--text);
       font-family: var(--font-worn);
       letter-spacing: 0.02em;
+      flex: 1;
     }
 
     .event-options {
@@ -976,13 +999,17 @@
       <section class="panel" style="margin-top:10px;">
         <div class="panel-header">► Eventos</div>
         <div class="panel-body">
-          <div class="event-image" id="eventImage"></div>
-          <div class="event-title" id="eventTitle" style="margin-top:10px">Sin evento</div>
-          <div id="eventSubtitle" style="display:none;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;"></div>
-          <div id="eventDurationBar" style="display:none;margin:6px 0 4px;"></div>
-          <div class="event-text" id="eventText">Asigna acciones y pulsa Finalizar día.</div>
-          <div class="event-options" id="eventOptions"></div>
-          <div id="persistentEventPanel" style="display:none;margin-top:14px;border-top:1px solid var(--line2);padding-top:12px;"></div>
+          <div class="event-layout" id="eventLayout">
+            <div class="event-image" id="eventImage"></div>
+            <div class="event-content">
+              <div class="event-title" id="eventTitle">Sin evento</div>
+              <div class="event-subtitle" id="eventSubtitle" style="display:none;"></div>
+              <div id="eventDurationBar" style="display:none;margin-bottom:8px;"></div>
+              <div class="event-text" id="eventText">Asigna acciones y pulsa Finalizar día.</div>
+              <div class="event-options" id="eventOptions"></div>
+            </div>
+          </div>
+          <div id="persistentEventPanel" style="display:none;margin-top:10px;border-top:1px solid var(--line2);padding-top:10px;"></div>
         </div>
       </section>
     </section>
@@ -3819,18 +3846,26 @@ function setEvent(ev){
   if(!ev._continuing) state.eventDaysLeft=days;
   renderEventDurationBar();
 
-  // Image
+  // Image — show/hide left column
   const eventImage=document.getElementById('eventImage');
-  eventImage.innerHTML=ev.image?`<img src="${escapeAttr(ev.image)}" alt="">`:'';
+  const eventLayout=document.getElementById('eventLayout');
+  if(ev.image){
+    eventImage.innerHTML=`<img src="${escapeAttr(ev.image)}" alt="">`;
+    eventImage.style.display='';
+    if(eventLayout) eventLayout.classList.remove('no-image');
+  } else {
+    eventImage.innerHTML='';
+    eventImage.style.display='none';
+    if(eventLayout) eventLayout.classList.add('no-image');
+  }
 
   // Title
   document.getElementById('eventTitle').textContent=ev.title||'Evento';
 
-  // Subtitle (explorer name)
+  // Subtitle — from ev.subtitle field (free text set in editor)
   const subEl=document.getElementById('eventSubtitle');
-  if(ev._explorerName||(ev._explorerId&&state.survivors.find(s=>s.id===ev._explorerId))){
-    const name=ev._explorerName||(state.survivors.find(s=>s.id===ev._explorerId)?.name)||'';
-    subEl.textContent=`Exploración de ${name}`; subEl.style.display='';
+  if(ev.subtitle){
+    subEl.textContent=ev.subtitle; subEl.style.display='';
   } else { subEl.style.display='none'; }
 
   // Text
