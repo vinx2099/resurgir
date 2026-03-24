@@ -74,45 +74,6 @@
     }
   },
   {
-    "id": "raiders_cerca",
-    "name": "Raiders en la zona",
-    "type": "city",
-    "weight": 9,
-    "days": 1,
-    "repeatable": true,
-    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de raiders parece estar vigilando el asentamiento.",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "random",
-        "arrivalDays": 2,
-        "effectOnVictory": [
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          },
-          {
-            "type": "addResource",
-            "resource": "materials",
-            "amount": 2
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "stabilityChange",
-            "amount": -2
-          },
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 2
-          }
-        ]
-      }
-    ]
-  },
-  {
     "id": "lluvia_acida",
     "name": "Lluvia ácida",
     "image": "https://i.ibb.co/HfTD9shg/lluvia-acida.jpg",
@@ -466,59 +427,6 @@
     ]
   },
   {
-    "id": "KIRK001",
-    "name": "El muro",
-    "image": "",
-    "text": "Kirk quiere tomarse el día libre.",
-    "days": 1,
-    "weight": 8,
-    "type": "city",
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "survivor",
-          "id": "survivor_vw4cahg8"
-        },
-        {
-          "type": "and",
-          "conditions": [
-            {
-              "type": "day_min",
-              "value": 2
-            },
-            {
-              "type": "day_max",
-              "value": 5
-            }
-          ]
-        }
-      ]
-    },
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Negarle el descanso. No es buen momento.",
-        "effects": [
-          {
-            "type": "moraleSurvivor",
-            "amount": 1
-          }
-        ]
-      },
-      "B": {
-        "label": "Permitir su descanso",
-        "effects": [
-          {
-            "type": "addFatigue",
-            "target": "random",
-            "amount": 1
-          }
-        ]
-      }
-    }
-  },
-  {
     "id": "noche_tranquila",
     "name": "Noche tranquila",
     "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
@@ -579,5 +487,83 @@
         ]
       }
     }
+  },
+  {
+    "id": "raiders_cerca",
+    "name": "Raiders en la zona",
+    "image": "https://i.ibb.co/HDgKccWm/raiders001.jpg",
+    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de raiders parece estar vigilando el asentamiento.",
+    "days": 1,
+    "weight": 9,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "raiders",
+        "attackStrength": 3,
+        "arrivalDays": 2,
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "injureSurvivor"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "fanatic_cerca",
+    "name": "Fanáticos en la zona",
+    "image": "https://i.ibb.co/prrvDWJY/fanatic001.jpg",
+    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de fanáticos parece estar vigilando el asentamiento.",
+    "days": 1,
+    "weight": 6,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "sectarians",
+        "attackStrength": 3,
+        "arrivalDays": 2,
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "injureSurvivor"
+          }
+        ]
+      }
+    ]
   }
 ]
