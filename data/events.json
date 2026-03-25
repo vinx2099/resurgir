@@ -164,61 +164,6 @@
     }
   },
   {
-    "id": "story_dia14_refugiados",
-    "name": "Grupo de refugiados",
-    "image": "",
-    "text": "Un pequeño grupo llega al asentamiento pidiendo refugio. Están agotados y hambrientos. Acogerlos supondrá un esfuerzo.",
-    "days": 1,
-    "weight": 0,
-    "type": "story",
-    "day": 14,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Acogerlos (+2 Supervivientes)",
-        "effects": [
-          {
-            "type": ""
-          },
-          {
-            "type": "stabilityChange",
-            "amount": 2
-          },
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 2
-          },
-          {
-            "type": "addSurvivor",
-            "rarity": 4
-          },
-          {
-            "type": "addSurvivor",
-            "rarity": 3
-          }
-        ]
-      },
-      "B": {
-        "label": "Rechazarlos",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": -4
-          },
-          {
-            "type": "moraleAll",
-            "amount": -1
-          }
-        ]
-      },
-      "C": {
-        "label": "Darles víveres y que sigan su camino.",
-        "effects": []
-      }
-    }
-  },
-  {
     "id": "semanal_1",
     "name": "Revisión semanal",
     "image": "",
@@ -664,6 +609,99 @@
       {
         "type": "stabilityChange",
         "amount": -2
+      }
+    ]
+  },
+  {
+    "id": "story_dia14_refugiados",
+    "name": "Grupo de refugiados",
+    "image": "",
+    "text": "Un pequeño grupo llega al asentamiento pidiendo refugio. Están agotados y hambrientos. Acogerlos supondrá un esfuerzo.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "priority": true,
+    "day": 14,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Acogerlos (+2 Supervivientes)",
+        "effects": [
+          {
+            "type": ""
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          },
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addSurvivorRandom"
+          },
+          {
+            "type": "addSurvivorByRarity",
+            "rarity": 3
+          }
+        ]
+      },
+      "B": {
+        "label": "Rechazarlos",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -4
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Darles víveres y que sigan su camino.",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "explorar_lobos",
+    "name": "bestias salvajes",
+    "image": "",
+    "text": "¡Lobos!",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "random",
+        "attackStrength": 3,
+        "arrivalDays": 1,
+        "combatPopupVictory": {},
+        "combatPopupDefeat": {},
+        "effectOnVictory": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ],
+        "effectOnDefeat": []
       }
     ]
   }
