@@ -549,53 +549,6 @@
     }
   },
   {
-    "id": "HOS001",
-    "name": "El centro médico fortificado",
-    "image": "https://i.ibb.co/rRTm67YS/Evento-Hospital.jpg",
-    "text": "Los exploradores han localizado un viejo almacén sanitario al norte. Está custodiado por un grupo de hostiles, pero contiene suministros suficientes para montar un centro médico en el asentamiento. Es arriesgado, pero podría cambiar mucho las cosas a nuestro favor.",
-    "days": 1,
-    "weight": 0,
-    "type": "story",
-    "priority": true,
-    "day": 10,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "raiders",
-        "attackStrength": 4,
-        "arrivalDays": 1,
-        "combatPopupVictory": {},
-        "combatPopupDefeat": {},
-        "effectOnVictory": [
-          {
-            "type": "unlockBuilding",
-            "building": "hospital"
-          },
-          {
-            "type": "addResource",
-            "resource": "meds",
-            "amount": 2
-          },
-          {
-            "type": "stabilityChange",
-            "amount": 2
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "stabilityChange",
-            "amount": -1
-          },
-          {
-            "type": "moraleAll",
-            "amount": -1
-          }
-        ]
-      }
-    ]
-  },
-  {
     "id": "lowmorale",
     "name": "Revuelta",
     "image": "",
