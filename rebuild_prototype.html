@@ -1321,14 +1321,80 @@ function isExteriorSurvivor(s){
 function getLocationByInstanceId(locationId){
   return (state.locations||[]).find(loc=>loc.instanceId===locationId)||null;
 }
+function getExteriorZoneName(){
+  return state.activeZone?.name||'Exterior';
+}
 function getLocationDisplayName(locationId){
   if(locationId==='base') return 'Base';
   if(locationId==='travelling') return 'En tránsito';
+  if(locationId==='exterior') return getExteriorZoneName();
   const loc=getLocationByInstanceId(locationId);
   return loc?loc.name:'Exterior';
 }
+function getExteriorSiteLabel(siteId){
+  if(!siteId) return 'Campamento exterior';
+  const loc=getLocationByInstanceId(siteId);
+  return loc?loc.name:'Ubicación exterior';
+}
 function getExteriorSurvivorCount(){
   return state.survivors.filter(s=>s.status!=='muerto'&&isExteriorSurvivor(s)).length;
+}
+function normalizeAmountRange(range, fallbackMax=1){
+  if(Array.isArray(range)) return [Number(range[0]??0), Number(range[1]??range[0]??0)];
+  if(typeof range==='number') return [range, range];
+  return [0, fallbackMax];
+}
+function normalizeResourceRangeMap(map){
+  const out={};
+  Object.entries(map||{}).forEach(([key, value])=>{
+    const [min,max]=normalizeAmountRange(value);
+    out[key]=[Math.max(0, min), Math.max(Math.max(0, min), max)];
+  });
+  return out;
+}
+function hasAnyPositiveResources(map){
+  return Object.values(map||{}).some(v=>Number(v||0)>0);
+}
+function inferLocationResourceMode(tpl){
+  const explicit=(tpl?.resourceMode||tpl?.lootMode||'').toString().trim().toLowerCase();
+  if(['respawn','fixed','once'].includes(explicit)) return explicit;
+  if(Number(tpl?.respawnDays||tpl?.regenerateDays||0)>0) return 'respawn';
+  if(tpl?.exhaustible===false) return 'fixed';
+  return 'once';
+}
+function isLocationOnRespawnCooldown(loc){
+  return !!(loc&&loc.respawnReadyDay&&state.day<loc.respawnReadyDay);
+}
+function getLocationRespawnDaysLeft(loc){
+  return Math.max(0, Number(loc?.respawnReadyDay||0)-state.day);
+}
+function getLocationAvailableResourcesText(loc){
+  if(!loc) return '';
+  if(loc.resourceMode==='fixed'){
+    const preview=Object.entries(loc.lootYield||loc.maxResources||{}).map(([k,[min,max]])=>{
+      if(max<=0) return null;
+      return `<span style="color:var(--ok-bright)">+${min===max?max:(min+'-'+max)} ${resourceLabel(k)}</span>`;
+    }).filter(Boolean).join(' · ');
+    return preview?`♾ Recurso fijo: ${preview}`:'';
+  }
+  const res=Object.entries(loc.resources||{}).filter(([,v])=>Number(v||0)>0).map(([k,v])=>`<span style="color:var(--ok-bright)">${v} ${resourceLabel(k)}</span>`).join(' · ');
+  return res?`📦 Recursos disponibles: ${res}`:'';
+}
+function getLocationStatusMeta(loc){
+  if(!loc) return {text:'', color:'var(--muted)'};
+  if(loc.status==='undiscovered') return {text:'Sin observar', color:'var(--muted)'};
+  if(loc.hasRaiders) return {text:`⚔ ${loc.hostileLabel||'Hostiles'}`, color:'var(--danger-bright)'};
+  if(loc.resourceMode==='fixed') return {text:'Recurso fijo', color:'var(--ok-bright)'};
+  if(isLocationOnRespawnCooldown(loc)) return {text:`Reponiendo (${getLocationRespawnDaysLeft(loc)}d)`, color:'var(--amber-bright)'};
+  if(hasAnyPositiveResources(loc.resources)) return {text:loc.status==='explored'?'Visitado':'Observado', color:'var(--ok-bright)'};
+  if(loc.resourceMode==='respawn') return {text:`Vacío (${loc.respawnDays||0}d respawn)`, color:'var(--dim)'};
+  return {text:'Agotado', color:'var(--dim)'};
+}
+function getSurvivorsAtExteriorSite(siteId){
+  return state.survivors.filter(s=>s.status!=='muerto'&&s.location==='exterior'&&s.exteriorSiteId===siteId);
+}
+function getExteriorCampSurvivors(){
+  return state.survivors.filter(s=>s.status!=='muerto'&&s.location==='exterior'&&!s.exteriorSiteId);
 }
 function getCampInventoryEntries(){
   ensureCampInventory();
@@ -1757,10 +1823,11 @@ function renderSurvivors(){
     const campHeader=document.createElement('div');
     const campSummary=getCampInventoryEntries().map(item=>`<span>${item.icon} <b>${item.amount}</b> ${item.label}</span>`).join('');
     const extCount=getExteriorSurvivorCount();
+    const campCount=getExteriorCampSurvivors().length;
     campHeader.innerHTML=`
       <div style="border:1px solid var(--ok);border-left:3px solid var(--ok-bright);padding:8px 10px;background:rgba(74,138,53,0.06);margin-bottom:8px;">
-        <div style="font-family:var(--font-display);font-size:12px;letter-spacing:0.1em;color:var(--ok-bright);margin-bottom:4px;">⛺ CAMPAMENTO EXTERIOR</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text);">${campSummary}<span style="color:var(--muted);">${extCount} superviviente${extCount!==1?'s':''}</span></div>
+        <div style="font-family:var(--font-display);font-size:12px;letter-spacing:0.1em;color:var(--ok-bright);margin-bottom:4px;">⛺ CAMPAMENTO EXTERIOR · ${escapeHtml(getExteriorZoneName())}</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text);">${campSummary}<span style="color:var(--muted);">${extCount} superviviente${extCount!==1?'s':''} · ${campCount} en campamento</span></div>
       </div>`;
     survivorList.appendChild(campHeader);
   }
@@ -1783,7 +1850,8 @@ function renderSurvivors(){
       ? `${statusLabel(s.status)} (${injuryDisplayName(s.injuryLevel||'simple')})`
       : statusLabel(s.status);
     const exteriorLocationName=isExteriorCard?getLocationDisplayName(s.location):'';
-    const exteriorStatus=isExteriorCard ? `<div style="margin-top:8px;border:1px solid var(--line2);padding:6px 8px;font-size:10px;background:rgba(74,138,53,0.04);line-height:1.6;"><div><span style="color:var(--ok-bright);">📍 ${escapeHtml(exteriorLocationName)}</span></div><div style="color:var(--muted);">Selecciona una ubicación del exterior para asignar acciones como viajar, saquear o volver a base.</div></div>` : '';
+    const exteriorSiteName=isExteriorCard?getExteriorSiteLabel(s.exteriorSiteId):'';
+    const exteriorStatus=isExteriorCard ? `<div style="margin-top:8px;border:1px solid var(--line2);padding:6px 8px;font-size:10px;background:rgba(74,138,53,0.04);line-height:1.6;"><div><span style="color:var(--ok-bright);">📍 ${escapeHtml(exteriorLocationName)}</span></div><div><span style="color:var(--amber-bright);">🏚 ${escapeHtml(exteriorSiteName)}</span></div><div style="color:var(--muted);">Desde el campamento exterior podrás observar edificios, moverte entre ellos, saquear o volver a base.</div></div>` : '';
     card.innerHTML=`
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
         <div class="avatar">${avatarInner}</div>
@@ -3096,19 +3164,17 @@ function generateLocations(){
   const templates=gameData.locationTemplates||[];
   if(!templates.length) return;
   state.locations=[];
-  // Pick a zone profile
   const availableZones=(gameData.zones||[]).filter(z=>state.day>=(z.unlockDay||1));
   const zone=availableZones.length
     ? availableZones[Math.floor(Math.random()*availableZones.length)]
     : null;
   state.activeZone=zone||null;
-  // Build slot list from zone profile, or fall back to random 6-8
   let picked=[];
   if(zone&&zone.slots?.length){
     zone.slots.forEach(slot=>{
       const pool=templates.filter(t=>(t.riskLevel??0)===slot.riskLevel);
       for(let i=0;i<slot.count;i++){
-        if(!pool.length){ // fallback: pick closest risk level
+        if(!pool.length){
           const fallback=[...templates].sort((a,b)=>Math.abs((a.riskLevel??0)-slot.riskLevel)-Math.abs((b.riskLevel??0)-slot.riskLevel));
           if(fallback.length) picked.push(fallback[0]);
         } else {
@@ -3120,13 +3186,11 @@ function generateLocations(){
     const shuffled=[...templates].sort(()=>Math.random()-0.5);
     picked=shuffled.slice(0,Math.min(7,shuffled.length));
   }
-  // Generate positions
   const positions=generateMapPositions(picked.length);
   picked.forEach((tpl,i)=>{
     const adj=tpl.adjectives?.length?tpl.adjectives[Math.floor(Math.random()*tpl.adjectives.length)]:'';
-    const name=tpl.name.replace('{adj}',adj).trim();
-    // New format: hostilesChance + hostileTypes + hostileStrength
-    // Legacy: raidersChance
+    const rawName=(tpl.name||'Ubicación exterior');
+    const name=rawName.replace('{adj}',adj).trim();
     const hostileChance=tpl.hostilesChance??tpl.raidersChance??0;
     const hasRaiders=Math.random()<hostileChance;
     const hostileTypes=tpl.hostileTypes||['raiders'];
@@ -3134,11 +3198,19 @@ function generateLocations(){
     const hostileStrMin=tpl.hostileStrength?.[0]??tpl.attackStrength??2;
     const hostileStrMax=tpl.hostileStrength?.[1]??hostileStrMin+2;
     const hostileStrength=Math.floor(Math.random()*(hostileStrMax-hostileStrMin+1))+hostileStrMin;
-    // Resources: pick random amount in range
     const resources={};
     Object.entries(tpl.resources||{}).forEach(([k,[min,max]])=>{
       resources[k]=Math.floor(Math.random()*(max-min+1))+min;
     });
+    const maxResources=deepClone(resources);
+    const lootYield=normalizeResourceRangeMap(tpl.lootYield||tpl.resourceYield||tpl.lootPerAction||tpl.gatherPerAction||{});
+    Object.keys(resources).forEach(key=>{
+      if(!lootYield[key]){
+        const fallbackMax=Math.max(1, Math.min(3, Number(maxResources[key]||1)));
+        lootYield[key]=[1, fallbackMax];
+      }
+    });
+    const resourceMode=inferLocationResourceMode(tpl);
     state.locations.push({
       instanceId:'loc_'+Math.random().toString(36).slice(2,8),
       templateId:tpl.id,
@@ -3153,15 +3225,21 @@ function generateLocations(){
       hostileLabel:hasRaiders?getHostileLabel(pickedHostileType):'',
       exhaustible:tpl.exhaustible!==false,
       exhausted:false,
+      resourceMode,
       resources,
+      maxResources,
+      lootYield,
       exploitResources:tpl.exploitResources||null,
       regenerateDays:tpl.regenerateDays||null,
+      respawnDays:Number(tpl.respawnDays||tpl.regenerateDays||0)||null,
+      respawnReadyDay:null,
       lastRegenDay:0,
       exploreDays:tpl.exploreDays||1,
       survivorSpawn:tpl.survivorSpawn||null,
       survivorChance:tpl.survivorSpawn?.chance||tpl.survivorChance||0,
       exploringBy:null,
       exploreStartDay:null,
+      observed:false,
       x:positions[i].x,
       y:positions[i].y,
     });
@@ -3223,23 +3301,17 @@ function renderExteriorMap(){
   state.locations.forEach(loc=>{
     const btn=document.createElement('button');
     btn.className='loc-btn';
-    // State classes
     if(loc.status==='undiscovered') btn.classList.add('undiscovered');
     else if(loc.hasRaiders) btn.classList.add('has-raiders');
-    else if(loc.exhausted) btn.classList.add('exhausted');
-    // Survivors present
-    const survivorsHere=state.survivors.filter(s=>s.location===loc.instanceId&&s.status!=='muerto');
+    else if(!hasAnyPositiveResources(loc.resources)&&loc.resourceMode!=='fixed') btn.classList.add('exhausted');
+    const survivorsHere=getSurvivorsAtExteriorSite(loc.instanceId);
     if(survivorsHere.length) btn.classList.add('has-survivors');
     btn.style.cssText=`left:${loc.x}%;top:${loc.y}%;position:absolute;`;
-    const statusText=loc.status==='undiscovered'?'Sin explorar':
-      loc.hasRaiders?`⚔ ${loc.hostileLabel||'Hostiles'}`:
-      loc.exhausted?'Saqueado':
-      loc.status==='explored'?'Explorado':'Descubierto';
-    const statusColor=loc.hasRaiders?'var(--danger-bright)':loc.exhausted?'var(--dim)':loc.status==='explored'?'var(--ok-bright)':'var(--muted)';
-    const survivorPips=survivorsHere.map(s=>`<span style="color:var(--ok-bright);font-size:9px;">●</span>`).join('');
+    const statusMeta=getLocationStatusMeta(loc);
+    const survivorPips=survivorsHere.map(()=>`<span style="color:var(--ok-bright);font-size:9px;">●</span>`).join('');
     btn.innerHTML=`<span class="loc-icon">${loc.status==='undiscovered'?'❓':loc.icon}</span>
       <span class="loc-name">${loc.status==='undiscovered'?'???':escapeHtml(loc.name)}</span>
-      <span class="loc-status" style="color:${statusColor}">${statusText}</span>
+      <span class="loc-status" style="color:${statusMeta.color}">${statusMeta.text}</span>
       ${survivorPips?`<span style="display:block;margin-top:2px;">${survivorPips}</span>`:''}`;
     btn.addEventListener('click',()=>showLocationDetail(loc.instanceId));
     map.appendChild(btn);
@@ -3252,27 +3324,54 @@ function showLocationDetail(instanceId){
   state.currentDetail='location_'+instanceId;
 
   const riskLabel=['✅ Seguro','⚠ Bajo','⚠⚠ Medio','⚠⚠⚠ Alto','💀 Extremo'][Math.min(loc.riskLevel||0,4)];
-  const survivorsHere=state.survivors.filter(s=>s.location===instanceId&&s.status!=='muerto');
-  const travellingHere=state.survivors.filter(s=>s.travelDest===instanceId&&s.location==='travelling');
+  const survivorsHere=getSurvivorsAtExteriorSite(instanceId);
+  const campSurvivors=getExteriorCampSurvivors();
+  const travellingHere=state.survivors.filter(s=>s.travelDest==='exterior'&&s.location==='travelling');
+  const canTravelFromBase=state.survivors.filter(s=>s.status==='activo'&&s.location==='base'&&(s.negativeSkill||'').toLowerCase()!=='miedoso');
+  const eligibleReturn=state.survivors.filter(s=>s.location==='exterior'&&s.exteriorSiteId===instanceId&&s.status!=='muerto'&&!s._exteriorActionLocked&&!hasLowMoraleRestRestriction(s)&&s.status!=='ocupado');
+  const eligibleLoot=getEligibleExteriorSurvivors(instanceId,'loot');
+  const eligibleRest=getEligibleExteriorSurvivors(instanceId,'rest');
+  const eligibleAttack=getEligibleExteriorSurvivors(instanceId,'attack');
+  const eligibleExploit=getEligibleExteriorSurvivors(instanceId,'exploit');
+  const eligibleMove=getEligibleExteriorSurvivors(instanceId,'move');
+  const statusMeta=getLocationStatusMeta(loc);
+  const zoneName=getExteriorZoneName();
 
-  let html=`<div class="loc-detail-header">${loc.status==='undiscovered'?'❓ Ubicación desconocida':loc.icon+' '+escapeHtml(loc.name)}</div>`;
-  html+=`<div class="loc-risk">${riskLabel}${loc.description&&loc.status!=='undiscovered'?' · '+escapeHtml(loc.description):''}</div>`;
+  let html=`<div class="loc-detail-header">${loc.status==='undiscovered'?'❓ Edificio no observado':loc.icon+' '+escapeHtml(loc.name)}</div>`;
+  html+=`<div class="loc-risk">${riskLabel} · Zona exterior: ${escapeHtml(zoneName)}</div>`;
+  html+=`<div style="font-size:11px;color:${statusMeta.color};margin-bottom:6px;">${statusMeta.text}</div>`;
+
+  if(loc.status!=='undiscovered'&&loc.description){
+    html+=`<div style="font-size:11px;color:var(--text);margin-bottom:6px;line-height:1.5;">${escapeHtml(loc.description)}</div>`;
+  } else if(loc.status==='undiscovered'){
+    html+=`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Todavía no se ha observado este edificio. Usa <b>Observar</b> para revelar su información antes de entrar.</div>`;
+  }
 
   if(loc.hasRaiders&&loc.status!=='undiscovered'){
     const hLabel=loc.hostileLabel||'Hostiles';
     const hStr=loc.hostileStrength?` · Fuerza: ${loc.hostileStrength}`:'';
     html+=`<div style="color:var(--danger-bright);font-size:11px;margin-bottom:6px;border-left:2px solid var(--danger);padding-left:6px;">⚔ ${escapeHtml(hLabel)}${hStr}. No se puede saquear.</div>`;
   }
-  if(loc.exhausted) html+=`<div style="font-size:11px;color:var(--dim);margin-bottom:6px;">Esta zona ya ha sido saqueada completamente.</div>`;
-  if(loc.status==='explored'&&!loc.exhausted&&!loc.hasRaiders){
-    const res=Object.entries(loc.resources||{}).map(([k,v])=>`<span style="color:var(--ok-bright)">${v} ${resourceLabel(k)}</span>`).join(' · ');
-    html+=`<div style="font-size:11px;margin-bottom:6px;">📦 Recursos disponibles: ${res}</div>`;
+
+  if(loc.status!=='undiscovered'){
+    const resText=getLocationAvailableResourcesText(loc);
+    if(resText){
+      html+=`<div style="font-size:11px;margin-bottom:6px;">${resText}</div>`;
+    } else if(loc.resourceMode==='respawn'&&isLocationOnRespawnCooldown(loc)){
+      html+=`<div style="font-size:11px;color:var(--amber-bright);margin-bottom:6px;">⏳ Reposición en ${getLocationRespawnDaysLeft(loc)} día${getLocationRespawnDaysLeft(loc)!==1?'s':''}.</div>`;
+    } else if(loc.resourceMode!=='fixed'){
+      html+=`<div style="font-size:11px;color:var(--dim);margin-bottom:6px;">No quedan recursos ahora mismo.</div>`;
+    }
+  }
+
+  if(campSurvivors.length){
+    html+=`<div style="font-size:11px;color:var(--ok-bright);margin-bottom:6px;">⛺ En campamento exterior: ${campSurvivors.map(s=>escapeHtml(s.name)).join(', ')}</div>`;
   }
   if(survivorsHere.length){
-    html+=`<div style="font-size:11px;color:var(--ok-bright);margin-bottom:6px;">👤 En la ubicación: ${survivorsHere.map(s=>escapeHtml(s.name)).join(', ')}</div>`;
+    html+=`<div style="font-size:11px;color:var(--ok-bright);margin-bottom:6px;">👤 En este edificio: ${survivorsHere.map(s=>escapeHtml(s.name)).join(', ')}</div>`;
   }
   if(travellingHere.length){
-    html+=`<div style="font-size:11px;color:var(--amber-bright);margin-bottom:6px;">🧭 En camino: ${travellingHere.map(s=>escapeHtml(s.name)+' (día '+s.travelArrivalDay+')').join(', ')}</div>`;
+    html+=`<div style="font-size:11px;color:var(--amber-bright);margin-bottom:6px;">🧭 En camino al exterior: ${travellingHere.map(s=>escapeHtml(s.name)+' (día '+s.travelArrivalDay+')').join(', ')}</div>`;
   }
 
   html+=`<div class="loc-actions" id="locActions"></div>`;
@@ -3280,21 +3379,31 @@ function showLocationDetail(instanceId){
   document.getElementById('buildingDetailPanel').style.display='block';
 
   const actionsEl=document.getElementById('locActions');
-  const canTravel=state.survivors.filter(s=>s.status==='activo'&&s.location==='base'&&(s.negativeSkill||'').toLowerCase()!=='miedoso');
-  const eligibleReturn=getEligibleExteriorSurvivors(instanceId,'return');
-  const eligibleLoot=getEligibleExteriorSurvivors(instanceId,'loot');
-  const eligibleRest=getEligibleExteriorSurvivors(instanceId,'rest');
-  const eligibleAttack=getEligibleExteriorSurvivors(instanceId,'attack');
-  const eligibleExploit=getEligibleExteriorSurvivors(instanceId,'exploit');
 
-  if(loc.status!=='exhausted'||loc.hasRaiders){
-    const btn=document.createElement('button');
-    btn.className='btn primary';
-    btn.innerHTML='🧭 Viajar aquí';
-    btn.disabled=!canTravel.length;
-    btn.title=!canTravel.length?'Sin supervivientes disponibles en base':'';
-    btn.onclick=()=>openTravelPopup(null, instanceId);
-    actionsEl.appendChild(btn);
+  const travelBtn=document.createElement('button');
+  travelBtn.className='btn primary';
+  travelBtn.innerHTML=`🧭 Viajar a ${escapeHtml(zoneName)}`;
+  travelBtn.disabled=!canTravelFromBase.length;
+  travelBtn.title=!canTravelFromBase.length?'Sin supervivientes disponibles en base':'';
+  travelBtn.onclick=()=>openTravelPopup(null, instanceId);
+  actionsEl.appendChild(travelBtn);
+
+  if(loc.status==='undiscovered'){
+    const observeBtn=document.createElement('button');
+    observeBtn.className='btn amber';
+    observeBtn.innerHTML='👁 Observar';
+    observeBtn.disabled=!campSurvivors.length&&!survivorsHere.length;
+    observeBtn.title=(!campSurvivors.length&&!survivorsHere.length)?'Necesitas a alguien en el exterior para observar este edificio':'';
+    observeBtn.onclick=()=>observeExteriorLocation(instanceId);
+    actionsEl.appendChild(observeBtn);
+  } else {
+    const moveBtn=document.createElement('button');
+    moveBtn.className='btn secondary';
+    moveBtn.innerHTML='🥾 Ir a este edificio';
+    moveBtn.disabled=!eligibleMove.length;
+    moveBtn.title=!eligibleMove.length?'Nadie puede moverse a este edificio hoy':'';
+    moveBtn.onclick=()=>openExteriorMovePopup(instanceId);
+    actionsEl.appendChild(moveBtn);
   }
 
   if(survivorsHere.length){
@@ -3307,12 +3416,17 @@ function showLocationDetail(instanceId){
     actionsEl.appendChild(returnBtn);
   }
 
-  if(survivorsHere.length&&!loc.hasRaiders&&!loc.exhausted&&loc.status!=='undiscovered'){
+  const lootAvailable = loc.status!=='undiscovered' && !loc.hasRaiders && (
+    loc.resourceMode==='fixed' ? hasAnyPositiveResources(Object.fromEntries(Object.entries(loc.lootYield||{}).map(([k,v])=>[k, Array.isArray(v)?v[1]:v])))
+    : hasAnyPositiveResources(loc.resources)
+  ) && !isLocationOnRespawnCooldown(loc);
+
+  if(survivorsHere.length&&lootAvailable){
     const lootBtn=document.createElement('button');
     lootBtn.className='btn primary';
     lootBtn.innerHTML='📦 Saquear';
     lootBtn.disabled=!eligibleLoot.length;
-    lootBtn.title=!eligibleLoot.length?'Nadie puede saquear hoy en esta ubicación':'';
+    lootBtn.title=!eligibleLoot.length?'Nadie puede saquear hoy en este edificio':'';
     lootBtn.onclick=()=>openLootPopup(instanceId);
     actionsEl.appendChild(lootBtn);
   }
@@ -3325,7 +3439,7 @@ function showLocationDetail(instanceId){
     actionsEl.appendChild(btn);
   }
 
-  if(survivorsHere.length&&!loc.hasRaiders&&!loc.exhausted&&loc.exploitResources&&loc.status==='explored'){
+  if(survivorsHere.length&&!loc.hasRaiders&&!isLocationOnRespawnCooldown(loc)&&loc.exploitResources&&loc.status!=='undiscovered'&&hasAnyPositiveResources(loc.resources)){
     const er=Object.entries(loc.exploitResources).map(([k,[min,max]])=>`+${max} ${resourceLabel(k)}`).join(', ');
     const btn=document.createElement('button');
     btn.className='btn amber';
@@ -3440,15 +3554,19 @@ function openExploitPopup(locationId){
 function exploitLocation(instanceId, survivorIds=[]){
   const loc=state.locations.find(l=>l.instanceId===instanceId);
   if(!loc||!loc.exploitResources) return;
-  const selected=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location===instanceId&&canUseExteriorAction(s));
+  const selected=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location==='exterior'&&s.exteriorSiteId===instanceId&&canUseExteriorAction(s));
   if(!selected.length){ addLog('No hay supervivientes válidos para explotar la zona.'); return; }
   lockExteriorImmediateAction(selected,'explotar_exterior',instanceId);
   Object.entries(loc.exploitResources).forEach(([k,[min,max]])=>{
     const amount=Math.floor(Math.random()*(max-min+1))+min;
     addCampResource(k, amount, `Explotación de ${loc.name}`);
   });
+  Object.keys(loc.resources||{}).forEach(k=>{ loc.resources[k]=0; });
   loc.exhausted=true;
   loc.status='explored';
+  if(loc.resourceMode==='respawn'&&Number(loc.respawnDays||0)>0){
+    loc.respawnReadyDay=state.day+Number(loc.respawnDays||0);
+  }
   addLog(`💥 ${selected.map(s=>s.name).join(', ')} agotan ${loc.name}.`);
   renderExteriorMap();
   render();
@@ -3457,14 +3575,23 @@ function exploitLocation(instanceId, survivorIds=[]){
 
 function regenerateLocations(){
   state.locations.forEach(loc=>{
-    if(loc.exhaustible||loc.exhausted||!loc.regenerateDays) return;
-    if(state.day-loc.lastRegenDay>=loc.regenerateDays){
+    if(loc.resourceMode!=='respawn'||!loc.respawnReadyDay) return;
+    if(state.day>=loc.respawnReadyDay){
       loc.lastRegenDay=state.day;
-      // Regenerate resources
+      loc.respawnReadyDay=null;
+      loc.exhausted=false;
       const tpl=(gameData.locationTemplates||[]).find(t=>t.id===loc.templateId);
-      if(tpl) Object.entries(tpl.resources||{}).forEach(([k,[min,max]])=>{
-        loc.resources[k]=Math.floor(Math.random()*(max-min+1))+min;
-      });
+      if(tpl){
+        const fresh={};
+        Object.entries(tpl.resources||{}).forEach(([k,[min,max]])=>{
+          fresh[k]=Math.floor(Math.random()*(max-min+1))+min;
+        });
+        loc.resources=fresh;
+        loc.maxResources=deepClone(fresh);
+      } else {
+        loc.resources=deepClone(loc.maxResources||{});
+      }
+      addLog(`🌿 ${loc.name} vuelve a tener recursos disponibles.`);
     }
   });
 }
@@ -3542,6 +3669,7 @@ function openTravelPopup(survivorId=null, presetLocationId=null){
     s.status==='activo'&&s.location==='base'&&s.status!=='muerto'&&
     (s.negativeSkill||'').toLowerCase()!=='miedoso'
   );
+  const zoneName=getExteriorZoneName();
 
   if(confirmBtn){
     confirmBtn.disabled=true;
@@ -3552,34 +3680,28 @@ function openTravelPopup(survivorId=null, presetLocationId=null){
   if(survivorId){
     const selected=eligibleSurvivors.find(s=>s.id===survivorId);
     if(!selected){ addLog('No hay supervivientes disponibles para viajar.'); return; }
-    const destinations=(state.locations||[]).filter(loc=>!presetLocationId||loc.instanceId===presetLocationId);
-    info.innerHTML=`🥾 <b>${escapeHtml(selected.name)}</b> · Selecciona destino · Llegada: día ${state.day+1}`;
+    info.innerHTML=`🥾 <b>${escapeHtml(selected.name)}</b> · Viajará a <b>${escapeHtml(zoneName)}</b> · Llegada: día ${state.day+1}`;
     list.innerHTML='';
-    destinations.forEach(loc=>{
-      const item=document.createElement('div');
-      item.style.cssText='display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px;border:1px solid var(--line2);background:var(--panel2);';
-      item.innerHTML=`
-        <div>
-          <div style="font-family:var(--font-display);font-size:13px;">${loc.icon||'📍'} ${escapeHtml(loc.name)}</div>
-          <div style="font-size:10px;color:var(--muted);">Llegada: día ${state.day+1}</div>
-        </div>
-        <button class="btn primary" style="font-size:11px;padding:5px 10px;" data-locid="${loc.instanceId}">Viajar</button>`;
-      item.querySelector('button').addEventListener('click',()=>{
-        travelToZone(selected.id, loc.instanceId);
-        popup.classList.remove('open');
-        renderSurvivors();
-        renderExteriorMap();
-      });
-      list.appendChild(item);
+    const item=document.createElement('div');
+    item.style.cssText='display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px;border:1px solid var(--line2);background:var(--panel2);';
+    item.innerHTML=`
+      <div>
+        <div style="font-family:var(--font-display);font-size:13px;">⛺ ${escapeHtml(zoneName)}</div>
+        <div style="font-size:10px;color:var(--muted);">Llegada: día ${state.day+1}</div>
+      </div>
+      <button class="btn primary" style="font-size:11px;padding:5px 10px;">Viajar</button>`;
+    item.querySelector('button').addEventListener('click',()=>{
+      travelToZone(selected.id, 'exterior');
+      popup.classList.remove('open');
+      renderSurvivors();
+      renderExteriorMap();
     });
-    if(!destinations.length) list.innerHTML='<div style="color:var(--muted);font-size:11px;">No hay zonas disponibles.</div>';
+    list.appendChild(item);
     popup.classList.add('open');
     return;
   }
 
-  const loc=state.locations.find(l=>l.instanceId===presetLocationId);
-  if(!loc) return;
-  info.innerHTML=`${loc.icon} <b>${escapeHtml(loc.name)}</b> · Elige 1 o más supervivientes · Llegada: día ${state.day+1}`;
+  info.innerHTML=`⛺ <b>${escapeHtml(zoneName)}</b> · Elige 1 o más supervivientes · Llegada: día ${state.day+1}`;
   list.innerHTML='';
   const selectedIds=new Set();
   if(!eligibleSurvivors.length){
@@ -3620,7 +3742,7 @@ function openTravelPopup(survivorId=null, presetLocationId=null){
     confirmBtn.textContent='Enviar expedición';
     confirmBtn.onclick=()=>{
       if(!selectedIds.size) return;
-      travelGroupToZone([...selectedIds], presetLocationId);
+      travelGroupToZone([...selectedIds], 'exterior');
       popup.classList.remove('open');
       renderSurvivors();
       renderExteriorMap();
@@ -3656,12 +3778,60 @@ function canUseExteriorAction(s, opts={}){
 
 function getEligibleExteriorSurvivors(locationId, mode='action'){
   return state.survivors.filter(s=>{
-    if(s.location!==locationId||s.status==='muerto') return false;
+    if(s.status==='muerto'||s.location!=='exterior') return false;
+    if(mode==='move'){
+      if(s.exteriorSiteId===locationId) return false;
+      return canUseExteriorAction(s);
+    }
+    if(s.exteriorSiteId!==locationId) return false;
     if(mode==='rest') return canUseExteriorAction(s,{allowForcedRest:true,allowZeroFatigue:true,allowLowMoraleRestOnly:true});
     if(mode==='attack') return canUseExteriorAction(s,{requireBravery:true});
-    if(mode==='return') return !s._exteriorActionLocked&&!hasLowMoraleRestRestriction(s)&&s.status!=='muerto'&&s.status!=='ocupado'&&s.location===locationId;
+    if(mode==='return') return !s._exteriorActionLocked&&!hasLowMoraleRestRestriction(s)&&s.status!=='muerto'&&s.status!=='ocupado'&&s.location==='exterior';
     return canUseExteriorAction(s);
   });
+}
+
+function observeExteriorLocation(locationId){
+  const loc=state.locations.find(l=>l.instanceId===locationId);
+  if(!loc) return;
+  if(loc.status==='undiscovered'){
+    loc.status='discovered';
+    loc.observed=true;
+    const hostiles=loc.hasRaiders?` Detectas ${loc.hostileLabel||'hostiles'}${loc.hostileStrength?` (fuerza ${loc.hostileStrength})`:''}.`:'';
+    const resText=getLocationAvailableResourcesText(loc);
+    addLog(`👁 Observáis ${loc.name}.${hostiles}${resText?` ${resText.replace(/<[^>]+>/g,'')}.`:''}`);
+  }
+  renderExteriorMap();
+  render();
+  showLocationDetail(locationId);
+}
+
+function openExteriorMovePopup(locationId){
+  const loc=state.locations.find(l=>l.instanceId===locationId);
+  if(!loc) return;
+  const survivors=getEligibleExteriorSurvivors(locationId,'move');
+  if(!survivors.length){ addLog('No hay supervivientes disponibles para moverse a ese edificio.'); return; }
+  openLocationActionPopup({
+    title:'🥾 Moverse por el exterior',
+    info:`<b>${escapeHtml(loc.name)}</b> · Elige quién va a este edificio. Coste: -1 fatiga. Quedarán ocupados hasta mañana.`,
+    survivors,
+    confirmLabel:'Mover al edificio',
+    onConfirm:(ids)=>moveExteriorGroupToLocation(locationId, ids)
+  });
+}
+
+function moveExteriorGroupToLocation(locationId, survivorIds){
+  const loc=state.locations.find(l=>l.instanceId===locationId);
+  if(!loc||loc.status==='undiscovered') return;
+  const selected=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location==='exterior'&&s.exteriorSiteId!==locationId&&canUseExteriorAction(s));
+  if(!selected.length){ addLog('No hay supervivientes válidos para moverse.'); return; }
+  lockExteriorImmediateAction(selected,'viajar_exterior',locationId);
+  selected.forEach(s=>{ s.exteriorSiteId=locationId; });
+  if(loc.status==='discovered') loc.status='explored';
+  addLog(`🥾 ${selected.map(s=>s.name).join(', ')} se mueven a ${loc.name}.`);
+  render();
+  renderExteriorMap();
+  showLocationDetail(locationId);
 }
 
 function lockExteriorImmediateAction(survivors, actionType, locationId){
@@ -3733,8 +3903,7 @@ function openLocationActionPopup({title,info,survivors,confirmLabel,onConfirm}){
 function travelGroupToZone(survivorIds, locationId){
   const ids=(Array.isArray(survivorIds)?survivorIds:[survivorIds]).filter(Boolean);
   if(!ids.length) return;
-  const loc=state.locations.find(l=>l.instanceId===locationId);
-  if(!loc) return;
+  const zoneName=getExteriorZoneName();
   ensureCampInventory();
   const foodToTake=Math.min(Number(document.getElementById('travelFood')?.value||0), state.food);
   const medsToTake=Math.min(Number(document.getElementById('travelMeds')?.value||0), state.meds);
@@ -3745,16 +3914,17 @@ function travelGroupToZone(survivorIds, locationId){
     const s=state.survivors.find(x=>x.id===survivorId);
     if(!s||s.location!=='base'||s.status==='muerto') return;
     s.location='travelling';
-    s.travelDest=locationId;
+    s.travelDest='exterior';
     s.travelArrivalDay=state.day+1;
     s.travelReturnDay=null;
+    s.exteriorSiteId=null;
     s.status='ocupado';
-    s.action={type:'viajar',target:locationId};
+    s.action={type:'viajar',target:'exterior'};
     movedNames.push(s.name);
   });
   if(!movedNames.length) return;
   if(foodToTake>0||medsToTake>0) addLog(`🎒 La expedición lleva ${foodToTake>0?foodToTake+' comida':''}${foodToTake>0&&medsToTake>0?' y ':''}${medsToTake>0?medsToTake+' meds':''} al campamento.`);
-  addLog(`🧭 ${movedNames.join(', ')} parten hacia ${loc.name}. Llegarán el día ${state.day+1}.`);
+  addLog(`🧭 ${movedNames.join(', ')} parten hacia ${zoneName}. Llegarán el día ${state.day+1}.`);
 }
 
 function travelToZone(survivorId, locationId){
@@ -3767,20 +3937,22 @@ function sendOnExpedition(survivorId, locationId){
 }
 
 function openTravelReturnPopup(locationOrSurvivorId){
-  const survivorDirect=state.survivors.find(x=>x.id===locationOrSurvivorId&&x.location!=='base'&&x.location!=='travelling'&&x.status!=='muerto');
-  const locationId=survivorDirect?survivorDirect.location:locationOrSurvivorId;
+  const survivorDirect=state.survivors.find(x=>x.id===locationOrSurvivorId&&x.location==='exterior'&&x.status!=='muerto');
+  const locationId=survivorDirect?(survivorDirect.exteriorSiteId||'exterior'):locationOrSurvivorId;
   const loc=getLocationByInstanceId(locationId);
-  const survivors=getEligibleExteriorSurvivors(locationId,'return');
+  const survivors=(locationId==='exterior')
+    ? state.survivors.filter(s=>s.location==='exterior'&&s.status!=='muerto'&&!s._exteriorActionLocked&&!hasLowMoraleRestRestriction(s)&&s.status!=='ocupado')
+    : state.survivors.filter(s=>s.location==='exterior'&&s.exteriorSiteId===locationId&&s.status!=='muerto'&&!s._exteriorActionLocked&&!hasLowMoraleRestRestriction(s)&&s.status!=='ocupado');
   if(!survivors.length) return;
   openLocationActionPopup({
     title:'↩ Volver a base',
-    info:`<b>${escapeHtml(loc?.name||'Ubicación exterior')}</b> · Elige qué supervivientes regresan hoy a la base.`,
+    info:`<b>${escapeHtml(loc?.name||'Campamento exterior')}</b> · Elige qué supervivientes regresan hoy a la base.`,
     survivors,
     confirmLabel:'Iniciar regreso',
     onConfirm:(ids)=>{
       const names=[];
       ids.forEach(id=>{
-        const s=state.survivors.find(x=>x.id===id&&x.location===locationId);
+        const s=state.survivors.find(x=>x.id===id&&x.location==='exterior');
         if(!s) return;
         s.location='travelling';
         s.travelDest='base';
@@ -3794,7 +3966,7 @@ function openTravelReturnPopup(locationOrSurvivorId){
         addLog(`🧭 ${names.join(', ')} emprenden el regreso a la base. Llegarán el día ${state.day+1}.`);
         renderSurvivors();
         renderExteriorMap();
-        if(locationId) showLocationDetail(locationId);
+        if(locationId&&locationId!=='exterior') showLocationDetail(locationId);
       }
     }
   });
@@ -3814,14 +3986,46 @@ function openLootPopup(locationId){
   });
 }
 
+function rollLocationLoot(loc){
+  const gains={};
+  if(!loc) return gains;
+  if(loc.resourceMode==='fixed'){
+    Object.entries(loc.lootYield||loc.maxResources||{}).forEach(([k, range])=>{
+      const [min,max]=normalizeAmountRange(range,1);
+      const amount=Math.floor(Math.random()*(max-min+1))+min;
+      if(amount>0) gains[k]=amount;
+    });
+    return gains;
+  }
+  Object.entries(loc.resources||{}).forEach(([k, current])=>{
+    const available=Number(current||0);
+    if(available<=0) return;
+    const [min,max]=normalizeAmountRange((loc.lootYield||{})[k]||[1,Math.min(3,available)],1);
+    const desired=Math.floor(Math.random()*(max-min+1))+min;
+    const amount=Math.max(0, Math.min(available, desired));
+    if(amount>0) gains[k]=amount;
+  });
+  return gains;
+}
+
 function lootLocation(locationId, survivorIds){
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!loc) return;
-  const selected=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location===locationId&&canUseExteriorAction(s));
+  const selected=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location==='exterior'&&s.exteriorSiteId===locationId&&canUseExteriorAction(s));
   if(!selected.length){ addLog('No hay supervivientes válidos para saquear.'); return; }
+  if(loc.status==='undiscovered'){ addLog('Primero debes observar este edificio.'); return; }
+  if(loc.resourceMode!=='fixed'&&(!hasAnyPositiveResources(loc.resources)||isLocationOnRespawnCooldown(loc))){
+    addLog('No quedan recursos disponibles ahora mismo en esa ubicación.');
+    return;
+  }
+  const gains=rollLocationLoot(loc);
+  if(!hasAnyPositiveResources(gains)){ addLog('No se ha podido obtener nada útil en esta pasada.'); return; }
   lockExteriorImmediateAction(selected,'saquear_exterior',locationId);
-  Object.entries(loc.resources||{}).forEach(([k,v])=>{
-    addCampResource(k, v, `${selected.map(s=>s.name).join(', ')} saquean ${loc.name}`);
+  Object.entries(gains).forEach(([k, amount])=>{
+    addCampResource(k, amount, `${selected.map(s=>s.name).join(', ')} saquean ${loc.name}`);
+    if(loc.resourceMode!=='fixed'){
+      loc.resources[k]=Math.max(0, Number(loc.resources[k]||0)-amount);
+    }
   });
   selected.forEach(s=>{
     if(Math.random()<(loc.riskLevel||0)*0.10){
@@ -3829,7 +4033,19 @@ function lootLocation(locationId, survivorIds){
     }
   });
   loc.status='explored';
-  if(loc.exhaustible) loc.exhausted=true;
+  const depleted = loc.resourceMode!=='fixed' && !hasAnyPositiveResources(loc.resources);
+  if(depleted){
+    loc.exhausted=true;
+    if(loc.resourceMode==='respawn'&&Number(loc.respawnDays||0)>0){
+      loc.respawnReadyDay=state.day+Number(loc.respawnDays||0);
+      addLog(`⏳ ${loc.name} queda vacía. Volverá a dar recursos en ${loc.respawnDays} día${loc.respawnDays!==1?'s':''}.`);
+    } else {
+      addLog(`📭 ${loc.name} ha quedado agotada.`);
+    }
+  } else if(loc.resourceMode!=='fixed'){
+    const left=Object.entries(loc.resources).filter(([,v])=>Number(v||0)>0).map(([k,v])=>`${v} ${resourceLabel(k)}`).join(', ');
+    if(left) addLog(`📦 Quedan en ${loc.name}: ${left}.`);
+  }
   addLog(`📦 Saqueo completado en ${loc.name} por ${selected.map(s=>s.name).join(', ')}.`);
   render();
   renderExteriorMap();
@@ -3853,7 +4069,7 @@ function openExteriorRestPopup(locationId){
 function assignExteriorRest(locationId, survivorIds){
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!loc) return;
-  const selected=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location===locationId&&canUseExteriorAction(s,{allowForcedRest:true,allowZeroFatigue:true}));
+  const selected=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location==='exterior'&&s.exteriorSiteId===locationId&&canUseExteriorAction(s,{allowForcedRest:true,allowZeroFatigue:true}));
   if(!selected.length){ addLog('No hay supervivientes válidos para descansar.'); return; }
   selected.forEach(s=>{
     s.action={type:'descansar_exterior',target:locationId};
@@ -3884,7 +4100,7 @@ function openLocationRaiderAttack(locationId){
 function attackLocationRaiders(locationId, survivorIds){
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!loc) return;
-  const survivorsHere=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location===locationId&&canUseExteriorAction(s,{requireBravery:true}));
+  const survivorsHere=state.survivors.filter(s=>survivorIds.includes(s.id)&&s.location==='exterior'&&s.exteriorSiteId===locationId&&canUseExteriorAction(s,{requireBravery:true}));
   if(!survivorsHere.length){ addLog('No hay supervivientes válidos para atacar.'); return; }
   lockExteriorImmediateAction(survivorsHere,'atacar_exterior',locationId);
   // Fight! Each survivor contributes +1, skill bonuses apply
@@ -3953,16 +4169,22 @@ function resolveTravelMovement(){
     if(s.location!=='travelling') return;
     if(s.travelArrivalDay&&state.day>=s.travelArrivalDay){
       const destination=s.travelDest||'base';
-      s.location=destination;
+      if(destination==='exterior'){
+        s.location='exterior';
+        s.exteriorSiteId=null;
+      } else {
+        s.location=destination;
+      }
       s.travelArrivalDay=null;
+      s.travelDest=null;
       s.status='activo';
       s.action=null;
       const loc=state.locations.find(l=>l.instanceId===destination);
-      if(loc&&loc.status==='undiscovered') loc.status='discovered';
-      addLog(`📍 ${s.name} llega a ${destination==='base'?'la base':(loc?loc.name:'destino')}.`);
+      addLog(`📍 ${s.name} llega a ${destination==='base'?'la base':destination==='exterior'?('el campamento exterior de '+getExteriorZoneName()):(loc?loc.name:'destino')}.`);
     }
     else if(s.travelReturnDay&&state.day>=s.travelReturnDay){
       s.location='base';
+      s.exteriorSiteId=null;
       s.travelDest=null;
       s.travelArrivalDay=null;
       s.travelReturnDay=null;
@@ -4788,7 +5010,7 @@ function isActionLimited(action){
   return hardLimit||tempLimit;
 }
 function getActionModifier(action){return Number(window.tempActionMods?.[action]||0)}
-function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',descansar_exterior:'Descansar (exterior)',construir:'Construir',defender:'Defender',explorar:'Explorar',viajar:'Viajar',investigar:'Investigar',atacar:'Atacar (preventivo)',saquear_exterior:'Saquear',explotar_exterior:'Explotar',atacar_exterior:'Atacar exterior',regresar:'Volver a base'})[type]||type}
+function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',descansar_exterior:'Descansar (exterior)',construir:'Construir',defender:'Defender',explorar:'Explorar',viajar:'Viajar',viajar_exterior:'Moverse por exterior',investigar:'Investigar',atacar:'Atacar (preventivo)',saquear_exterior:'Saquear',explotar_exterior:'Explotar',atacar_exterior:'Atacar exterior',regresar:'Volver a base'})[type]||type}
 function actionSummary(s){
   if(s.status==='muerto') return 'No disponible.';
   if(hasLowMoraleRestRestriction(s)&&!s.action) return 'Sin moral. Solo quiere descansar.';

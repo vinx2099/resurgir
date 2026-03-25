@@ -90,6 +90,10 @@
   .survivor-section { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line2); background: rgba(74,138,53,0.04); display: none; }
   .survivor-section.visible { display: block; }
 
+  .resource-panel { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line2); background: rgba(74,138,53,0.04); display: none; }
+  .resource-panel.visible { display: block; }
+  .resource-help { margin-top: 8px; font-size: 10px; color: var(--muted); line-height: 1.6; }
+
   .preview-box { background: var(--panel2); border: 1px solid var(--line2); padding: 10px; font-size: 10px; color: var(--muted); line-height: 1.7; white-space: pre-wrap; font-family: var(--font-mono); max-height: 500px; overflow-y: auto; }
 
   .badge { display: inline-block; font-size: 8px; padding: 1px 5px; border: 1px solid; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -191,33 +195,17 @@
             <input type="number" id="f-hostileStrMax" value="4" min="1" max="10" />
           </div>
         </div>
-
-        <!-- LOOT -->
-        <div class="section-divider"><span>Loot</span></div>
-        <div id="lootRows">
-          <div class="loot-row">
-            <span class="loot-label">🍽 Comida</span>
-            <input type="number" class="loot-min" data-res="food" value="0" min="0" max="20" />
-            <span class="range-sep">—</span>
-            <input type="number" class="loot-max" data-res="food" value="3" min="0" max="20" />
-          </div>
-          <div class="loot-row">
-            <span class="loot-label">🔧 Materiales</span>
-            <input type="number" class="loot-min" data-res="materials" value="1" min="0" max="20" />
-            <span class="range-sep">—</span>
-            <input type="number" class="loot-max" data-res="materials" value="4" min="0" max="20" />
-          </div>
-          <div class="loot-row">
-            <span class="loot-label">💊 Medicamentos</span>
-            <input type="number" class="loot-min" data-res="meds" value="0" min="0" max="10" />
-            <span class="range-sep">—</span>
-            <input type="number" class="loot-max" data-res="meds" value="0" min="0" max="10" />
-          </div>
-        </div>
-
-        <!-- MECÁNICAS -->
-        <div class="section-divider"><span>Mecánicas</span></div>
+        <!-- RECURSOS -->
+        <div class="section-divider"><span>Recursos</span></div>
         <div class="form-grid">
+          <div class="field">
+            <label>Modo de recurso</label>
+            <select id="f-resourceMode" onchange="applyResourceModeUI()">
+              <option value="once">Saqueo único — se agota y no vuelve</option>
+              <option value="respawn">Respawn — se agota y reaparece tras X días</option>
+              <option value="fixed">Fijo — siempre da lo mismo por acción</option>
+            </select>
+          </div>
           <div class="field">
             <label>Días de exploración</label>
             <input type="number" id="f-exploreDays" value="1" min="1" max="5" />
@@ -227,27 +215,68 @@
             <input type="number" id="f-weight" value="5" min="1" max="10" />
           </div>
         </div>
-        <div style="margin-top:8px;">
-          <div class="toggle-row">
-            <input type="checkbox" id="f-exhaustible" checked>
-            <label for="f-exhaustible">Agotable — se vacía al saquearlo</label>
-          </div>
-          <div class="toggle-row">
-            <input type="checkbox" id="f-renewable" onchange="toggleRenewable()">
-            <label for="f-renewable">Renovable — genera recursos periódicamente</label>
+        <div class="resource-help" id="resourceModeHelp">Saqueo único: el edificio tiene un stock inicial y cuando se vacía no vuelve a dar recursos.</div>
+
+        <div class="resource-panel visible" id="stockPanel">
+          <div id="stockTitle" style="font-size:10px;color:var(--amber-bright);margin-bottom:8px;">📦 Stock inicial de la zona (saqueo único)</div>
+          <div id="lootRows">
+            <div class="loot-row">
+              <span class="loot-label">🍽 Comida</span>
+              <input type="number" class="loot-min" data-res="food" value="0" min="0" max="20" />
+              <span class="range-sep">—</span>
+              <input type="number" class="loot-max" data-res="food" value="3" min="0" max="20" />
+            </div>
+            <div class="loot-row">
+              <span class="loot-label">🔧 Materiales</span>
+              <input type="number" class="loot-min" data-res="materials" value="1" min="0" max="20" />
+              <span class="range-sep">—</span>
+              <input type="number" class="loot-max" data-res="materials" value="4" min="0" max="20" />
+            </div>
+            <div class="loot-row">
+              <span class="loot-label">💊 Medicamentos</span>
+              <input type="number" class="loot-min" data-res="meds" value="0" min="0" max="10" />
+              <span class="range-sep">—</span>
+              <input type="number" class="loot-max" data-res="meds" value="0" min="0" max="10" />
+            </div>
           </div>
         </div>
 
-        <!-- RENOVABLE -->
-        <div class="regen-panel" id="regenPanel">
-          <div style="font-size:10px;color:var(--amber-bright);margin-bottom:8px;">⟳ Configuración de regeneración</div>
-          <div class="form-grid">
-            <div class="field">
-              <label>Cada cuántos días regenera</label>
-              <input type="number" id="f-regenDays" value="7" min="1" max="30" />
+        <div class="resource-panel visible" id="yieldPanel">
+          <div id="yieldTitle" style="font-size:10px;color:var(--amber-bright);margin-bottom:8px;">🎒 Loot por acción de saqueo</div>
+          <div id="yieldRows">
+            <div class="loot-row">
+              <span class="loot-label">🍽 Comida</span>
+              <input type="number" class="yield-min" data-res="food" value="0" min="0" max="20" />
+              <span class="range-sep">—</span>
+              <input type="number" class="yield-max" data-res="food" value="1" min="0" max="20" />
+            </div>
+            <div class="loot-row">
+              <span class="loot-label">🔧 Materiales</span>
+              <input type="number" class="yield-min" data-res="materials" value="1" min="0" max="20" />
+              <span class="range-sep">—</span>
+              <input type="number" class="yield-max" data-res="materials" value="2" min="0" max="20" />
+            </div>
+            <div class="loot-row">
+              <span class="loot-label">💊 Medicamentos</span>
+              <input type="number" class="yield-min" data-res="meds" value="0" min="0" max="10" />
+              <span class="range-sep">—</span>
+              <input type="number" class="yield-max" data-res="meds" value="0" min="0" max="10" />
             </div>
           </div>
-          <div style="margin-top:8px;font-size:10px;color:var(--muted);margin-bottom:6px;">Loot al explotar (agota la zona):</div>
+        </div>
+
+        <div class="resource-panel" id="respawnPanel">
+          <div style="font-size:10px;color:var(--amber-bright);margin-bottom:8px;">⟳ Configuración de respawn</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Días hasta que vuelvan los recursos</label>
+              <input type="number" id="f-respawnDays" value="7" min="1" max="30" />
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-panel visible" id="exploitPanel">
+          <div style="font-size:10px;color:var(--amber-bright);margin-bottom:8px;">⛏ Loot al explotar (opcional, vacía la zona)</div>
           <div id="exploitLootRows">
             <div class="loot-row">
               <span class="loot-label">🍽 Comida</span>
@@ -260,6 +289,12 @@
               <input type="number" class="exploit-min" data-res="materials" value="0" min="0" max="20" />
               <span class="range-sep">—</span>
               <input type="number" class="exploit-max" data-res="materials" value="0" min="0" max="20" />
+            </div>
+            <div class="loot-row">
+              <span class="loot-label">💊 Medicamentos</span>
+              <input type="number" class="exploit-min" data-res="meds" value="0" min="0" max="10" />
+              <span class="range-sep">—</span>
+              <input type="number" class="exploit-max" data-res="meds" value="0" min="0" max="10" />
             </div>
           </div>
         </div>
@@ -341,8 +376,6 @@
 const $ = id => document.getElementById(id);
 
 // ── STATE ──
-const EMBEDDED_LOCATIONS = [{"id":"supermarket","name":"Supermercado {adj}","adjectives":["abandonado","en ruinas","saqueado"],"icon":"🏪","riskLevel":1,"explorable":true,"exhaustible":true,"exploreDays":1,"resources":{"food":[2,4],"materials":[1,2]},"raidersChance":0.25,"description":"Un antiguo supermercado. Puede quedar algo de comida entre los estantes."},{"id":"gas_station","name":"Gasolinera {adj}","adjectives":["abandonada","quemada","semidestruida"],"icon":"⛽","riskLevel":1,"explorable":true,"exhaustible":true,"exploreDays":1,"resources":{"materials":[2,4]},"raidersChance":0.2,"description":"Una gasolinera de carretera. Herramientas y materiales pueden quedar en el taller."},{"id":"military_outpost","name":"Puesto militar {adj}","adjectives":["abandonado","destruido","en ruinas"],"icon":"🪖","riskLevel":3,"explorable":true,"exhaustible":true,"exploreDays":2,"resources":{"materials":[3,5],"meds":[1,2]},"raidersChance":0.5,"description":"Un antiguo puesto militar. Peligroso pero con buenas recompensas."},{"id":"clinic","name":"Clínica {adj}","adjectives":["abandonada","en ruinas","saqueada"],"icon":"🏥","riskLevel":2,"explorable":true,"exhaustible":true,"exploreDays":1,"resources":{"meds":[2,4]},"raidersChance":0.3,"description":"Una clínica de barrio. Los medicamentos son el objetivo."},{"id":"warehouse","name":"Almacén {adj}","adjectives":["industrial","abandonado","semiderruido"],"icon":"🏭","riskLevel":2,"explorable":true,"exhaustible":true,"exploreDays":2,"resources":{"materials":[4,7],"food":[1,3]},"raidersChance":0.4,"description":"Un gran almacén industrial. Mucho material pero probablemente vigilado."},{"id":"cornfield","name":"Campo de maíz","adjectives":[],"icon":"🌽","riskLevel":0,"explorable":true,"exhaustible":false,"exploreDays":1,"resources":{"food":[6,6]},"regenerateDays":7,"exploitResources":{"food":[4,4]},"raidersChance":0.1,"description":"Un campo de maíz que aún produce. Explotarlo da comida inmediata pero lo agota."},{"id":"school","name":"Escuela {adj}","adjectives":["abandonada","en ruinas"],"icon":"🏫","riskLevel":1,"explorable":true,"exhaustible":true,"exploreDays":1,"resources":{"materials":[1,3],"food":[1,2]},"raidersChance":0.2,"survivorChance":0.3,"description":"Una escuela. A veces hay supervivientes escondidos en estos sitios."},{"id":"raider_camp","name":"Campamento raider","adjectives":[],"icon":"💀","riskLevel":4,"explorable":true,"exhaustible":true,"exploreDays":3,"resources":{"materials":[5,8],"food":[3,5],"meds":[1,3]},"raidersChance":1.0,"description":"Un campamento de raiders. Limpiar esto sería muy valioso pero extremadamente peligroso."},{"id":"pharmacy","name":"Farmacia {adj}","adjectives":["abandonada","saqueada a medias"],"icon":"💊","riskLevel":1,"explorable":true,"exhaustible":true,"exploreDays":1,"resources":{"meds":[3,5]},"raidersChance":0.2,"description":"Una farmacia. Si no ha sido completamente saqueada, puede ser una mina de oro médica."},{"id":"river","name":"Río {adj}","adjectives":["contaminado","seco a medias","turbio"],"icon":"🌊","riskLevel":0,"explorable":true,"exhaustible":false,"exploreDays":1,"resources":{"food":[3,5]},"regenerateDays":7,"exploitResources":{"food":[5,7]},"raidersChance":0.15,"description":"Un río cercano. Pesca y agua potable si se trata bien."}];
-
 const state = {
   locations: [],
   editingId: null,
@@ -392,10 +425,40 @@ function renderHostileTypes(){
 function removeHostileType(type){ state.hostileTypes=state.hostileTypes.filter(h=>h.type!==type); renderHostileTypes(); }
 
 // ── TOGGLES ──
-function toggleRenewable(){
-  const on=$('f-renewable').checked;
-  $('regenPanel').classList.toggle('visible',on);
-  if(on) $('f-exhaustible').checked=false;
+function collectRangeMap(minClass, maxClass){
+  const out={};
+  document.querySelectorAll('.'+minClass).forEach(el=>{
+    const res=el.dataset.res;
+    const min=Number(el.value)||0;
+    const max=Number(document.querySelector('.'+maxClass+'[data-res="'+res+'"]')?.value)||0;
+    if(max>0||min>0) out[res]=[min,max];
+  });
+  return out;
+}
+function inferResourceMode(loc){
+  const explicit=(loc?.resourceMode||loc?.lootMode||'').toString().trim().toLowerCase();
+  if(['respawn','fixed','once'].includes(explicit)) return explicit;
+  if(Number(loc?.respawnDays||loc?.regenerateDays||0)>0) return 'respawn';
+  if(loc?.exhaustible===false) return 'fixed';
+  return 'once';
+}
+function applyResourceModeUI(){
+  const mode=$('f-resourceMode').value;
+  const isFixed=mode==='fixed';
+  const isRespawn=mode==='respawn';
+  $('stockPanel').classList.toggle('visible',!isFixed);
+  $('respawnPanel').classList.toggle('visible',isRespawn);
+  $('exploitPanel').classList.toggle('visible',!isFixed);
+  $('stockTitle').textContent=isRespawn
+    ? '📦 Stock inicial de la zona (se vacía y reaparece tras X días)'
+    : '📦 Stock inicial de la zona ('+(mode==='once'?'saqueo único':'stock inicial')+')';
+  $('yieldTitle').textContent=isFixed ? '♾ Recurso fijo por acción' : '🎒 Loot por acción de saqueo';
+  $('resourceModeHelp').textContent=
+    mode==='fixed'
+      ? 'Recurso fijo: no consume stock. Útil para pesca, caza estable o cualquier fuente permanente.'
+      : mode==='respawn'
+        ? 'Respawn: el edificio tiene stock inicial, se va reduciendo al saquear y vuelve a llenarse tras los días indicados.'
+        : 'Saqueo único: el edificio tiene un stock inicial y cuando se vacía no vuelve a dar recursos.';
 }
 function toggleSurvivorSection(){
   $('survivorSection').classList.toggle('visible',$('f-hasSurvivor').checked);
@@ -412,27 +475,10 @@ function getFormData(){
   const name = $('f-name').value.trim();
   const adjStr = $('f-adjectives').value.trim();
   const adjectives = adjStr ? adjStr.split(',').map(s=>s.trim()).filter(Boolean) : [];
-  const resources = {};
-  document.querySelectorAll('.loot-min').forEach(el=>{
-    const res=el.dataset.res;
-    const min=Number(el.value)||0;
-    const max=Number(document.querySelector(`.loot-max[data-res="${res}"]`)?.value)||0;
-    if(max>0||min>0) resources[res]=[min,max];
-  });
-  const renewable = $('f-renewable').checked;
-  let exploitResources = undefined;
-  let regenerateDays = undefined;
-  if(renewable){
-    regenerateDays = Number($('f-regenDays').value)||7;
-    const er={};
-    document.querySelectorAll('.exploit-min').forEach(el=>{
-      const res=el.dataset.res;
-      const min=Number(el.value)||0;
-      const max=Number(document.querySelector(`.exploit-max[data-res="${res}"]`)?.value)||0;
-      if(max>0||min>0) er[res]=[min,max];
-    });
-    if(Object.keys(er).length) exploitResources=er;
-  }
+  const resourceMode=$('f-resourceMode').value;
+  const resources = resourceMode==='fixed' ? {} : collectRangeMap('loot-min','loot-max');
+  const lootYield = collectRangeMap('yield-min','yield-max');
+  const exploitResources = resourceMode==='fixed' ? {} : collectRangeMap('exploit-min','exploit-max');
   const hasSurv=$('f-hasSurvivor').checked;
   let survivorSpawn=undefined;
   if(hasSurv){
@@ -457,17 +503,28 @@ function getFormData(){
       Number($('f-hostileStrMin').value)||1,
       Number($('f-hostileStrMax').value)||3,
     ],
-    resources,
     exploreDays: Number($('f-exploreDays').value)||1,
     weight: Number($('f-weight').value)||5,
-    exhaustible: $('f-exhaustible').checked,
+    resourceMode,
   };
-  if(renewable){ loc.exhaustible=false; loc.regenerateDays=regenerateDays; }
-  if(exploitResources) loc.exploitResources=exploitResources;
+  if(Object.keys(resources).length) loc.resources=resources;
+  if(Object.keys(lootYield).length) loc.lootYield=lootYield;
+  if(Object.keys(exploitResources).length) loc.exploitResources=exploitResources;
+  if(resourceMode==='fixed'){
+    loc.exhaustible=false;
+  } else {
+    loc.exhaustible=true;
+  }
+  if(resourceMode==='respawn'){
+    loc.respawnDays=Number($('f-respawnDays').value)||7;
+    loc.regenerateDays=loc.respawnDays;
+  }
   if(survivorSpawn) loc.survivorSpawn=survivorSpawn;
-  // Remove empty arrays
   if(!loc.adjectives.length) delete loc.adjectives;
   if(!loc.hostileTypes.length) delete loc.hostileTypes;
+  if(!loc.resources || !Object.keys(loc.resources).length) delete loc.resources;
+  if(!loc.lootYield || !Object.keys(loc.lootYield).length) delete loc.lootYield;
+  if(!loc.exploitResources || !Object.keys(loc.exploitResources).length) delete loc.exploitResources;
   return loc;
 }
 
@@ -506,9 +563,9 @@ function resetForm(){
   $('f-hostileStrMax').value='4';
   $('f-exploreDays').value='1';
   $('f-weight').value='5';
-  $('f-exhaustible').checked=true;
-  $('f-renewable').checked=false;
-  $('regenPanel').classList.remove('visible');
+  $('f-resourceMode').value='once';
+  $('f-respawnDays').value='7';
+  applyResourceModeUI();
   $('f-hasSurvivor').checked=false;
   $('survivorSection').classList.remove('visible');
   $('f-survivorChance').value='30';
@@ -519,6 +576,12 @@ function resetForm(){
     const defaults={food:[0,3],materials:[1,4],meds:[0,0]};
     const res=el.dataset.res;
     const isMin=el.classList.contains('loot-min');
+    el.value=defaults[res]?.[isMin?0:1]??0;
+  });
+  document.querySelectorAll('.yield-min,.yield-max').forEach(el=>{
+    const defaults={food:[0,1],materials:[1,2],meds:[0,0]};
+    const res=el.dataset.res;
+    const isMin=el.classList.contains('yield-min');
     el.value=defaults[res]?.[isMin?0:1]??0;
   });
   document.querySelectorAll('.exploit-min,.exploit-max').forEach(el=>el.value=0);
@@ -545,29 +608,26 @@ function fillForm(loc){
   $('f-hostileStrMax').value=loc.hostileStrength?.[1]??4;
   $('f-exploreDays').value=loc.exploreDays||1;
   $('f-weight').value=loc.weight||5;
-  $('f-exhaustible').checked=loc.exhaustible!==false&&!loc.regenerateDays;
-  $('f-renewable').checked=!!loc.regenerateDays;
-  $('regenPanel').classList.toggle('visible',!!loc.regenerateDays);
-  if(loc.regenerateDays) $('f-regenDays').value=loc.regenerateDays;
-  // Loot
+  $('f-resourceMode').value=inferResourceMode(loc);
+  $('f-respawnDays').value=Number(loc.respawnDays||loc.regenerateDays||7)||7;
+  applyResourceModeUI();
   ['food','materials','meds'].forEach(res=>{
-    const range=loc.resources?.[res];
-    const minEl=document.querySelector(`.loot-min[data-res="${res}"]`);
-    const maxEl=document.querySelector(`.loot-max[data-res="${res}"]`);
-    if(minEl) minEl.value=range?.[0]??0;
-    if(maxEl) maxEl.value=range?.[1]??0;
+    const stockRange=loc.resources?.[res];
+    const yieldRange=(loc.lootYield||loc.resourceYield||loc.lootPerAction||loc.gatherPerAction||{})[res];
+    const exploitRange=(loc.exploitResources||{})[res];
+    const stockMinEl=document.querySelector('.loot-min[data-res="'+res+'"]');
+    const stockMaxEl=document.querySelector('.loot-max[data-res="'+res+'"]');
+    const yieldMinEl=document.querySelector('.yield-min[data-res="'+res+'"]');
+    const yieldMaxEl=document.querySelector('.yield-max[data-res="'+res+'"]');
+    const exploitMinEl=document.querySelector('.exploit-min[data-res="'+res+'"]');
+    const exploitMaxEl=document.querySelector('.exploit-max[data-res="'+res+'"]');
+    if(stockMinEl) stockMinEl.value=stockRange?.[0]??0;
+    if(stockMaxEl) stockMaxEl.value=stockRange?.[1]??0;
+    if(yieldMinEl) yieldMinEl.value=yieldRange?.[0]??0;
+    if(yieldMaxEl) yieldMaxEl.value=yieldRange?.[1]??0;
+    if(exploitMinEl) exploitMinEl.value=exploitRange?.[0]??0;
+    if(exploitMaxEl) exploitMaxEl.value=exploitRange?.[1]??0;
   });
-  // Exploit loot
-  if(loc.exploitResources){
-    ['food','materials'].forEach(res=>{
-      const range=loc.exploitResources[res];
-      const minEl=document.querySelector(`.exploit-min[data-res="${res}"]`);
-      const maxEl=document.querySelector(`.exploit-max[data-res="${res}"]`);
-      if(minEl) minEl.value=range?.[0]??0;
-      if(maxEl) maxEl.value=range?.[1]??0;
-    });
-  }
-  // Survivor spawn
   const sp=loc.survivorSpawn;
   $('f-hasSurvivor').checked=!!sp;
   $('survivorSection').classList.toggle('visible',!!sp);
@@ -593,16 +653,20 @@ function render(){
     return;
   }
   const riskLabels=['Seguro','Bajo','Medio','Alto','Extremo'];
-  el.innerHTML=state.locations.map(loc=>`
+  const modeLabels={once:'1 vez',respawn:'⟳ Respawn',fixed:'♾ Fijo'};
+  el.innerHTML=state.locations.map(loc=>{
+    const mode=inferResourceMode(loc);
+    return `
     <div class="loc-card ${state.editingId===loc.id?'selected':''}" onclick="fillForm(state.locations.find(l=>l.id==='${loc.id}'))">
       <div class="loc-card-icon">${loc.icon||'📍'}</div>
       <div>
         <div class="loc-card-name">${escapeHtml(loc.name)}</div>
         <div class="loc-card-meta">
           <span class="badge risk-${loc.riskLevel||0}">${riskLabels[loc.riskLevel||0]}</span>
+          · ${modeLabels[mode]||mode}
           · ${loc.exploreDays||1} día${(loc.exploreDays||1)!==1?'s':''}
           · Peso: ${loc.weight||5}
-          ${loc.regenerateDays?'· ⟳ Renovable':''}
+          ${mode==='respawn'?'· '+(loc.respawnDays||loc.regenerateDays||7)+'d':''}
           ${loc.survivorSpawn?'· 👤':''}
           ${(loc.hostileTypes||[]).length?'· ⚔ '+Math.round((loc.hostilesChance||0)*100)+'% hostiles':''}
         </div>
@@ -610,7 +674,8 @@ function render(){
       <div class="loc-card-actions">
         <button class="btn" onclick="event.stopPropagation();deleteLoc('${loc.id}')" title="Eliminar" style="padding:4px 8px;color:var(--danger-bright);border-color:var(--danger);">✕</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   updatePreview();
 }
 
@@ -668,17 +733,7 @@ async function autoLoad(){
     });
     render();
     showToast(`${data.length} ubicaciones cargadas desde /data/ ✓`);
-  } catch(e){
-    console.warn('No se pudo cargar locations.json:', e.message);
-    if(!state.locations.length && Array.isArray(EMBEDDED_LOCATIONS) && EMBEDDED_LOCATIONS.length){
-      EMBEDDED_LOCATIONS.forEach(loc=>{
-        if(!state.locations.find(l=>l.id===loc.id)) state.locations.push(loc);
-      });
-      render();
-      showToast(`${state.locations.length} ubicaciones cargadas (fallback embebido) ✓`);
-      return;
-    }
-  }
+  } catch(e){ console.warn('No se pudo cargar locations.json:', e.message); }
 }
 
 // ── EVENTS ──
@@ -693,6 +748,7 @@ document.querySelectorAll('input,select,textarea').forEach(el=>{
 
 // ── INIT ──
 renderHostileTypes();
+applyResourceModeUI();
 updatePreview();
 autoLoad();
 </script>
