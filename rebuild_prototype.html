@@ -1046,16 +1046,31 @@
   
   <!-- Travel popup -->
   <div class="overlay" id="travelPopup">
-    <div class="modal" style="width:min(480px,100%);background:var(--panel);">
+    <div class="modal" style="width:min(520px,100%);background:var(--panel);">
       <div class="modal-header" style="color:var(--ok-bright);background:#080f0a;border-bottom:1px solid #1a3a1a;">
         🧭 Enviar expedición
       </div>
       <div class="modal-body" style="padding:14px;">
         <div id="travelDestInfo" style="font-size:12px;color:var(--muted);margin-bottom:12px;border-left:2px solid var(--ok);padding-left:8px;"></div>
-        <div style="font-size:11px;color:var(--text);margin-bottom:10px;">
-          ⏱ <b>Día 1:</b> Viaje · <b>Día 2:</b> En destino · <b>Día 3:</b> Regreso
+        <div style="font-size:11px;color:var(--text);margin-bottom:12px;">
+          ⏱ <b>Día 1:</b> Viaje · permanece en el campamento hasta que vuelva a la base
         </div>
-        <div id="travelSurvivorList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;"></div>
+        <div style="border:1px solid var(--line2);padding:10px;background:var(--panel2);margin-bottom:12px;">
+          <div style="font-size:10px;color:var(--amber-bright);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">🎒 Suministros a llevar</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:9px;color:var(--muted);display:block;margin-bottom:3px;">🍽 COMIDA (disponible: <span id="travelFoodAvail">0</span>)</label>
+              <input type="number" id="travelFood" value="0" min="0" style="width:100%;background:var(--panel);border:1px solid var(--line2);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:5px 8px;">
+            </div>
+            <div>
+              <label style="font-size:9px;color:var(--muted);display:block;margin-bottom:3px;">💊 MEDS (disponible: <span id="travelMedsAvail">0</span>)</label>
+              <input type="number" id="travelMeds" value="0" min="0" style="width:100%;background:var(--panel);border:1px solid var(--line2);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:5px 8px;">
+            </div>
+          </div>
+          <div style="font-size:9px;color:var(--dim);margin-top:6px;">Los recursos se restan del inventario de la base y van al campamento exterior.</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">Elegir superviviente</div>
+        <div id="travelSurvivorList" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
         <div style="margin-top:12px;display:flex;gap:8px;">
           <button class="btn secondary" id="travelCancel">Cancelar</button>
         </div>
@@ -1230,7 +1245,7 @@
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},log:[],currentDetail:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},log:[],currentDetail:null};
 const dataLoadState={errors:[],loaded:[]};
 let activeMapTab='base';
 
@@ -1595,6 +1610,13 @@ function renderTopbar(){
       : stabilityTier==='strong'
         ? 'Fuerte: defensa +1, +eventos positivos, más reclutas, descanso con posible +1 moral.'
         : 'Normal: sin modificadores globales.';
+  // Camp indicator in topbar
+  const campHeader=document.getElementById('campTopbarIndicator');
+  const extCount=state.survivors.filter(s=>s.status!=='muerto'&&(s.location==='exterior'||s.location==='travelling')).length;
+  if(campHeader){
+    campHeader.style.display=extCount>0?'flex':'none';
+    if(extCount>0) campHeader.innerHTML=`<span style="font-size:9px;color:var(--ok-bright);letter-spacing:0.08em;">⛺ CAMP</span><span style="font-size:14px;font-weight:600;">🍽${state.camp.food} 💊${state.camp.meds}</span>`;
+  }
   const cards=[
     ['Día','📅',state.day,false],
     ['Comida','🌽',state.food,false],
@@ -1630,7 +1652,22 @@ function renderSurvivors(){
       threatBanner.style.display='none';
     }
   }
-  // Base panel: only survivors currently in the settlement
+  // Show camp header + inventory when in exterior tab
+  if(activeMapTab==='exterior'){
+    const campHeader=document.createElement('div');
+    const extCount=state.survivors.filter(s=>s.status!=='muerto'&&(s.location==='exterior'||s.location==='travelling')).length;
+    campHeader.innerHTML=`
+      <div style="border:1px solid var(--ok);border-left:3px solid var(--ok-bright);padding:8px 10px;background:rgba(74,138,53,0.06);margin-bottom:8px;">
+        <div style="font-family:var(--font-display);font-size:12px;letter-spacing:0.1em;color:var(--ok-bright);margin-bottom:4px;">⛺ CAMPAMENTO EXTERIOR</div>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text);">
+          <span>🍽 <b>${state.camp.food}</b> comida</span>
+          <span>💊 <b>${state.camp.meds}</b> meds</span>
+          <span style="color:var(--muted);">${extCount} superviviente${extCount!==1?'s':''}</span>
+        </div>
+      </div>`;
+    survivorList.appendChild(campHeader);
+  }
+
   const tabFilter = activeMapTab==='exterior'
     ? s => s.status!=='muerto' && (s.location==='exterior'||s.location==='travelling')
     : s => s.status!=='muerto' && (s.location==='base'||s.location===undefined||s.location===null||s.location==='');
@@ -2274,18 +2311,33 @@ function applyDailyIncome(){
 }
 
 function applyFoodConsumption(){
-  const alive=aliveSurvivors();
   const foodPer=Number(gameData.config?.rules?.foodPerSurvivor??1);
+  // Exterior survivors eat from camp inventory
+  const extSurvivors=state.survivors.filter(s=>s.status!=='muerto'&&s.location==='exterior');
+  if(extSurvivors.length>0){
+    const campNeeded=extSurvivors.length*foodPer;
+    if(state.camp.food>=campNeeded){
+      state.camp.food-=campNeeded;
+      addLog(`⛺ El campamento consume ${campNeeded} comida.`);
+      extSurvivors.forEach(s=>{ s.fed=true; });
+    } else {
+      addLog(`⛺ Sin comida en el campamento. Los supervivientes en exterior pasan hambre.`);
+      extSurvivors.forEach(s=>{ s.fed=false; s.morale=Math.max(0,(s.morale??2)-1); });
+      state.camp.food=0;
+    }
+  }
+  const alive=aliveSurvivors().filter(s=>s.location!=='exterior');
+  const aliveBase=aliveSurvivors().filter(s=>s.location!=='exterior'&&s.location!=='travelling');
   const pozoReduction=state.buildings.pozo?.built&&state.buildings.pozo?.active?state.buildings.pozo.level:0;
   // Glotón: counts as 2 food portions
-  const glutonCount=alive.filter(s=>(s.negativeSkill||'').toLowerCase()==='glotón').length;
-  const neededBase=alive.length*foodPer + glutonCount; // gluton counts double
+  const glutonCount=aliveBase.filter(s=>(s.negativeSkill||'').toLowerCase()==='glotón').length;
+  const neededBase=aliveBase.length*foodPer + glutonCount; // gluton counts double
   const needed=Math.max(0,neededBase - pozoReduction);
   if(pozoReduction>0) addLog(`💧 El Pozo de Agua reduce el consumo en ${pozoReduction} comida.`);
 
   if(state.food<=0){
     // Nobody eats — everyone loses morale, stability drops
-    alive.forEach(s=>{
+    alive.filter(s=>s.location!=='exterior').forEach(s=>{
       s.fed=false;
       s.morale=Math.max(0,s.morale-1);
     });
@@ -3134,6 +3186,7 @@ function showLocationDetail(instanceId){
   if(survivorsHere.length&&!loc.hasRaiders&&!loc.exhausted&&loc.status!=='undiscovered'){
     const btn=document.createElement('button');
     btn.className='btn primary';
+    btn.style.cssText='width:100%;padding:10px 14px;text-align:left;margin-bottom:4px;';
     btn.innerHTML='📦 Saquear';
     btn.onclick=()=>openLootPopup(instanceId);
     actionsEl.appendChild(btn);
@@ -3153,7 +3206,8 @@ function showLocationDetail(instanceId){
   if(loc.hasRaiders&&loc.status!=='undiscovered'&&survivorsHere.length){
     const btn=document.createElement('button');
     btn.className='btn danger';
-    btn.innerHTML='⚔ Atacar raiders';
+    btn.style.cssText='width:100%;padding:10px 14px;text-align:left;margin-bottom:4px;';
+    btn.innerHTML='⚔ Atacar hostiles';
     btn.onclick=()=>openLocationRaiderAttack(instanceId);
     actionsEl.appendChild(btn);
   }
@@ -3398,13 +3452,20 @@ function travelToZone(survivorId, locationId){
   const s=state.survivors.find(x=>x.id===survivorId);
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!s||!loc) return;
+  // Transfer supplies from base to camp
+  const foodToTake=Math.min(Number(document.getElementById('travelFood')?.value||0), state.food);
+  const medsToTake=Math.min(Number(document.getElementById('travelMeds')?.value||0), state.meds);
+  if(foodToTake>0){ state.food-=foodToTake; state.camp.food+=foodToTake; }
+  if(medsToTake>0){ state.meds-=medsToTake; state.camp.meds+=medsToTake; }
+  if(foodToTake>0||medsToTake>0)
+    addLog(`🎒 ${s.name} lleva ${foodToTake>0?foodToTake+' comida':''}${foodToTake>0&&medsToTake>0?' y ':''}${medsToTake>0?medsToTake+' meds':''} al campamento.`);
   s.location='travelling';
   s.travelDest=locationId;
   s.travelArrivalDay=state.day+1;
-  s.travelReturnDay=null; // set when they start returning
+  s.travelReturnDay=null;
   s.status='ocupado';
   s.action={type:'viajar',target:locationId};
-  addLog(`🧭 ${s.name} parte hacia ${loc.name}. Llegará el día ${s.travelArrivalDay}.`);
+  addLog(`🧭 ${s.name} parte hacia la zona exterior. Llegará el día ${s.travelArrivalDay}.`);
 }
 
 // Legacy alias (kept for compatibility with older onclick hooks)
@@ -3538,6 +3599,13 @@ function resolveTravelMovement(){
       s.status='activo';
       s.action=null;
       addLog(`🏠 ${s.name} regresa a la base.`);
+      // If last exterior survivor, bring camp supplies back
+      const stillOutside=state.survivors.filter(x=>x.id!==s.id&&(x.location==='exterior'||x.location==='travelling')).length;
+      if(stillOutside===0&&(state.camp.food>0||state.camp.meds>0)){
+        if(state.camp.food>0){ state.food+=state.camp.food; addLog(`🎒 ${state.camp.food} comida del campamento regresa a la base.`); }
+        if(state.camp.meds>0){ state.meds+=state.camp.meds; addLog(`🎒 ${state.camp.meds} meds del campamento regresan a la base.`); }
+        state.camp={food:0,meds:0};
+      }
     }
   });
 }
