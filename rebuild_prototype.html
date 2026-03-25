@@ -530,6 +530,37 @@
     .log-day-separator::after {
       background: linear-gradient(to left, transparent, var(--line2));
     }
+    .panel-tools {
+      display:flex;
+      gap:6px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .panel-tools .btn {
+      padding:4px 8px;
+      font-size:10px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+    }
+    .techlog-text {
+      width:100%;
+      min-height:420px;
+      background:rgba(0,0,0,0.45);
+      border:1px solid var(--line2);
+      color:var(--text);
+      padding:12px;
+      resize:vertical;
+      font-family:var(--font-mono);
+      font-size:11px;
+      line-height:1.55;
+      white-space:pre;
+    }
+    .techlog-meta {
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.6;
+      margin-bottom:10px;
+    }
 
     /* EVENTS */
     /* ── EVENT PANEL: image left, content right ── */
@@ -1048,7 +1079,14 @@
         <div class="panel-header" style="justify-content:space-between;"><span>Instalación</span><button id="closeBuildingDetail" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;">✕</button></div>
         <div class="panel-body"><div class="detail-grid" id="detailBox"></div></div>
       </div>
-      <div class="panel-header">Registro de operaciones</div>
+      <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span>Registro de operaciones</span>
+        <div class="panel-tools">
+          <button class="btn secondary" id="openTechLogBtn">Log técnico</button>
+          <button class="btn secondary" id="copyTechLogBtn">Copiar TXT</button>
+          <button class="btn secondary" id="downloadTechLogBtn">Descargar TXT</button>
+        </div>
+      </div>
       <div class="panel-body" style="flex:1;overflow:hidden;"><div class="log" id="logBox"></div></div>
     </section>
   </div>
@@ -1212,6 +1250,28 @@
     </div>
   </div>
 
+  <!-- Injury treatment popup -->
+  <div class="overlay" id="injuryTreatmentPopup">
+    <div class="modal" style="width:min(560px,100%);background:var(--panel);">
+      <div class="modal-header" style="color:var(--warn-bright);background:#100d08;border-bottom:1px solid #3a2a10;">
+        🩹 Tratamiento de heridas
+      </div>
+      <div class="modal-body" style="padding:16px;display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:start;">
+        <div id="injuryTreatmentPortrait" style="width:96px;height:96px;border:1px solid var(--line2);overflow:hidden;background:var(--panel2);"></div>
+        <div>
+          <div id="injuryTreatmentName" style="font-family:var(--font-display);font-size:20px;font-weight:600;letter-spacing:0.06em;color:var(--warn-bright);margin-bottom:4px;"></div>
+          <div id="injuryTreatmentMeta" style="font-size:11px;color:var(--muted);margin-bottom:8px;"></div>
+          <div id="injuryTreatmentText" style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px;"></div>
+          <div id="injuryTreatmentStock" style="font-size:11px;color:var(--ok-bright);"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="gap:8px;">
+        <button class="btn primary" id="injuryTreatmentConfirm">💊 Administrar medicina</button>
+        <button class="btn secondary" id="injuryTreatmentDecline">Sin medicina (tirar 1d6)</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Food choice popup -->
   <div class="overlay" id="foodChoicePopup">
     <div class="modal" style="width:min(520px,100%);background:var(--panel);">
@@ -1287,21 +1347,50 @@
       </div>
     </div>
   </div>
+
+  <div class="overlay" id="techLogModal">
+    <div class="modal" style="width:min(980px,100%);background:var(--panel);">
+      <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span>Log técnico de la partida</span>
+        <div class="panel-tools">
+          <button class="btn secondary" id="copyTechLogModalBtn">Copiar TXT</button>
+          <button class="btn secondary" id="downloadTechLogModalBtn">Descargar TXT</button>
+          <button class="btn secondary" id="closeTechLogBtn">Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:14px;">
+        <div class="techlog-meta">Este registro guarda eventos internos de la partida, errores JS, cambios de estado y resoluciones de heridas/construcción para ayudarte a detectar fallos concretos.</div>
+        <textarea id="techLogText" class="techlog-text" readonly spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+
   <div class="gameover" id="gameOverWrap"><div class="gameover-box"><h1>Derrota</h1><p id="gameOverText"></p><button onclick="location.reload()">Reiniciar partida</button></div></div>
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0,deferred:false,triggered:false},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0,deferred:false,triggered:false},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],debugLog:[],_debugSeq:0,currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null};
 const dataLoadState={errors:[],loaded:[]};
 let activeMapTab='base';
 
-const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
+const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap'),techLogModal=document.getElementById('techLogModal'),techLogText=document.getElementById('techLogText');
 
 
 document.getElementById('endDayBtn').addEventListener('click',endDay);
 document.getElementById('resetAssignmentsBtn').addEventListener('click',resetAssignments);
 document.getElementById('closeBuildModal').addEventListener('click',()=>buildModalWrap.classList.remove('open'));
 document.querySelectorAll('.building').forEach(btn=>btn.addEventListener('click',()=>showBuildingDetail(btn.dataset.building)));
+document.getElementById('openTechLogBtn')?.addEventListener('click',openTechLogModal);
+document.getElementById('copyTechLogBtn')?.addEventListener('click',copyTechnicalLogToClipboard);
+document.getElementById('downloadTechLogBtn')?.addEventListener('click',downloadTechnicalLogFile);
+document.getElementById('copyTechLogModalBtn')?.addEventListener('click',copyTechnicalLogToClipboard);
+document.getElementById('downloadTechLogModalBtn')?.addEventListener('click',downloadTechnicalLogFile);
+document.getElementById('closeTechLogBtn')?.addEventListener('click',closeTechLogModal);
+if(techLogModal){
+  techLogModal.addEventListener('click',(e)=>{
+    if(e.target===techLogModal) closeTechLogModal();
+  });
+}
 
 function deepClone(v){return JSON.parse(JSON.stringify(v))}
 
@@ -1662,6 +1751,8 @@ function initGame(){
   state.delayedQueue=[];
   state.actionLimits={};
   state.log=[];
+  state.debugLog=[];
+  state._debugSeq=0;
   state.currentDetail=null;
   state._lastStabilityTier=getStabilityTier();
 
@@ -2054,6 +2145,8 @@ function openBuildModal(survivorId){
       state.buildings[def.id]._constructionDays=days;
       state.buildings[def.id]._constructionDaysLeft=days;
       state.buildings[def.id]._underConstruction=true;
+      state.buildings[def.id]._constructionPaidCost=finalCost;
+      state.buildings[def.id]._constructionBuilderId=s.id;
       s.action={type:'construir',target:def.id};
       s.status='ocupado';
       const dayStr=days===1?'1 día':`${days} días`;
@@ -2119,6 +2212,11 @@ function maybeContinueEndDayAfterPause(){
 }
 
 function endDay(){
+  addTechLog('end_day_start', 'Se ha solicitado finalizar el día.', {
+    pendingEvent: state.pendingEvent?.id||null,
+    processing: !!state._processingDay,
+    survivors: state.survivors.filter(s=>s.status!=='muerto').map(s=>({id:s.id,name:s.name,status:s.status,action:s.action?.type||null,injury:s.injuryLevel||null,location:s.location||'base'}))
+  });
   // Only block if there's a pending event that requires player choice
   if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive){
     addLog('⚠ Debes resolver el evento actual antes de finalizar el día.');
@@ -2166,8 +2264,14 @@ function endDay(){
     finalizeEndDayAfterPauses();
   } catch(err){
     console.error('Error al finalizar día:', err);
+    addTechLog('end_day_error', 'Error durante la resolución del día.', {error: err?.message||String(err), stack: err?.stack||null});
     addLog(`❌ Error al finalizar día: ${err?.message||err}`);
   } finally {
+    addTechLog('end_day_finish', 'Finaliza la resolución de fin de día.', {
+      pendingFoodChoice: !!state._pendingFoodChoice,
+      pendingTreatmentQueue: Array.isArray(state._pendingTreatmentQueue)?state._pendingTreatmentQueue.slice():null,
+      processing: !!state._processingDay
+    });
     state._processingDay=false;
     render();
   }
@@ -2237,6 +2341,10 @@ function resolveActions(){
         } else {
           // Construction complete!
           bld._underConstruction=false;
+          delete bld._constructionDays;
+          delete bld._constructionDaysLeft;
+          delete bld._constructionPaidCost;
+          delete bld._constructionBuilderId;
           bld.built=true;
           bld.level+=1;
           bld.active=true;
@@ -2671,8 +2779,10 @@ function advanceTreatmentFlow(){
 }
 
 function openInjuryTreatmentPopup(){
+  addTechLog('injury_popup_check', 'Se intenta abrir el popup de tratamiento de heridas.');
   const survivor=getNextTreatmentSurvivor();
   if(!survivor){
+    addTechLog('injury_popup_skip', 'No hay supervivientes pendientes de tratamiento.');
     closeInjuryTreatmentPopup();
     finalizeInjuriesEndOfDay();
     maybeContinueEndDayAfterPause();
@@ -2694,23 +2804,25 @@ function openInjuryTreatmentPopup(){
     : '<div style="width:100%;height:100%;background:var(--panel3);"></div>';
 
   const level=injuryDisplayName(survivor.injuryLevel||'simple');
-  const restNeeded=Math.max(0,(INJURY_REST_DAYS[survivor.injuryLevel]||1)-Number(survivor.injuryRestDays||0));
+  addTechLog('injury_popup_open', 'Popup de tratamiento abierto.', {survivorId: survivor.id, survivorName: survivor.name, injuryLevel: survivor.injuryLevel||'simple', meds: state.meds});
   nameEl.textContent=survivor.name;
-  metaEl.textContent=`Herida ${level} · Descanso restante: ${restNeeded} día${restNeeded===1?'':'s'}`;
-  textEl.textContent=`${survivor.name} necesita medicamentos para tratar su herida ${level}. Si no recibe tratamiento, mantiene el riesgo de empeorar.`;
+  metaEl.textContent=`Herida ${level} · Orden médica: hoy solo puede descansar`;
+  textEl.textContent=`Si administras medicina, la herida baja un nivel. Si no, se tira 1d6: 1 empeora, 2-3-4 sigue igual, 5-6 baja un nivel.`;
   stockEl.textContent=`Medicamentos disponibles: ${state.meds}`;
 
   confirmBtn.disabled=state.meds<=0;
   confirmBtn.onclick=()=>{
     if(state.meds<=0) return;
+    addTechLog('injury_treat_meds', 'Se administra medicina a un superviviente herido.', {survivorId: survivor.id, survivorName: survivor.name, injuryLevel: survivor.injuryLevel||'simple', medsBefore: state.meds});
     state.meds=Math.max(0,state.meds-1);
     survivor._injuryTreatedToday=true;
-    addLog(`💊 ${survivor.name} recibe tratamiento para herida ${level} (-1 medicamento).`);
+    improveInjuryOneLevel(survivor, '💊 Medicina');
     if(Array.isArray(state._pendingTreatmentQueue)) state._pendingTreatmentQueue.shift();
     advanceTreatmentFlow();
   };
   declineBtn.onclick=()=>{
-    addLog(`⚠ Decides no tratar la herida de ${survivor.name}.`);
+    addTechLog('injury_treat_no_meds', 'Se resuelve una herida sin medicina.', {survivorId: survivor.id, survivorName: survivor.name, injuryLevel: survivor.injuryLevel||'simple', meds: state.meds});
+    addLog(`🩹 ${survivor.name} descansa sin medicina.`);
     applyUntreatedInjuryOutcome(survivor,{fromChoice:true});
     if(Array.isArray(state._pendingTreatmentQueue)) state._pendingTreatmentQueue.shift();
     advanceTreatmentFlow();
@@ -4443,21 +4555,21 @@ function applyDailyMoraleDecay(){
 }
 
 function applyUntreatedInjuryOutcome(s, opts={}){
-  if(!s||s.status!=='herido') return;
+  if(!s||s.status!=='herido') return null;
+  addTechLog('injury_roll_start', 'Tirada de herida sin medicina.', {survivorId: s.id, survivorName: s.name, injuryLevel: s.injuryLevel||'simple', fromChoice: !!opts.fromChoice});
   ensureInjuryState(s);
-  const level=s.injuryLevel;
-  if(level!=='seria'&&level!=='grave') return;
-  if(Math.random()<INJURY_ESCALATE_RISK){
-    if(level==='seria'){
-      s.injuryLevel='grave';
-      s.injuryRestDays=0;
-      addLog(`⚠ ${opts.fromChoice?'Sin tratamiento,':'Sin medicamentos,'} la herida de ${s.name} empeora a grave.`);
-    } else {
-      killSurvivor(s,`💀 ${s.name} muere por una herida grave ${opts.fromChoice?'sin tratamiento':'sin tratamiento'}.`);
-    }
+  const rollValue=Number(opts.roll||roll(1,6));
+  const label=opts.fromChoice?'Sin medicina':'Descanso sin medicina';
+  if(rollValue===1){
+    worsenInjuryOneLevel(s, `${label} (1d6: ${rollValue})`);
+  } else if(rollValue>=5){
+    improveInjuryOneLevel(s, `${label} (1d6: ${rollValue})`);
   } else {
-    addLog(`⚠ ${s.name} no recibió medicamentos para su herida ${injuryDisplayName(level)}.`);
+    addLog(`🩹 ${label}: la herida de ${s.name} sigue en ${injuryDisplayName(s.injuryLevel)}. (1d6: ${rollValue})`);
   }
+  addTechLog('injury_roll_result', 'Resultado de herida sin medicina.', {survivorId: s.id, survivorName: s.name, roll: rollValue, label, injuryLevel: s.injuryLevel||null, status: s.status});
+  s._injuryTreatedToday=true;
+  return rollValue;
 }
 
 function finalizeInjuriesEndOfDay(){
@@ -4467,13 +4579,9 @@ function finalizeInjuriesEndOfDay(){
       return;
     }
     ensureInjuryState(s);
-    const currentNeeded=INJURY_REST_DAYS[s.injuryLevel]||1;
-    const treated=!!s._injuryTreatedToday;
-    if(s.injuryRestDays>=currentNeeded&&(s.injuryLevel==='simple'||treated)){
+    if(!s.injuryLevel){
       s.status='activo';
-      s.injuryLevel=null;
       s.injuryRestDays=0;
-      addLog(`✅ ${s.name} se recupera de sus heridas tras descansar.`);
     }
     delete s._injuryTreatedToday;
   });
@@ -4487,18 +4595,13 @@ function processInjuriesEndOfDay(){
     if(s.status!=='herido') return;
     ensureInjuryState(s);
     s._injuryTreatedToday=false;
-    const needed=INJURY_REST_DAYS[s.injuryLevel]||1;
-    if(s.action?.type==='descansar'||s.action?.type==='descansar_exterior'){
-      s.injuryRestDays=Math.min(needed, Number(s.injuryRestDays||0)+1);
-    }
-  });
+    if(!isRestingForRecovery(s)) return;
 
-  aliveSurvivors().forEach(s=>{
-    if(s.status!=='herido') return;
-    ensureInjuryState(s);
-    const level=s.injuryLevel;
-    const needsMeds=(level==='seria'||level==='grave');
-    if(!needsMeds) return;
+    if(s.injuryLevel==='simple'){
+      applyUntreatedInjuryOutcome(s);
+      return;
+    }
+
     if(state.meds>0){
       treatmentQueue.push(s.id);
     } else {
@@ -4956,11 +5059,9 @@ function resetForNewDay(){
       s._keepInvestigating=false;
       s.action={type:'investigar'};
       s.status='ocupado';
-    } else if(s._keepBuilding&&s.status!=='muerto'){
+    } else if(s._keepBuilding&&s.status!=='muerto'&&s.action?.type==='construir'&&s.action?.target&&state.buildings?.[s.action.target]?._underConstruction&&!requiresForcedRest(s)){
       s._keepBuilding=false;
-      // Keep same construir action with same target
       s.status='ocupado';
-      // action stays as-is
     } else {
       if(s.location==='travelling'&&s.status!=='muerto'){
         s.status='ocupado';
@@ -5180,8 +5281,8 @@ function getSurvivorImage(s){
   return s.imageUrl||'';
 }
 
-const INJURY_REST_DAYS={simple:1,seria:2,grave:3};
-const INJURY_ESCALATE_RISK=0.5;
+const INJURY_LEVELS=['simple','seria','grave'];
+const INJURY_REST_DAYS={simple:1,seria:1,grave:1};
 const INJURY_LEVEL_RULES={
   generic:{simple:0.7, seria:0.22, grave:0.08},
   outside:{simple:0.65, seria:0.25, grave:0.10},
@@ -5195,23 +5296,23 @@ function injuryDisplayName(level){
 function nextInjuryLevel(level){
   return level==='simple'?'seria':level==='seria'?'grave':'grave';
 }
+function prevInjuryLevel(level){
+  return level==='grave'?'seria':level==='seria'?'simple':null;
+}
 function ensureInjuryState(s){
   if(s.status!=='herido') return;
   if(!s.injuryLevel) s.injuryLevel='simple';
   if(typeof s.injuryRestDays!=='number') s.injuryRestDays=0;
 }
 function requiresForcedRest(s){
-  if(!s||s.status!=='herido') return false;
-  ensureInjuryState(s);
-  const level=String(s.injuryLevel||'simple').toLowerCase();
-  return level==='seria' || level==='grave';
+  return !!(s&&s.status==='herido');
 }
 function injuredLabel(s){
   const level=s?.injuryLevel||'simple';
   return `herido/a (${injuryDisplayName(level)})`;
 }
 function rollInjuryLevel(source='generic', forcedLevel){
-  if(forcedLevel&&INJURY_REST_DAYS[forcedLevel]) return forcedLevel;
+  if(forcedLevel&&INJURY_LEVELS.includes(forcedLevel)) return forcedLevel;
   const rules=INJURY_LEVEL_RULES[source]||INJURY_LEVEL_RULES.generic;
   const r=Math.random();
   const sCut=Number(rules.simple||0.7);
@@ -5219,6 +5320,82 @@ function rollInjuryLevel(source='generic', forcedLevel){
   if(r<=sCut) return 'simple';
   if(r<=seCut) return 'seria';
   return 'grave';
+}
+function isRestingForRecovery(s){
+  return s?.action?.type==='descansar'||s?.action?.type==='descansar_exterior';
+}
+function cancelConstructionForSurvivor(s, reason=''){
+  addTechLog('build_cancel_check', 'Se comprueba si hay que cancelar una construcción.', {
+    survivorId: s?.id||null,
+    survivorName: s?.name||null,
+    reason,
+    action: s?.action?.type||null,
+    target: s?.action?.target||null,
+    status: s?.status||null
+  });
+  if(!s) return false;
+  const target=s.action?.type==='construir'&&s.action?.target?s.action.target:null;
+  const bld=target?state.buildings?.[target]:null;
+  if(!bld||!bld._underConstruction) {
+    s._keepBuilding=false;
+    if(s.action?.type==='construir') s.action=null;
+    return false;
+  }
+  const refund=Math.max(0, Number(bld._constructionPaidCost||0));
+  if(refund>0){
+    state.materials+=refund;
+    addLog(`↩ ${refund} materiales devueltos a la base por cancelar ${bld.name}.`);
+  }
+  bld._underConstruction=false;
+  delete bld._constructionDays;
+  delete bld._constructionDaysLeft;
+  delete bld._constructionPaidCost;
+  delete bld._constructionBuilderId;
+  s._keepBuilding=false;
+  if(s.action?.type==='construir') s.action=null;
+  addLog(`🛠 La construcción de ${bld.name} se cancela${reason?`: ${reason}`:''}.`);
+  addTechLog('build_cancelled', 'Construcción cancelada y recursos devueltos.', {
+    survivorId: s.id,
+    survivorName: s.name,
+    buildingId: target,
+    buildingName: bld.name,
+    refund,
+    reason
+  });
+  return true;
+}
+function worsenInjuryOneLevel(s, reasonLabel='Sin medicina'){
+  if(!s||s.status!=='herido') return 'same';
+  ensureInjuryState(s);
+  if(s.injuryLevel==='simple'){
+    s.injuryLevel='seria';
+    addLog(`⚠ ${reasonLabel}: la herida de ${s.name} empeora de simple a seria.`);
+    return 'worse';
+  }
+  if(s.injuryLevel==='seria'){
+    s.injuryLevel='grave';
+    addLog(`⚠ ${reasonLabel}: la herida de ${s.name} empeora de seria a grave.`);
+    return 'worse';
+  }
+  killSurvivor(s, `💀 ${s.name} muere por el empeoramiento de una herida grave.`);
+  return 'dead';
+}
+function improveInjuryOneLevel(s, reasonLabel='Descanso'){
+  if(!s||s.status!=='herido') return 'same';
+  ensureInjuryState(s);
+  const prev=s.injuryLevel;
+  const next=prevInjuryLevel(prev);
+  if(!next){
+    s.status='activo';
+    s.injuryLevel=null;
+    s.injuryRestDays=0;
+    addLog(`✅ ${reasonLabel}: ${s.name} se recupera de su herida simple.`);
+    return 'cured';
+  }
+  s.injuryLevel=next;
+  s.injuryRestDays=0;
+  addLog(`✅ ${reasonLabel}: la herida de ${s.name} baja de ${injuryDisplayName(prev)} a ${injuryDisplayName(next)}.`);
+  return 'better';
 }
 
 function getMoraleEmoji(s){
@@ -5231,7 +5408,8 @@ function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:
 function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
 function injureSurvivor(s,msg,opts={}){
-  if(s.status==='muerto') return;
+  if(!s||s.status==='muerto') return;
+  const wasBuilding=!!(s.action?.type==='construir'&&s.action?.target);
   if(s.status==='herido'){
     ensureInjuryState(s);
     const prev=s.injuryLevel;
@@ -5244,6 +5422,9 @@ function injureSurvivor(s,msg,opts={}){
     s.injuryRestDays=0;
     addLog(`🩸 ${s.name} sufre una herida ${injuryDisplayName(s.injuryLevel)}.`);
   }
+  if(wasBuilding){
+    cancelConstructionForSurvivor(s, `${s.name} ha sido herido/a`);
+  }
   const finalLevel=injuryDisplayName(s.injuryLevel||'simple');
   const finalLabel=`herido/a (${finalLevel})`;
   const finalMsg=typeof msg==='function'
@@ -5255,12 +5436,17 @@ function injureSurvivor(s,msg,opts={}){
 }
 
 function killSurvivor(s,msg){
-  if(s.status==='muerto') return;
+  if(!s||s.status==='muerto') return;
   _doKill(s, msg);
 }
 
 function _doKill(s, msg){
+  if(s.action?.type==='construir'&&s.action?.target){
+    cancelConstructionForSurvivor(s, `${s.name} ha muerto`);
+  }
   s.status='muerto';
+  s.action=null;
+  s._keepBuilding=false;
   state.cemetery.push({
     id:s.id,
     name:s.name,
@@ -5270,7 +5456,126 @@ function _doKill(s, msg){
   });
   addLog(msg||`${s.name} ha muerto.`);
 }
-function addLog(text){state.log.unshift(`Día ${state.day}: ${text}`);state.log=state.log.slice(0,80)}
+function getTechnicalPhase(){
+  if(state._processingDay) return 'procesando_fin_dia';
+  if(state._currentTreatmentSurvivorId) return 'tratamiento_heridas';
+  if(state.pendingEvent) return 'evento_activo';
+  return 'esperando_acciones';
+}
+function safeDebugClone(value, depth=0){
+  if(depth>4) return '[MaxDepth]';
+  if(value===null||value===undefined) return value;
+  const t=typeof value;
+  if(t==='number'||t==='string'||t==='boolean') return value;
+  if(t==='function') return '[Function]';
+  if(value instanceof Set) return Array.from(value);
+  if(Array.isArray(value)) return value.slice(0,20).map(v=>safeDebugClone(v, depth+1));
+  if(t==='object'){
+    const out={};
+    Object.keys(value).slice(0,30).forEach(key=>{
+      out[key]=safeDebugClone(value[key], depth+1);
+    });
+    return out;
+  }
+  return String(value);
+}
+function addTechLog(kind, message, extra={}){
+  if(!Array.isArray(state.debugLog)) state.debugLog=[];
+  state._debugSeq=(Number(state._debugSeq)||0)+1;
+  const entry={
+    seq: state._debugSeq,
+    iso: new Date().toISOString(),
+    day: Number(state.day)||0,
+    phase: getTechnicalPhase(),
+    kind: kind||'trace',
+    message: String(message||''),
+    pendingEvent: state.pendingEvent?.id||state.pendingEvent?.name||null,
+    processingDay: !!state._processingDay,
+    currentTreatment: state._currentTreatmentSurvivorId||null,
+    extra: safeDebugClone(extra)
+  };
+  state.debugLog.push(entry);
+  if(state.debugLog.length>1200) state.debugLog=state.debugLog.slice(-1200);
+  if(techLogModal?.classList.contains('open')) renderTechnicalLogText();
+  return entry;
+}
+function formatTechnicalLogEntry(entry){
+  const head=`#${String(entry.seq).padStart(4,'0')} | ${entry.iso} | día=${entry.day} | fase=${entry.phase} | tipo=${entry.kind}`;
+  const parts=[head, entry.message||''];
+  if(entry.pendingEvent) parts.push(`evento=${entry.pendingEvent}`);
+  if(entry.currentTreatment) parts.push(`tratamiento=${entry.currentTreatment}`);
+  if(entry.extra&&Object.keys(entry.extra).length){
+    try{ parts.push(JSON.stringify(entry.extra, null, 2)); }
+    catch(_err){ parts.push('[extra no serializable]'); }
+  }
+  return parts.join('\n');
+}
+function buildTechnicalLogText(){
+  const lines=[];
+  lines.push('=== RESURGIR · LOG TÉCNICO DE PARTIDA ===');
+  lines.push(`Generado: ${new Date().toISOString()}`);
+  lines.push(`Día actual: ${state.day}`);
+  lines.push(`Supervivientes vivos: ${aliveSurvivors().length}`);
+  lines.push(`Recursos base: comida=${state.food} | materiales=${state.materials} | meds=${state.meds} | estabilidad=${state.stability}`);
+  lines.push(`Procesando día: ${state._processingDay?'sí':'no'}`);
+  lines.push('');
+  if(!state.debugLog.length){
+    lines.push('Sin eventos técnicos todavía.');
+    return lines.join('\n');
+  }
+  state.debugLog.forEach(entry=>{
+    lines.push(formatTechnicalLogEntry(entry));
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+function renderTechnicalLogText(){
+  const text=buildTechnicalLogText();
+  if(techLogText) techLogText.value=text;
+  return text;
+}
+function openTechLogModal(){
+  renderTechnicalLogText();
+  if(techLogModal) techLogModal.classList.add('open');
+}
+function closeTechLogModal(){
+  if(techLogModal) techLogModal.classList.remove('open');
+}
+async function copyTechnicalLogToClipboard(){
+  const text=renderTechnicalLogText();
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      addLog('📋 Log técnico copiado al portapapeles.');
+      addTechLog('techlog_copy', 'El usuario ha copiado el log técnico.');
+    }else{
+      throw new Error('Clipboard API no disponible');
+    }
+  }catch(err){
+    addLog(`❌ No se pudo copiar el log técnico: ${err?.message||err}`);
+    addTechLog('techlog_copy_error', 'Fallo al copiar el log técnico.', {error: err?.message||String(err)});
+  }
+}
+function downloadTechnicalLogFile(){
+  const text=renderTechnicalLogText();
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  a.href=url;
+  a.download=`resurgir_log_tecnico_dia_${state.day}_${stamp}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  addLog('💾 Log técnico descargado en TXT.');
+  addTechLog('techlog_download', 'El usuario ha descargado el log técnico.', {filename: a.download});
+}
+function addLog(text){
+  state.log.unshift(`Día ${state.day}: ${text}`);
+  state.log=state.log.slice(0,250);
+  addTechLog('game_log', text);
+}
 function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No queda ningún superviviente con vida.');if(state.stability<=0)return openGameOver('La estabilidad del asentamiento ha caído a cero. El grupo se disuelve.')}
 function openGameOver(text){document.getElementById('gameOverText').textContent=text;gameOverWrap.classList.add('open')}
 function getBuildingCost(buildingId){const b=state.buildings[buildingId];const base=Number(b?.cost||0);const level=Number(b?.level||0);return Math.ceil(base*Math.pow(2,level))}
@@ -5755,7 +6060,24 @@ function startIntro(){
   btn.addEventListener('click', endIntro);
 }
 
-loadFromFiles().then(() => { const ok=initGame(); if(ok) startIntro(); }).catch((err) => { handleDataLoadError('Carga inicial', err?.message || 'Error inesperado'); initGame(); });
+window.addEventListener('error',(event)=>{
+  addTechLog('window_error', 'Error global de JavaScript.', {
+    message: event?.message||null,
+    source: event?.filename||null,
+    line: event?.lineno||null,
+    column: event?.colno||null,
+    stack: event?.error?.stack||null
+  });
+});
+window.addEventListener('unhandledrejection',(event)=>{
+  const reason=event?.reason;
+  addTechLog('promise_rejection', 'Promesa rechazada sin capturar.', {
+    reason: typeof reason==='string'?reason:(reason?.message||String(reason)),
+    stack: reason?.stack||null
+  });
+});
+
+loadFromFiles().then(() => { const ok=initGame(); if(ok) startIntro(); }).catch((err) => { handleDataLoadError('Carga inicial', err?.message || 'Error inesperado'); addTechLog('initial_load_error', 'Fallo durante la carga inicial.', {error: err?.message||String(err), stack: err?.stack||null}); initGame(); });
 document.getElementById('closeBuildingDetail').addEventListener('click',()=>{
   document.getElementById('buildingDetailPanel').style.display='none';
   state.currentDetail=null;
