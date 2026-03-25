@@ -1290,7 +1290,7 @@
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},log:[],currentDetail:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null};
 const dataLoadState={errors:[],loaded:[]};
 let activeMapTab='base';
 
@@ -1922,6 +1922,9 @@ function assignAction(id,type){
   if(s.status==='herido'&&type!=='descansar'){
     addLog(`${s.name} está herido/a y solo puede descansar.`);render();return;
   }
+  if(hasLowMoraleRestRestriction(s)&&type!=='descansar'){
+    addLog(`${s.name} no quiere hacer nada más que descansar.`);render();return;
+  }
   if(s.fatigue<=0&&type!=='descansar'){addLog(`${s.name} no tiene fatiga suficiente.`);render();return}
   if(isActionLimited(type)){addLog(`La acción ${actionLabel(type)} está limitada temporalmente.`);render();return}
   if(type==='vigilar'&&(!state.buildings.atalaya?.built||!state.buildings.atalaya?.active)){addLog('Necesitas una Atalaya activa para vigilar.');render();return}
@@ -2060,18 +2063,18 @@ function endDay(){
         state.eventTotalDays=carried._totalDays;
         carried._continuing=true;
         carried._multiDayPassive=true;  // doesn't block endDay
-        // Always show a new daily event on top
-        if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
+        // Always show a queued or daily event on top
+        showQueuedOrDailyEvent();
         // If no new event, re-show the carried one
         if(!state.pendingEvent){
           setEvent(carried);
         }
       } else {
         state._activeMultiDayEvent=null;
-        if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
+        showQueuedOrDailyEvent();
       }
     } else {
-      if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
+      showQueuedOrDailyEvent();
     }
   } catch(err){
     console.error('Error al finalizar día:', err);
@@ -2092,6 +2095,11 @@ function resolveActions(){
     const isRestAction=type==='descansar'||type==='descansar_exterior';
     if(requiresForcedRest(s)&&!isRestAction){
       addLog(`⚠ ${s.name} tiene herida ${injuryDisplayName(s.injuryLevel)} y solo puede descansar.`);
+      s.action={type:isExteriorSurvivor(s)?'descansar_exterior':'descansar',target:s.action?.target};
+      s.status='ocupado';
+    }
+    if(hasLowMoraleRestRestriction(s)&&!isRestAction){
+      addLog(`😶 ${s.name} no quiere hacer nada más que descansar.`);
       s.action={type:isExteriorSurvivor(s)?'descansar_exterior':'descansar',target:s.action?.target};
       s.status='ocupado';
     }
@@ -2116,7 +2124,6 @@ function resolveActions(){
     }else if(resolvedType==='descansar'||resolvedType==='descansar_exterior'){
       const usesCamp=resolvedType==='descansar_exterior';
       s.fatigue=s.maxFatigue;
-      const foodPool=usesCamp?'camp':'base';
       const hasFood=usesCamp?state.camp.food>0:state.food>0;
       // Resting with food restores morale
       if(hasFood&&s.morale<(s.maxMorale??2)){
@@ -2131,6 +2138,7 @@ function resolveActions(){
         s.morale=Math.min(s.maxMorale??2,s.morale+1);
         addLog(`🏛 La cohesión del asentamiento ayuda a ${s.name}: +1 moral extra por descanso.`);
       }
+      if(s.morale>0) s._lowMoraleRestOnly=false;
     }else if(resolvedType==='construir'){
       const buildTarget=s.action.target;
       const bld=buildTarget?state.buildings[buildTarget]:null;
@@ -3635,11 +3643,13 @@ function canUseExteriorAction(s, opts={}){
   const allowForcedRest=!!opts.allowForcedRest;
   const allowZeroFatigue=!!opts.allowZeroFatigue;
   const requireBravery=!!opts.requireBravery;
+  const allowLowMoraleRestOnly=!!opts.allowLowMoraleRestOnly;
   if(!s||s.status==='muerto') return false;
   if((s.location||'base')==='base'||s.location==='travelling') return false;
   if(s._exteriorActionLocked||s.status==='ocupado') return false;
   if(requireBravery&&(s.negativeSkill||'').toLowerCase().trim()==='cobarde') return false;
   if(!allowForcedRest&&requiresForcedRest(s)) return false;
+  if(!allowLowMoraleRestOnly&&hasLowMoraleRestRestriction(s)) return false;
   if(!allowZeroFatigue&&Number(s.fatigue||0)<=0) return false;
   return true;
 }
@@ -3647,9 +3657,9 @@ function canUseExteriorAction(s, opts={}){
 function getEligibleExteriorSurvivors(locationId, mode='action'){
   return state.survivors.filter(s=>{
     if(s.location!==locationId||s.status==='muerto') return false;
-    if(mode==='rest') return canUseExteriorAction(s,{allowForcedRest:true,allowZeroFatigue:true});
+    if(mode==='rest') return canUseExteriorAction(s,{allowForcedRest:true,allowZeroFatigue:true,allowLowMoraleRestOnly:true});
     if(mode==='attack') return canUseExteriorAction(s,{requireBravery:true});
-    if(mode==='return') return !s._exteriorActionLocked&&s.status!=='muerto'&&s.status!=='ocupado'&&s.location===locationId;
+    if(mode==='return') return !s._exteriorActionLocked&&!hasLowMoraleRestRestriction(s)&&s.status!=='muerto'&&s.status!=='ocupado'&&s.location===locationId;
     return canUseExteriorAction(s);
   });
 }
@@ -3968,28 +3978,84 @@ function resolveTravelMovement(){
 }
 
 // ── SURVIVOR MORALE SYSTEM ──
+function hasLowMoraleRestRestriction(s){
+  return !!(s&&s.status!=='muerto'&&s._lowMoraleRestOnly&&Number(s.morale||0)<=0);
+}
+
+function queueEventById(eventId, forcedSurvivor){
+  if(!eventId) return false;
+  const schema=[...(gameData.events||[]), ...(gameData.story_events||[])].find(e=>e&&e.id===eventId);
+  if(!schema) return false;
+  if(!Array.isArray(state._queuedEventSchemas)) state._queuedEventSchemas=[];
+  state._queuedEventSchemas.push({eventId, forcedSurvivorId:forcedSurvivor?.id||null});
+  return true;
+}
+
+function consumeQueuedPriorityEvent(){
+  if(!Array.isArray(state._queuedEventSchemas)||!state._queuedEventSchemas.length) return false;
+  while(state._queuedEventSchemas.length){
+    const queued=state._queuedEventSchemas.shift();
+    const schema=[...(gameData.events||[]), ...(gameData.story_events||[])].find(e=>e&&e.id===queued.eventId);
+    if(!schema) continue;
+    const forcedSurvivor=queued.forcedSurvivorId?state.survivors.find(s=>s.id===queued.forcedSurvivorId&&s.status!=='muerto'):null;
+    setEvent(buildEventFromSchema(schema, forcedSurvivor||pick(aliveSurvivors())||{name:'Alguien'}));
+    return true;
+  }
+  return false;
+}
+
+function showQueuedOrDailyEvent(){
+  if(consumeQueuedPriorityEvent()) return true;
+  if(!checkWeeklyEvent()&&!checkStoryEvent()&&!checkPriorityEvent()) chooseEvent();
+  return !!state.pendingEvent;
+}
+
 function checkLowMorale(){
   aliveSurvivors().forEach(s=>{
-    if(s.morale<=0&&s.status!=='muerto'){
-      // Can recover by resting if food available
-      if((s.action?.type==='descansar'&&state.food>0)||(s.action?.type==='descansar_exterior'&&state.camp.food>0)){
-        s.morale=1;
-        s.fed=true;
-        if(s.action?.type==='descansar_exterior') state.camp.food=Math.max(0,state.camp.food-1);
-        else state.food=Math.max(0,state.food-1);
-        addLog(`${s.name} descansa y recupera la moral gracias a una ración extra.`);
-        return;
-      }
-      // Otherwise: depart or betray
-      triggerSurvivorLeaving(s);
+    if(s.morale>0){
+      s._lowMoraleRestOnly=false;
+      return;
     }
+    if(s.status==='muerto') return;
+    // Can recover by resting if food available
+    if((s.action?.type==='descansar'&&state.food>0)||(s.action?.type==='descansar_exterior'&&state.camp.food>0)){
+      s.morale=1;
+      s.fed=true;
+      s._lowMoraleRestOnly=false;
+      if(s.action?.type==='descansar_exterior') state.camp.food=Math.max(0,state.camp.food-1);
+      else state.food=Math.max(0,state.food-1);
+      addLog(`${s.name} descansa y recupera la moral gracias a una ración extra.`);
+      return;
+    }
+
+    const roll=Math.random();
+    if(roll<0.20){
+      s._lowMoraleRestOnly=false;
+      triggerSurvivorLeaving(s,{forceBetrayal:true});
+      return;
+    }
+    if(roll<0.50){
+      s._lowMoraleRestOnly=false;
+      triggerSurvivorLeaving(s,{forceBetrayal:false});
+      return;
+    }
+    if(roll<0.90){
+      s._lowMoraleRestOnly=false;
+      if(queueEventById('lowmorale',s)) addLog(`😞 ${s.name} entra en crisis y activará el evento lowmorale.`);
+      else addLog(`⚠ ${s.name} entra en crisis, pero no existe el evento lowmorale.`);
+      return;
+    }
+
+    s._lowMoraleRestOnly=true;
+    addLog(`😶 ${s.name} se niega a hacer nada salvo descansar.`);
   });
 }
 
-function triggerSurvivorLeaving(s){
+function triggerSurvivorLeaving(s, opts={}){
   const stabilityAbandonBonus=Number(getStabilityModifiers().abandonChanceBonus||0);
   const betrayChance=Math.max(0,Math.min(1,0.4+stabilityAbandonBonus));
-  const betrays=Math.random()<betrayChance; // base 40%, modified by estabilidad
+  const forcedBetrayal=typeof opts.forceBetrayal==='boolean'?opts.forceBetrayal:null;
+  const betrays=forcedBetrayal!==null?forcedBetrayal:(Math.random()<betrayChance); // base 40%, modified by estabilidad
   if(betrays){
     // Betrayal: sabotage event
     addLog(`💢 ${s.name} ha traicionado al asentamiento antes de marcharse!`);
@@ -4699,6 +4765,7 @@ function resetAssignments(){
 
 function getAvailableActions(s){
   if(s.status==='muerto') return [];
+  if(hasLowMoraleRestRestriction(s)) return ['descansar'];
   if(requiresForcedRest(s)||s.fatigue<=0) return ['descansar'];
   const neg=(s.negativeSkill||'').toLowerCase().trim();
   const arr=['forraje','reciclar','construir'];
@@ -4724,6 +4791,7 @@ function getActionModifier(action){return Number(window.tempActionMods?.[action]
 function actionLabel(type){return({vigilar:'Vigilar',forraje:'Forrajear',reciclar:'Reciclar',descansar:'Descansar',descansar_exterior:'Descansar (exterior)',construir:'Construir',defender:'Defender',explorar:'Explorar',viajar:'Viajar',investigar:'Investigar',atacar:'Atacar (preventivo)',saquear_exterior:'Saquear',explotar_exterior:'Explotar',atacar_exterior:'Atacar exterior',regresar:'Volver a base'})[type]||type}
 function actionSummary(s){
   if(s.status==='muerto') return 'No disponible.';
+  if(hasLowMoraleRestRestriction(s)&&!s.action) return 'Sin moral. Solo quiere descansar.';
   if(requiresForcedRest(s)&&!s.action) return `Tiene herida ${injuryDisplayName(s.injuryLevel||'simple')}. Solo puede descansar.`;
   if(s.status==='herido'&&!s.action) return `Está herido (${injuryDisplayName(s.injuryLevel||'simple')}).`;
   if(s.fatigue<=0&&!s.action) return 'Sin fatiga. Solo puede descansar.';
