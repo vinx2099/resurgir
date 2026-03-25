@@ -649,5 +649,22 @@
         ]
       }
     ]
+  },
+  {
+    "id": "lowmorale",
+    "name": "Revuelta",
+    "image": "",
+    "text": "Se ha producido una revuelta en el campamento por la gestión del mismo. Voces cansadas y hambrientas ponen en peligro la estabilidad del lugar.",
+    "days": 1,
+    "weight": 1,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "stabilityChange",
+        "amount": -2
+      }
+    ]
   }
 ]
