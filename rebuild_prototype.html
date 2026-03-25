@@ -1291,7 +1291,7 @@
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0,deferred:false,introShown:false},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null};
 const dataLoadState={errors:[],loaded:[]};
 let activeMapTab='base';
 
@@ -1639,7 +1639,7 @@ function initGame(){
   state.electricityUsed=0;
   state.hospitalUnlocked=false;
   state.vallaElectrica=false;
-  state._hos001={active:false,attempts:0,deferred:false};
+  state._hos001={active:false,attempts:0,deferred:false,introShown:false};
   state.attackThreat=false;
   state.attackHostileType="raiders";
   state.attackStrength=3;
@@ -2732,37 +2732,54 @@ function processDelayedEffects(){
 }
 
 function checkStoryEvent(){
-  // If HOS001 is active, deferred and not yet attacked — skip, show normal event
-  if(state._hos001.active&&!state.hospitalUnlocked&&state._hos001.deferred) return false;
-  // If HOS001 is active and not deferred, show it
+  if(!state._hos001) state._hos001={active:false,attempts:0,deferred:false,introShown:false};
+
+  // HOS001 solo debe mostrarse una vez como evento de historia.
+  // Después queda como amenaza persistente atacable desde el panel lateral,
+  // pero no vuelve a saltar cada día.
   if(state._hos001.active&&!state.hospitalUnlocked){
-    const hos=( gameData.events||[]).find(e=>e.id==='HOS001')||
-               (gameData.story_events||[]).find(e=>e.id==='HOS001');
-    if(hos){
-      const schema=deepClone(hos);
-      // Escalate on each attempt: alternate +1 strength or +15% injury chance
-      if(state._hos001.attempts>0){
-        const alt=state._hos001.attempts%2;
-        if(alt===0){
-          // +1 strength per 2 attempts
-          const extra=Math.floor(state._hos001.attempts/2);
-          if(schema.effects) schema.effects=schema.effects.map(e=>e.type==='setAttackThreat'?{...e,attackStrength:(e.attackStrength||4)+extra}:e);
-          addLog(`⚔ El grupo hostil se ha reforzado. Fuerza: ${4+extra}.`);
-        } else {
-          // More injury probability — stored as flag for resolveGroupAttack
-          state._hos001.higherInjury=true;
-          addLog(`⚠ El grupo hostil está preparado. Mayor riesgo de heridas.`);
+    // Compatibilidad con partidas antiguas: si el evento ya estaba activo
+    // y esta marca no existe, asumimos que la introducción ya se mostró.
+    if(typeof state._hos001.introShown==='undefined') state._hos001.introShown=true;
+
+    if(!state._hos001.introShown){
+      const hos=( gameData.events||[]).find(e=>e.id==='HOS001')||
+                 (gameData.story_events||[]).find(e=>e.id==='HOS001');
+      if(hos){
+        const schema=deepClone(hos);
+        // Escalate on each attempt: alternate +1 strength or +15% injury chance
+        if(state._hos001.attempts>0){
+          const alt=state._hos001.attempts%2;
+          if(alt===0){
+            // +1 strength per 2 attempts
+            const extra=Math.floor(state._hos001.attempts/2);
+            if(schema.effects) schema.effects=schema.effects.map(e=>e.type==='setAttackThreat'?{...e,attackStrength:(e.attackStrength||4)+extra}:e);
+            addLog(`⚔ El grupo hostil se ha reforzado. Fuerza: ${4+extra}.`);
+          } else {
+            // More injury probability — stored as flag for resolveGroupAttack
+            state._hos001.higherInjury=true;
+            addLog(`⚠ El grupo hostil está preparado. Mayor riesgo de heridas.`);
+          }
         }
+        state._hos001.introShown=true;
+        setEvent(buildEventFromSchema(schema));
+        return true;
       }
-      setEvent(buildEventFromSchema(schema));
-      return true;
     }
+    return false;
   }
+
   // Check for HOS001 triggering on day 10 (first time)
   if(state.day===10&&!state._hos001.active&&!state.hospitalUnlocked){
     const hos=(gameData.events||[]).find(e=>e.id==='HOS001')||
                (gameData.story_events||[]).find(e=>e.id==='HOS001');
-    if(hos){ state._hos001.active=true; setEvent(buildEventFromSchema(hos)); return true; }
+    if(hos){
+      state._hos001.active=true;
+      state._hos001.deferred=false;
+      state._hos001.introShown=true;
+      setEvent(buildEventFromSchema(hos));
+      return true;
+    }
   }
   if(!Array.isArray(state.deferredStoryEventIds)) state.deferredStoryEventIds=[];
   // First, try deferred story events that were postponed in previous days
