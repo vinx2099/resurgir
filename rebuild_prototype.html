@@ -1994,7 +1994,7 @@ function assignAction(id,type){
   if(hasLowMoraleRestRestriction(s)&&type!=='descansar'){
     addLog(`${s.name} no quiere hacer nada más que descansar.`);render();return;
   }
-  if(s.fatigue<=0&&type!=='descansar'){addLog(`${s.name} no tiene fatiga suficiente.`);render();return}
+  if(Number(s.fatigue||0)<=0&&type!=='descansar'){addLog(`${s.name} no tiene fatiga disponible.`);render();return}
   if(isActionLimited(type)){addLog(`La acción ${actionLabel(type)} está limitada temporalmente.`);render();return}
   if(type==='vigilar'&&(!state.buildings.atalaya?.built||!state.buildings.atalaya?.active)){addLog('Necesitas una Atalaya activa para vigilar.');render();return}
   if(type==='defender'&&!state.attackThreat){addLog('No hay grupo hostil cercano para atacar.');render();return}
@@ -2191,7 +2191,7 @@ function resolveActions(){
     }
     s._actionResolved=true;
     const resolvedType=s.action.type;
-    if(resolvedType!=='descansar'&&resolvedType!=='descansar_exterior') s.fatigue=Math.max(0,s.fatigue-1);
+    if(resolvedType!=='descansar'&&resolvedType!=='descansar_exterior') s.fatigue=Math.max(0,Math.min(s.maxFatigue??3,s.fatigue-1));
     if(resolvedType==='forraje'){
       const found=Math.max(0,1+getActionModifier('forraje'));
       state.food+=found;
@@ -2209,7 +2209,7 @@ function resolveActions(){
       addLog(`${s.name} vigila desde la Atalaya.`);
     }else if(resolvedType==='descansar'||resolvedType==='descansar_exterior'){
       const usesCamp=resolvedType==='descansar_exterior';
-      s.fatigue=s.maxFatigue;
+      s.fatigue=Number(s.maxFatigue??3);
       const hasFood=usesCamp?state.camp.food>0:state.food>0;
       // Resting with food restores morale
       if(hasFood&&s.morale<(s.maxMorale??2)){
@@ -3640,6 +3640,7 @@ function exploitLocation(instanceId, survivorIds=[]){
     const amount=Math.floor(Math.random()*(max-min+1))+min;
     addCampResource(k, amount, `Explotación de ${loc.name}`);
   });
+  selected.forEach(s=>resolveExteriorRandomEncounter(s, instanceId, `explota ${loc.name}`));
   Object.keys(loc.resources||{}).forEach(k=>{ loc.resources[k]=0; });
   loc.exhausted=true;
   loc.status='explored';
@@ -3870,6 +3871,46 @@ function getEligibleExteriorSurvivors(locationId, mode='action'){
   });
 }
 
+function getExteriorEncounterChance(loc, survivor){
+  const risk=Math.max(0, Math.min(Number(loc?.riskLevel||0), 4));
+  let chance=[0.05,0.10,0.15,0.20,0.25][risk]||0.10;
+  const skills=getSurvivorSkills(survivor).map(v=>(v||'').toLowerCase().trim());
+  if(skills.includes('explorador')) chance-=0.03;
+  if(skills.includes('rastreador')) chance-=0.02;
+  if(skills.includes('precavido')) chance-=0.02;
+  return Math.max(0.02, chance);
+}
+
+function resolveExteriorRandomEncounter(survivor, locationId, contextLabel){
+  const loc=state.locations.find(l=>l.instanceId===locationId);
+  if(!survivor||survivor.status==='muerto'||!loc) return false;
+  const chance=getExteriorEncounterChance(loc, survivor);
+  if(Math.random()>=chance) return false;
+
+  const fallbackHostiles=(gameData.hostiles||[]).filter(h=>h&&h.id);
+  const randomHostile=fallbackHostiles.length ? fallbackHostiles[Math.floor(Math.random()*fallbackHostiles.length)] : null;
+  const hostileType=(loc.hostileType&&loc.hostileType!=='none') ? loc.hostileType : (randomHostile?.id||'raiders');
+  const hostileDef=getHostileDef(hostileType)||{};
+  const hostileLabel=hostileDef.label||getHostileLabel(hostileType)||'un hostil';
+  const skills=getSurvivorSkills(survivor).map(v=>(v||'').toLowerCase().trim());
+  const survivorPower=roll(1,6)+1+(skills.includes('combatiente')?1:0)+(skills.includes('explorador')?1:0)+(skills.includes('rastreador')?1:0);
+  const enemyPower=roll(1,4)+Math.max(1, Number(loc.riskLevel||0));
+
+  addLog(`👣 ${survivor.name} se cruza con ${hostileLabel} mientras ${contextLabel}.`);
+
+  if(survivorPower>=enemyPower){
+    addLog(`✅ ${survivor.name} logra evitar el peligro y sigue adelante.`);
+    return true;
+  }
+
+  injureSurvivor(
+    survivor,
+    `⚠ ${survivor.name} se encuentra con ${hostileLabel} mientras ${contextLabel} y resulta {injuryLabel}.`,
+    {source:'combat'}
+  );
+  return true;
+}
+
 function observeExteriorLocation(locationId){
   const loc=state.locations.find(l=>l.instanceId===locationId);
   if(!loc) return;
@@ -3908,6 +3949,7 @@ function moveExteriorGroupToLocation(locationId, survivorIds){
   selected.forEach(s=>{ s.exteriorSiteId=locationId; });
   if(loc.status==='discovered') loc.status='explored';
   addLog(`🥾 ${selected.map(s=>s.name).join(', ')} se mueven a ${loc.name}.`);
+  selected.forEach(s=>resolveExteriorRandomEncounter(s, locationId, `se mueve por ${loc.name}`));
   render();
   renderExteriorMap();
   showLocationDetail(locationId);
@@ -3917,7 +3959,7 @@ function lockExteriorImmediateAction(survivors, actionType, locationId){
   const acted=[];
   (survivors||[]).forEach(s=>{
     if(!s||s.status==='muerto'||s._exteriorActionLocked) return;
-    s.fatigue=Math.max(0,Number(s.fatigue||0)-1);
+    s.fatigue=Math.max(0,Math.min(Number(s.maxFatigue??3),Number(s.fatigue||0)-1));
     s.status='ocupado';
     s.action={type:actionType,target:locationId};
     s._actionResolved=true;
@@ -4042,6 +4084,11 @@ function openTravelReturnPopup(locationOrSurvivorId){
         names.push(s.name);
       });
       if(names.length){
+        const sourceLoc=(locationId&&locationId!=='exterior') ? locationId : (survivors[0]?.exteriorSiteId||null);
+        ids.forEach(id=>{
+          const sx=state.survivors.find(x=>x.id===id);
+          if(sx&&sourceLoc) resolveExteriorRandomEncounter(sx, sourceLoc, 'abandona la zona para volver a la base');
+        });
         addLog(`🧭 ${names.join(', ')} emprenden el regreso a la base. Llegarán el día ${state.day+1}.`);
         renderSurvivors();
         renderExteriorMap();
@@ -4107,6 +4154,7 @@ function lootLocation(locationId, survivorIds){
     }
   });
   selected.forEach(s=>{
+    resolveExteriorRandomEncounter(s, locationId, `saquea ${loc.name}`);
     if(Math.random()<(loc.riskLevel||0)*0.10){
       injureSurvivor(s,`🩸 ${s.name} resulta {injuryLabel} saqueando ${loc.name}.`,{source:'combat'});
     }
@@ -4155,6 +4203,7 @@ function assignExteriorRest(locationId, survivorIds){
     s.status='ocupado';
     s._exteriorActionLocked=true;
     s._actionResolved=false;
+    resolveExteriorRandomEncounter(s, locationId, `se prepara para descansar en ${loc.name}`);
   });
   addLog(`🛏 ${selected.map(s=>s.name).join(', ')} descansan en ${loc.name}.`);
   render();
@@ -5097,7 +5146,7 @@ function resetAssignments(){
 function getAvailableActions(s){
   if(s.status==='muerto') return [];
   if(hasLowMoraleRestRestriction(s)) return ['descansar'];
-  if(requiresForcedRest(s)||s.fatigue<=0) return ['descansar'];
+  if(requiresForcedRest(s)||Number(s.fatigue||0)<=0) return ['descansar'];
   const neg=(s.negativeSkill||'').toLowerCase().trim();
   const arr=['forraje','reciclar','construir'];
   if(neg!=='miedoso') arr.push('explorar');
@@ -5125,7 +5174,7 @@ function actionSummary(s){
   if(hasLowMoraleRestRestriction(s)&&!s.action) return 'Sin moral. Solo quiere descansar.';
   if(requiresForcedRest(s)&&!s.action) return `Tiene herida ${injuryDisplayName(s.injuryLevel||'simple')}. Solo puede descansar.`;
   if(s.status==='herido'&&!s.action) return `Está herido (${injuryDisplayName(s.injuryLevel||'simple')}).`;
-  if(s.fatigue<=0&&!s.action) return 'Sin fatiga. Solo puede descansar.';
+  if(Number(s.fatigue||0)<=0&&!s.action) return 'Sin fatiga disponible. Solo puede descansar.';
   if(!s.action) return 'Sin acción asignada.';
 
   if(s.action.type==='construir'&&s.action.target){
