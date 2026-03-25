@@ -800,6 +800,12 @@
             🚫 No elegir este evento si hay una amenaza de ataque activa
           </label>
         </div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="f-blockAttackThreatWhileActive" style="width:14px;height:14px;">
+          <label for="f-blockAttackThreatWhileActive" style="font-size:11px;color:var(--text);cursor:pointer;">
+            🛡 Mientras este evento siga activo, no pueden dispararse eventos con amenaza de ataque
+          </label>
+        </div>
       </div>
     </div>
 
@@ -1369,7 +1375,19 @@ function updateEffectRowFields(row, type) {
       p2.value = 'simple';
     }
   } else if (type === 'injureExplorer') {
-    // No params — always targets the survivor who triggered the explore event
+    p1.style.display = '';
+    [
+      ['simple', 'Herida simple'],
+      ['seria', 'Herida seria'],
+      ['grave', 'Herida grave'],
+      ['random', 'Aleatorio (50% simple · 35% seria · 15% grave)'],
+    ].forEach(([value, label]) => {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = label;
+      p1.appendChild(opt);
+    });
+    p1.value = 'random';
   } else if (type === 'injureActionSurvivor') {
     p1.style.display = '';
     [
@@ -1543,7 +1561,7 @@ function readEffectRows(containerId) {
       if (p1.value === '__by_id__' && row.dataset.customTargetId) effect.targetId = row.dataset.customTargetId;
       if (type === 'healSurvivor') effect.injuryLevel = p2.value || 'simple';
     } else if (type === 'injureExplorer') {
-      // no extra params
+      effect.injuryLevel = p1.value || 'random';
     } else if (type === 'injureActionSurvivor') {
       if (p1.value && p1.value !== 'related') effect.action = p1.value;
       if (p2.value) effect.injuryLevel = p2.value;
@@ -1588,7 +1606,7 @@ function effectToString(e) {
   if (e.type === 'addSurvivor' || e.type === 'addSurvivorByRarity') return `🧲 Nuevo superviviente (rareza ${e.rarity})`;
   if (e.type === 'healSurvivor') return `Curar herida ${(e.injuryLevel||'simple')} (${e.targetId||'aleatorio'})`;
   if (e.type === 'injureSurvivor') return `Herir superviviente (${e.targetId||'aleatorio'})`;
-  if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
+  if (e.type === 'injureExplorer') return `🩸 Herir al explorador${e.injuryLevel?` [${e.injuryLevel}]`:''}`;
   if (e.type === 'injureActionSurvivor') return `🩸 Herir por acción (${e.action||'relacionada'})${e.injuryLevel?` [${e.injuryLevel}]`:''}`;
   if (e.type === 'setAttackThreat') {
     const hostile = e.hostileType==='random'
@@ -1623,6 +1641,7 @@ function buildEventObject() {
   let condition=readCondition();
   const dayRangeConds=[];
   const skipWhenAttackActive = document.getElementById('f-skipWhenAttackActive')?.checked || false;
+  const blockAttackThreatWhileActive = document.getElementById('f-blockAttackThreatWhileActive')?.checked || false;
   if(dayMin!==undefined) dayRangeConds.push({type:'day_min',value:dayMin});
   if(dayMax!==undefined) dayRangeConds.push({type:'day_max',value:dayMax});
   if(dayRangeConds.length){
@@ -1636,6 +1655,7 @@ function buildEventObject() {
   if(condition) ev.condition=condition;
   if(priority) ev.priority=true;
   if(skipWhenAttackActive) ev.skipWhenAttackActive=true;
+  if(blockAttackThreatWhileActive) ev.blockAttackThreatWhileActive=true;
   if(week!==undefined) ev.week=week;
   if(day!==undefined)  ev.day=day;
   if(relatedAction) ev.relatedAction=relatedAction;
@@ -1746,6 +1766,7 @@ function updatePreview() {
   const actionStr = ev.relatedAction ? `  ·  Relacionado con: ${ev.relatedAction}` : '';
   const repeatStr = ev.repeatable ? '  ·  ↺ Repetible' : '';
   const skipAttackStr = ev.skipWhenAttackActive ? '  ·  🚫 con ataque activo' : '';
+  const blockThreatStr = ev.blockAttackThreatWhileActive ? '  ·  🛡 bloquea amenazas' : '';
   const rangeFromCond=(cond,type)=>cond?.type===type?cond.value:undefined;
   const extractRange=(cond)=>{
     if(!cond) return {};
@@ -1759,7 +1780,7 @@ function updatePreview() {
   const range=extractRange(ev.condition);
   const rangeStr=(range.min||range.max)?`  ·  Rango: ${range.min?`día ${range.min}`:'inicio'}-${range.max?`día ${range.max}`:'sin tope'}`:'';
   document.getElementById('previewMeta').textContent =
-    `ID: ${ev.id || '—'}  ·  ${typeStr}  ·  ${ev.type!=='weekly'?'Peso: '+ev.weight+'  ·  ':''}Duración: ${ev.days}d${rangeStr}${actionStr}${repeatStr}${skipAttackStr}`;
+    `ID: ${ev.id || '—'}  ·  ${typeStr}  ·  ${ev.type!=='weekly'?'Peso: '+ev.weight+'  ·  ':''}Duración: ${ev.days}d${rangeStr}${actionStr}${repeatStr}${skipAttackStr}${blockThreatStr}`;
 
   // JSON output
   document.getElementById('currentJsonOutput').textContent = JSON.stringify(ev, null, 2);
@@ -1866,6 +1887,10 @@ if(attackStrengthInput) attackStrengthInput.addEventListener('input', updatePrev
     el.addEventListener('input', updatePreview);
   }
 });
+['f-priority','f-skipWhenAttackActive','f-blockAttackThreatWhileActive'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('change', updatePreview);
+});
 
 // ── ADD EVENT ──
 function addEvent() {
@@ -1929,7 +1954,7 @@ function renderEventList() {
     const typeTag = ev.type==='weekly' ? `📅 Semanal (semana ${ev.week||'?'})` : ev.type==='explore'?'🗺 Exploración':'📋 Diario';
     const actionTag = ev.relatedAction ? `  ·  ⚡ ${ev.relatedAction}` : '';
     const repeatTag = ev.repeatable ? '  ·  ↺' : '';
-    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  ${typeTag}  ·  ${modeTag}  ·  ${effectCount}  ·  ${ev.days}d${ev.type!=='weekly'?' · peso '+ev.weight:''}${actionTag}${repeatTag}</div>`;
+    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  ${typeTag}  ·  ${modeTag}  ·  ${effectCount}  ·  ${ev.days}d${ev.type!=='weekly'?' · peso '+ev.weight:''}${actionTag}${repeatTag}${ev.skipWhenAttackActive?' · 🚫 con ataque':''}${ev.blockAttackThreatWhileActive?' · 🛡 bloquea amenazas':''}</div>`;
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn';
@@ -1986,7 +2011,7 @@ function renderEventList() {
     const effectCount = ev.choiceMode === 'direct'
       ? (ev.effects?.length || 0) + ' efecto(s)'
       : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0} · C: ${ev.options?.C?.effects?.length||0}`;
-    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  📅 Día ${ev.day}  ·  ${modeTag}  ·  ${effectCount}</div>`;
+    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  📅 Día ${ev.day}  ·  ${modeTag}  ·  ${effectCount}${ev.skipWhenAttackActive?' · 🚫 con ataque':''}${ev.blockAttackThreatWhileActive?' · 🛡 bloquea amenazas':''}</div>`;
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn'; editBtn.style.cssText = 'font-size:11px;padding:6px 10px;';
@@ -2025,6 +2050,7 @@ function loadEventForEditing(idx) {
   loadConditionIntoUI(condition);
   if(document.getElementById('f-relatedAction')) document.getElementById('f-relatedAction').value = ev.relatedAction || '';
   if(document.getElementById('f-skipWhenAttackActive')) document.getElementById('f-skipWhenAttackActive').checked = !!ev.skipWhenAttackActive;
+  if(document.getElementById('f-blockAttackThreatWhileActive')) document.getElementById('f-blockAttackThreatWhileActive').checked = !!ev.blockAttackThreatWhileActive;
   setRepeatable(!!ev.repeatable);
   onTypeChange();
 
@@ -2107,6 +2133,7 @@ function loadStoryEventForEditing(idx) {
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = '';
   loadConditionIntoUI(ev.condition);
   if(document.getElementById('f-skipWhenAttackActive')) document.getElementById('f-skipWhenAttackActive').checked = !!ev.skipWhenAttackActive;
+  if(document.getElementById('f-blockAttackThreatWhileActive')) document.getElementById('f-blockAttackThreatWhileActive').checked = !!ev.blockAttackThreatWhileActive;
   setRepeatable(!!ev.repeatable);
   onTypeChange();
 
@@ -2197,6 +2224,8 @@ function loadEffectIntoRow(row, eff) {
     if (eff.type === 'healSurvivor' && p2) {
       p2.value = eff.injuryLevel || 'simple';
     }
+  } else if (eff.type === 'injureExplorer') {
+    p1.value = eff.injuryLevel || 'random';
   } else if (eff.type === 'injureActionSurvivor') {
     p1.value = eff.action || 'related';
     if (p2) p2.value = eff.injuryLevel || '';
@@ -2235,6 +2264,7 @@ function clearForm() {
   if(document.getElementById('f-condId')) document.getElementById('f-condId').value='';
   if(document.getElementById('f-priority')) document.getElementById('f-priority').checked=false;
   if(document.getElementById('f-skipWhenAttackActive')) document.getElementById('f-skipWhenAttackActive').checked=false;
+  if(document.getElementById('f-blockAttackThreatWhileActive')) document.getElementById('f-blockAttackThreatWhileActive').checked=false;
   if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = 'random';
   if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
   if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';

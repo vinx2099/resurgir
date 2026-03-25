@@ -530,37 +530,6 @@
     .log-day-separator::after {
       background: linear-gradient(to left, transparent, var(--line2));
     }
-    .panel-tools {
-      display:flex;
-      gap:6px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-    .panel-tools .btn {
-      padding:4px 8px;
-      font-size:10px;
-      letter-spacing:0.08em;
-      text-transform:uppercase;
-    }
-    .techlog-text {
-      width:100%;
-      min-height:420px;
-      background:rgba(0,0,0,0.45);
-      border:1px solid var(--line2);
-      color:var(--text);
-      padding:12px;
-      resize:vertical;
-      font-family:var(--font-mono);
-      font-size:11px;
-      line-height:1.55;
-      white-space:pre;
-    }
-    .techlog-meta {
-      font-size:11px;
-      color:var(--muted);
-      line-height:1.6;
-      margin-bottom:10px;
-    }
 
     /* EVENTS */
     /* ── EVENT PANEL: image left, content right ── */
@@ -1079,14 +1048,7 @@
         <div class="panel-header" style="justify-content:space-between;"><span>Instalación</span><button id="closeBuildingDetail" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;">✕</button></div>
         <div class="panel-body"><div class="detail-grid" id="detailBox"></div></div>
       </div>
-      <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <span>Registro de operaciones</span>
-        <div class="panel-tools">
-          <button class="btn secondary" id="openTechLogBtn">Log técnico</button>
-          <button class="btn secondary" id="copyTechLogBtn">Copiar TXT</button>
-          <button class="btn secondary" id="downloadTechLogBtn">Descargar TXT</button>
-        </div>
-      </div>
+      <div class="panel-header">Registro de operaciones</div>
       <div class="panel-body" style="flex:1;overflow:hidden;"><div class="log" id="logBox"></div></div>
     </section>
   </div>
@@ -1197,21 +1159,21 @@
     </div>
   </div>
 
-  <!-- HOS001 survivor selector popup -->
-  <div class="overlay" id="hos001Popup">
+  <!-- Attack setup popup -->
+  <div class="overlay" id="attackSetupPopup">
     <div class="modal" style="width:min(520px,100%);background:var(--panel);">
       <div class="modal-header" style="color:var(--danger-bright);background:#0f0808;border-bottom:1px solid #3a1010;">
-        ⚔ Asalto al Almacén de Medicinas
+        ⚔ Preparar ataque
       </div>
       <div class="modal-body" style="padding:14px;">
         <p style="font-size:12px;color:var(--text);margin-bottom:12px;line-height:1.6;">
-          Elige qué supervivientes liderarán el asalto. Usarán la acción <b>Atacar</b> este día. 
+          Elige qué supervivientes participarán en el ataque. Usarán la acción <b>Atacar</b> este día.
           El combate se resolverá al finalizar el turno.
         </p>
-        <div id="hos001SurvivorList" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <div id="attackSetupSurvivorList" style="display:flex;flex-direction:column;gap:6px;"></div>
         <div style="margin-top:14px;display:flex;gap:8px;">
-          <button class="btn primary" id="hos001Confirm">⚔ Confirmar asalto</button>
-          <button class="btn secondary" id="hos001Cancel">Cancelar</button>
+          <button class="btn primary" id="attackSetupConfirm">⚔ Confirmar ataque</button>
+          <button class="btn secondary" id="attackSetupCancel">Cancelar</button>
         </div>
       </div>
     </div>
@@ -1246,28 +1208,6 @@
         <button id="closeCemeteryBtn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 6px;">✕</button>
       </div>
       <div class="modal-body" style="padding:16px;max-height:70vh;overflow-y:auto;" id="cemeteryList">
-      </div>
-    </div>
-  </div>
-
-  <!-- Injury treatment popup -->
-  <div class="overlay" id="injuryTreatmentPopup">
-    <div class="modal" style="width:min(560px,100%);background:var(--panel);">
-      <div class="modal-header" style="color:var(--warn-bright);background:#100d08;border-bottom:1px solid #3a2a10;">
-        🩹 Tratamiento de heridas
-      </div>
-      <div class="modal-body" style="padding:16px;display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:start;">
-        <div id="injuryTreatmentPortrait" style="width:96px;height:96px;border:1px solid var(--line2);overflow:hidden;background:var(--panel2);"></div>
-        <div>
-          <div id="injuryTreatmentName" style="font-family:var(--font-display);font-size:20px;font-weight:600;letter-spacing:0.06em;color:var(--warn-bright);margin-bottom:4px;"></div>
-          <div id="injuryTreatmentMeta" style="font-size:11px;color:var(--muted);margin-bottom:8px;"></div>
-          <div id="injuryTreatmentText" style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px;"></div>
-          <div id="injuryTreatmentStock" style="font-size:11px;color:var(--ok-bright);"></div>
-        </div>
-      </div>
-      <div class="modal-footer" style="gap:8px;">
-        <button class="btn primary" id="injuryTreatmentConfirm">💊 Administrar medicina</button>
-        <button class="btn secondary" id="injuryTreatmentDecline">Sin medicina (tirar 1d6)</button>
       </div>
     </div>
   </div>
@@ -1347,50 +1287,21 @@
       </div>
     </div>
   </div>
-
-  <div class="overlay" id="techLogModal">
-    <div class="modal" style="width:min(980px,100%);background:var(--panel);">
-      <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <span>Log técnico de la partida</span>
-        <div class="panel-tools">
-          <button class="btn secondary" id="copyTechLogModalBtn">Copiar TXT</button>
-          <button class="btn secondary" id="downloadTechLogModalBtn">Descargar TXT</button>
-          <button class="btn secondary" id="closeTechLogBtn">Cerrar</button>
-        </div>
-      </div>
-      <div class="modal-body" style="padding:14px;">
-        <div class="techlog-meta">Este registro guarda eventos internos de la partida, errores JS, cambios de estado y resoluciones de heridas/construcción para ayudarte a detectar fallos concretos.</div>
-        <textarea id="techLogText" class="techlog-text" readonly spellcheck="false"></textarea>
-      </div>
-    </div>
-  </div>
-
   <div class="gameover" id="gameOverWrap"><div class="gameover-box"><h1>Derrota</h1><p id="gameOverText"></p><button onclick="location.reload()">Reiniciar partida</button></div></div>
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,_hos001:{active:false,attempts:0,deferred:false,triggered:false},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],debugLog:[],_debugSeq:0,currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null};
+const state={day:1,food:0,materials:0,stability:5,meds:0,electricity:0,unlocked:{meds:false,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null};
 const dataLoadState={errors:[],loaded:[]};
 let activeMapTab='base';
 
-const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap'),techLogModal=document.getElementById('techLogModal'),techLogText=document.getElementById('techLogText');
+const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
 
 
 document.getElementById('endDayBtn').addEventListener('click',endDay);
 document.getElementById('resetAssignmentsBtn').addEventListener('click',resetAssignments);
 document.getElementById('closeBuildModal').addEventListener('click',()=>buildModalWrap.classList.remove('open'));
 document.querySelectorAll('.building').forEach(btn=>btn.addEventListener('click',()=>showBuildingDetail(btn.dataset.building)));
-document.getElementById('openTechLogBtn')?.addEventListener('click',openTechLogModal);
-document.getElementById('copyTechLogBtn')?.addEventListener('click',copyTechnicalLogToClipboard);
-document.getElementById('downloadTechLogBtn')?.addEventListener('click',downloadTechnicalLogFile);
-document.getElementById('copyTechLogModalBtn')?.addEventListener('click',copyTechnicalLogToClipboard);
-document.getElementById('downloadTechLogModalBtn')?.addEventListener('click',downloadTechnicalLogFile);
-document.getElementById('closeTechLogBtn')?.addEventListener('click',closeTechLogModal);
-if(techLogModal){
-  techLogModal.addEventListener('click',(e)=>{
-    if(e.target===techLogModal) closeTechLogModal();
-  });
-}
 
 function deepClone(v){return JSON.parse(JSON.stringify(v))}
 
@@ -1728,7 +1639,6 @@ function initGame(){
   state.electricityUsed=0;
   state.hospitalUnlocked=false;
   state.vallaElectrica=false;
-  state._hos001={active:false,attempts:0,deferred:false,triggered:false};
   state.attackThreat=false;
   state.attackHostileType="raiders";
   state.attackStrength=3;
@@ -1751,8 +1661,6 @@ function initGame(){
   state.delayedQueue=[];
   state.actionLimits={};
   state.log=[];
-  state.debugLog=[];
-  state._debugSeq=0;
   state.currentDetail=null;
   state._lastStabilityTier=getStabilityTier();
 
@@ -1933,13 +1841,13 @@ function renderSurvivors(){
     const actions=getAvailableActions(s);
     const isExteriorCard=activeMapTab==='exterior'&&isExteriorSurvivor(s)&&s.location!=='travelling';
     const _img=getSurvivorImage(s);
-    const _filter=s.status==='muerto'?'grayscale(1) brightness(0.6)':s.status==='herido'?'grayscale(30%) sepia(30%) brightness(0.85)':'';
+    const _filter=s.status==='muerto'?'grayscale(1) brightness(0.6)':hasActiveInjury(s)?'grayscale(30%) sepia(30%) brightness(0.85)':'';
     const avatarInner = _img ? `<img src="${escapeAttr(_img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;filter:${_filter}">` : '<span style="color:var(--muted);font-size:11px">Sin<br>imagen</span>';
     const card=document.createElement('div');
     card.className='survivor-card';
     const loreBtn=`<button class="lore-btn" title="Historia de ${escapeHtml(s.name)}">📖</button>`;
-    const statusText=s.status==='herido'
-      ? `${statusLabel(s.status)} (${injuryDisplayName(s.injuryLevel||'simple')})`
+    const statusText=hasActiveInjury(s)
+      ? `${statusLabel('herido')} (${injuryDisplayName(s.injuryLevel||'simple')})`
       : statusLabel(s.status);
     const exteriorLocationName=isExteriorCard?getLocationDisplayName(s.location):'';
     const exteriorSiteName=isExteriorCard?getExteriorSiteLabel(s.exteriorSiteId):'';
@@ -2079,7 +1987,7 @@ function assignAction(id,type){
   const neg2=(s.negativeSkill||'').toLowerCase().trim();
   if(type==='explorar'&&neg2==='miedoso'){addLog(`${s.name} tiene miedo de salir a explorar.`);render();return}
   if(type==='defender'&&neg2==='cobarde'){addLog(`${s.name} es cobarde y no puede defender.`);render();return}
-  if(s.status==='herido'&&type!=='descansar'){
+  if(hasActiveInjury(s)&&type!=='descansar'){
     addLog(`${s.name} está herido/a y solo puede descansar.`);render();return;
   }
   if(hasLowMoraleRestRestriction(s)&&type!=='descansar'){
@@ -2117,7 +2025,7 @@ function openBuildModal(survivorId){
     const elecLabel=elecReq>0&&!current?.built?` · Requiere ${elecReq}⚡ (libre: ${getElectricityFree()})` : elecReq>0&&current?.built?` · Usando ${elecReq}⚡`:'';
 
     const blocked=!constructible;
-    const blockReason=def.id==='hospital'&&!state.hospitalUnlocked?'Requiere completar evento HOS001':
+    const blockReason=def.id==='hospital'&&!state.hospitalUnlocked?'Requiere un evento que desbloquee el Hospital':
                       def.id==='generador'&&(state.buildings.taller?.level||0)<2?'Requiere Taller nivel 2':'';
 
     const label=blocked?`${def.name} (bloqueado)`:current?.built?`Mejorar ${def.name}`:`Construir ${def.name}`;
@@ -2145,8 +2053,6 @@ function openBuildModal(survivorId){
       state.buildings[def.id]._constructionDays=days;
       state.buildings[def.id]._constructionDaysLeft=days;
       state.buildings[def.id]._underConstruction=true;
-      state.buildings[def.id]._constructionPaidCost=finalCost;
-      state.buildings[def.id]._constructionBuilderId=s.id;
       s.action={type:'construir',target:def.id};
       s.status='ocupado';
       const dayStr=days===1?'1 día':`${days} días`;
@@ -2199,12 +2105,12 @@ function finalizeEndDayAfterPauses(){
 }
 
 function maybeContinueEndDayAfterPause(){
-  if(state._pendingFoodChoice){
-    openFoodChoicePopup();
-    return;
-  }
   if(state._pendingTreatmentQueue&&state._pendingTreatmentQueue.length){
     openInjuryTreatmentPopup();
+    return;
+  }
+  if(state._pendingFoodChoice){
+    openFoodChoicePopup();
     return;
   }
   finalizeEndDayAfterPauses();
@@ -2212,11 +2118,6 @@ function maybeContinueEndDayAfterPause(){
 }
 
 function endDay(){
-  addTechLog('end_day_start', 'Se ha solicitado finalizar el día.', {
-    pendingEvent: state.pendingEvent?.id||null,
-    processing: !!state._processingDay,
-    survivors: state.survivors.filter(s=>s.status!=='muerto').map(s=>({id:s.id,name:s.name,status:s.status,action:s.action?.type||null,injury:s.injuryLevel||null,location:s.location||'base'}))
-  });
   // Only block if there's a pending event that requires player choice
   if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive){
     addLog('⚠ Debes resolver el evento actual antes de finalizar el día.');
@@ -2253,25 +2154,19 @@ function endDay(){
     processInjuriesEndOfDay();
     regenerateLocations();
     processDelayedEffects();
-    if(state._pendingFoodChoice){
-      openFoodChoicePopup();
-      return;
-    }
     if(state._pendingTreatmentQueue&&state._pendingTreatmentQueue.length){
       openInjuryTreatmentPopup();
+      return;
+    }
+    if(state._pendingFoodChoice){
+      openFoodChoicePopup();
       return;
     }
     finalizeEndDayAfterPauses();
   } catch(err){
     console.error('Error al finalizar día:', err);
-    addTechLog('end_day_error', 'Error durante la resolución del día.', {error: err?.message||String(err), stack: err?.stack||null});
     addLog(`❌ Error al finalizar día: ${err?.message||err}`);
   } finally {
-    addTechLog('end_day_finish', 'Finaliza la resolución de fin de día.', {
-      pendingFoodChoice: !!state._pendingFoodChoice,
-      pendingTreatmentQueue: Array.isArray(state._pendingTreatmentQueue)?state._pendingTreatmentQueue.slice():null,
-      processing: !!state._processingDay
-    });
     state._processingDay=false;
     render();
   }
@@ -2341,10 +2236,6 @@ function resolveActions(){
         } else {
           // Construction complete!
           bld._underConstruction=false;
-          delete bld._constructionDays;
-          delete bld._constructionDaysLeft;
-          delete bld._constructionPaidCost;
-          delete bld._constructionBuilderId;
           bld.built=true;
           bld.level+=1;
           bld.active=true;
@@ -2536,15 +2427,7 @@ function resolveGroupAttack(){
     }
 
     addLog(`❌ El asentamiento no pudo resistir el ataque (${totalDef} vs ${totalAtk}). Diferencia: ${diff}.`);
-    // Track HOS001 attempts
-    if(state._hos001.active&&!state.hospitalUnlocked){
-      state._hos001.attempts++;
-      addLog(`📋 HOS001: intento ${state._hos001.attempts}. El grupo se reagrupará.`);
-    }
-
-    const hosBoost=state._hos001?.higherInjury?0.2:0;
-    state._hos001 && (state._hos001.higherInjury=false);
-    const injureChance=Math.min(0.3+diff*0.12+hosBoost, 0.95);
+    const injureChance=Math.min(0.3+diff*0.12, 0.95);
     const deathChance=diff>=5 ? Math.min((diff-4)*0.12, 0.5) : diff>=3 ? 0.05 : 0;
 
     const candidates=[...alive];
@@ -2603,8 +2486,6 @@ function outsideRiskChance(survivor){
   if(survivor&&getSurvivorSkills(survivor).includes('precavido')) base=base*0.60;
   // Torpe negative trait: +10% injury chance
   if(survivor&&(survivor.negativeSkill||'').toLowerCase()==='torpe') base=Math.min(0.95, base+0.10);
-  // HOS001 deferred: hostiles in the area increase danger
-  if(state._hos001?.active&&state._hos001?.deferred&&!state.hospitalUnlocked) base=Math.min(0.95, base+0.08);
 
   // TODO: equipment modifiers (vehicle, protection gear) — hook here next session
   // if(survivor?._equipmentRiskMod) base=base*(1+survivor._equipmentRiskMod);
@@ -2741,7 +2622,7 @@ function getNextTreatmentSurvivor(){
   while(queue.length){
     const id=queue[0];
     const s=state.survivors.find(x=>x.id===id);
-    if(!s||s.status!=='herido'){
+    if(!s||!hasActiveInjury(s)){
       queue.shift();
       continue;
     }
@@ -2779,10 +2660,8 @@ function advanceTreatmentFlow(){
 }
 
 function openInjuryTreatmentPopup(){
-  addTechLog('injury_popup_check', 'Se intenta abrir el popup de tratamiento de heridas.');
   const survivor=getNextTreatmentSurvivor();
   if(!survivor){
-    addTechLog('injury_popup_skip', 'No hay supervivientes pendientes de tratamiento.');
     closeInjuryTreatmentPopup();
     finalizeInjuriesEndOfDay();
     maybeContinueEndDayAfterPause();
@@ -2804,25 +2683,26 @@ function openInjuryTreatmentPopup(){
     : '<div style="width:100%;height:100%;background:var(--panel3);"></div>';
 
   const level=injuryDisplayName(survivor.injuryLevel||'simple');
-  addTechLog('injury_popup_open', 'Popup de tratamiento abierto.', {survivorId: survivor.id, survivorName: survivor.name, injuryLevel: survivor.injuryLevel||'simple', meds: state.meds});
+  const restNeeded=Math.max(0,(INJURY_REST_DAYS[survivor.injuryLevel]||1)-Number(survivor.injuryRestDays||0));
   nameEl.textContent=survivor.name;
-  metaEl.textContent=`Herida ${level} · Orden médica: hoy solo puede descansar`;
-  textEl.textContent=`Si administras medicina, la herida baja un nivel. Si no, se tira 1d6: 1 empeora, 2-3-4 sigue igual, 5-6 baja un nivel.`;
+  metaEl.textContent=`Herida ${level} · Descanso restante: ${restNeeded} día${restNeeded===1?'':'s'}`;
+  textEl.textContent=`${survivor.name} necesita medicamentos para tratar su herida ${level}. Si recibe tratamiento, baja un nivel de herida. Si no recibe medicina, se tira 1d6: 1 empeora, 2-4 sigue igual, 5-6 baja un nivel.`;
   stockEl.textContent=`Medicamentos disponibles: ${state.meds}`;
 
   confirmBtn.disabled=state.meds<=0;
   confirmBtn.onclick=()=>{
     if(state.meds<=0) return;
-    addTechLog('injury_treat_meds', 'Se administra medicina a un superviviente herido.', {survivorId: survivor.id, survivorName: survivor.name, injuryLevel: survivor.injuryLevel||'simple', medsBefore: state.meds});
     state.meds=Math.max(0,state.meds-1);
     survivor._injuryTreatedToday=true;
-    improveInjuryOneLevel(survivor, '💊 Medicina');
+    const prevLevel=survivor.injuryLevel;
+    survivor.injuryLevel = prevLevel==='grave' ? 'seria' : 'simple';
+    survivor.injuryRestDays=0;
+    addLog(`💊 ${survivor.name} recibe tratamiento: ${injuryDisplayName(prevLevel)} → ${injuryDisplayName(survivor.injuryLevel)} (-1 medicamento).`);
     if(Array.isArray(state._pendingTreatmentQueue)) state._pendingTreatmentQueue.shift();
     advanceTreatmentFlow();
   };
   declineBtn.onclick=()=>{
-    addTechLog('injury_treat_no_meds', 'Se resuelve una herida sin medicina.', {survivorId: survivor.id, survivorName: survivor.name, injuryLevel: survivor.injuryLevel||'simple', meds: state.meds});
-    addLog(`🩹 ${survivor.name} descansa sin medicina.`);
+    addLog(`⚠ Decides no tratar la herida de ${survivor.name}.`);
     applyUntreatedInjuryOutcome(survivor,{fromChoice:true});
     if(Array.isArray(state._pendingTreatmentQueue)) state._pendingTreatmentQueue.shift();
     advanceTreatmentFlow();
@@ -2843,22 +2723,37 @@ function processDelayedEffects(){
   due.forEach(item=>applyEffect(item.effect,true));
 }
 
-function checkStoryEvent(){
-  if(!state._hos001) state._hos001={active:false,attempts:0,deferred:false,triggered:false};
+function activeEventBlocksAttackThreat(options={}){
+  const ev=state._activeMultiDayEvent;
+  if(!ev||!ev.blockAttackThreatWhileActive) return false;
+  if(options.ignorePending&&state.pendingEvent&&state.pendingEvent===ev) return false;
+  return Number(ev._daysLeft||0)>0;
+}
 
-  // HOS001: only shows ONCE on day 10 as a story event.
-  // After that, it lives in the persistent panel only — never re-triggers here.
-  if(!state._hos001.triggered&&state.day>=10&&!state.hospitalUnlocked){
-    const hos=(gameData.events||[]).find(e=>e.id==='HOS001')||
-               (gameData.story_events||[]).find(e=>e.id==='HOS001');
-    if(hos){
-      state._hos001.triggered=true;  // never triggers again from here
-      state._hos001.active=true;
-      state._hos001.deferred=false;
-      setEvent(buildEventFromSchema(hos));
-      return true;
+function schemaContainsAttackThreat(schema){
+  const seen=new Set();
+  const scan=(node)=>{
+    if(!node) return false;
+    if(Array.isArray(node)) return node.some(scan);
+    if(typeof node!=='object') return false;
+    if(seen.has(node)) return false;
+    seen.add(node);
+    if(node.type==='setAttackThreat') return true;
+    if(scan(node.effects)) return true;
+    if(scan(node.randomEffects)) return true;
+    if(scan(node.effectOnVictory)) return true;
+    if(scan(node.effectOnDefeat)) return true;
+    if(scan(node.delayed)) return true;
+    if(node.options){
+      const values=Array.isArray(node.options)?node.options:Object.values(node.options);
+      if(scan(values)) return true;
     }
-  }
+    return false;
+  };
+  return scan(schema);
+}
+
+function checkStoryEvent(){
   if(!Array.isArray(state.deferredStoryEventIds)) state.deferredStoryEventIds=[];
   // First, try deferred story events that were postponed in previous days
   for(let i=0;i<state.deferredStoryEventIds.length;i++){
@@ -2870,17 +2765,23 @@ function checkStoryEvent(){
       continue;
     }
     if(state.attackThreat&&deferredEv.skipWhenAttackActive) continue;
+    if(activeEventBlocksAttackThreat()&&schemaContainsAttackThreat(deferredEv)) continue;
     if(deferredEv.condition&&!evaluateCondition(deferredEv.condition)) continue;
     state.deferredStoryEventIds.splice(i,1);
     addLog(`📖 Evento de historia aplazado activado: ${deferredEv.name||deferredEv.id}.`);
     setEvent(buildEventFromSchema(deferredEv));
     return true;
   }
-  const ev=(gameData.story_events||[]).find(x=>Number(x.day)===state.day&&x.id!=='HOS001');
+  const ev=(gameData.story_events||[]).find(x=>Number(x.day)===state.day);
   if(!ev) return false;
   if(state.attackThreat&&ev.skipWhenAttackActive){
     if(!state.deferredStoryEventIds.includes(ev.id)) state.deferredStoryEventIds.push(ev.id);
     addLog(`📖 ${ev.name||ev.id} se aplaza: hay amenaza de ataque activa.`);
+    return false;
+  }
+  if(activeEventBlocksAttackThreat()&&schemaContainsAttackThreat(ev)){
+    if(!state.deferredStoryEventIds.includes(ev.id)) state.deferredStoryEventIds.push(ev.id);
+    addLog(`📖 ${ev.name||ev.id} se aplaza: un efecto activo bloquea amenazas de ataque.`);
     return false;
   }
   // Check condition even for story events
@@ -2897,6 +2798,7 @@ function checkPriorityEvent(){
     if(!e.priority) return false;
     if(state.seenEvents.has(e.id)) return false;
     if(state.attackThreat&&e.skipWhenAttackActive) return false;
+    if(activeEventBlocksAttackThreat()&&schemaContainsAttackThreat(e)) return false;
     if(!evaluateCondition(e.condition)) return false;
     return true;
   });
@@ -2916,7 +2818,7 @@ function checkWeeklyEvent(){
   const weeklyPool=(gameData.events||[]).filter(e=>e&&e.type==='weekly');
   if(!weeklyPool.length) return false;
   // Try to match exact week number, else cycle through pool
-  const eligibleWeekly=weeklyPool.filter(e=>!(state.attackThreat&&e.skipWhenAttackActive));
+  const eligibleWeekly=weeklyPool.filter(e=>!(state.attackThreat&&e.skipWhenAttackActive)&&!(activeEventBlocksAttackThreat()&&schemaContainsAttackThreat(e)));
   if(!eligibleWeekly.length) return false;
   const ev=eligibleWeekly.find(e=>Number(e.week)===week)||eligibleWeekly[(week-1)%eligibleWeekly.length];
   if(!ev) return false;
@@ -2932,8 +2834,9 @@ function chooseEvent(){
     if(state.seenEvents.has(e.id)) return false;
     if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
-    const isRaiderEvent=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
+    const isRaiderEvent=schemaContainsAttackThreat(e);
     if(isRaiderEvent&&state.attackThreat) return false;
+    if(isRaiderEvent&&activeEventBlocksAttackThreat()) return false;
     // Evaluate condition if present
     if(e.condition&&!evaluateCondition(e.condition)) return false;
     return true;
@@ -2961,9 +2864,6 @@ function chooseEvent(){
   // Skill bonuses: Explorador boosts positive events, Precavido reduces negative ones
   const exploradoresCount=aliveSurvivors().filter(s=>s.action?.type&&(s.skill||'').toLowerCase()==='explorador').length;
   const precavidosCount=aliveSurvivors().filter(s=>s.action?.type&&(s.skill||'').toLowerCase()==='precavido').length;
-
-  const hosActive=state._hos001?.active&&!state.hospitalUnlocked;
-  const hosDeferred=hosActive&&state._hos001?.deferred;
   const stabilityMods=getStabilityModifiers();
   const boostedPool=activePool.map(ev=>{
     let w=Number(ev.weight||1);
@@ -2972,14 +2872,6 @@ function chooseEvent(){
       const boost=Math.min(actionCounts[ev.relatedAction],4)*0.5;
       w=Math.round(w*(1+boost));
     }
-    // HOS001 active: boost sabotaje moderately (x1.8 — noticeable but not overwhelming)
-    if(ev.id==='sabotaje'){
-      w=Math.min(w,6);
-      if(hosActive) w=Math.round(w*1.5);
-    }
-    // HOS001 deferred: boost raider/threat events
-    const isRaiderEv=(Array.isArray(ev.effects)?ev.effects:[]).some(ef=>ef.type==='setAttackThreat');
-    if(hosDeferred&&isRaiderEv) w=Math.round(w*2.0);
     // Positive/negative event skill modifiers
     const tone=(ev.tone||'neutral').toLowerCase();
     const isPositive=tone==='positive'||['hallazgo','nada','lluvia'].includes(ev.id);
@@ -3006,7 +2898,7 @@ function weightedPickField(items,field){
 
 function triggerExploreEvent(survivor){
   // Pull explore events from events.json type='explore' only
-  const pool=(gameData.events||[]).filter(e=>e&&e.type==='explore');
+  const pool=(gameData.events||[]).filter(e=>e&&e.type==='explore'&&!(activeEventBlocksAttackThreat()&&schemaContainsAttackThreat(e)));
 
   // Exclude already seen unless repeatable, cycle when exhausted
   const available=pool.filter(e=>e.repeatable||!state._seenExplore?.has(e.id));
@@ -4547,7 +4439,7 @@ function applyDailyMoraleDecay(){
   // Morale naturally decreases for unfed survivors handled in food consumption
   // Also: injured survivors without treatment lose morale
   aliveSurvivors().forEach(s=>{
-    if(s.status==='herido'&&s.action?.type!=='descansar'&&s.action?.type!=='descansar_exterior'){
+    if(hasActiveInjury(s)&&s.action?.type!=='descansar'&&s.action?.type!=='descansar_exterior'){
       s.morale=Math.max(0,s.morale-1);
       if(s.morale<=0) addLog(`😞 ${s.name} está herido y desmoralizado.`);
     }
@@ -4555,35 +4447,49 @@ function applyDailyMoraleDecay(){
 }
 
 function applyUntreatedInjuryOutcome(s, opts={}){
-  if(!s||s.status!=='herido') return null;
-  addTechLog('injury_roll_start', 'Tirada de herida sin medicina.', {survivorId: s.id, survivorName: s.name, injuryLevel: s.injuryLevel||'simple', fromChoice: !!opts.fromChoice});
+  if(!s||!hasActiveInjury(s)) return;
   ensureInjuryState(s);
-  const rollValue=Number(opts.roll||roll(1,6));
-  const label=opts.fromChoice?'Sin medicina':'Descanso sin medicina';
-  if(rollValue===1){
-    worsenInjuryOneLevel(s, `${label} (1d6: ${rollValue})`);
-  } else if(rollValue>=5){
-    improveInjuryOneLevel(s, `${label} (1d6: ${rollValue})`);
+  const level=s.injuryLevel;
+  if(level!=='seria'&&level!=='grave') return;
+  const roll=clamp(Number(opts.roll||0)||Math.floor(Math.random()*6)+1,1,6);
+  const outcome=INJURY_NO_MEDS_TABLE[roll]||'same';
+  const prev=level;
+  if(outcome==='worsen'){
+    if(level==='seria'){
+      s.injuryLevel='grave';
+      s.injuryRestDays=0;
+      addLog(`⚠ Descanso sin medicina (1d6: ${roll}): la herida de ${s.name} empeora de ${injuryDisplayName(prev)} a grave.`);
+    } else {
+      killSurvivor(s,`💀 ${s.name} muere por una herida grave sin tratamiento (1d6: ${roll}).`);
+      return;
+    }
+  } else if(outcome==='improve'){
+    s.injuryLevel = level==='grave' ? 'seria' : 'simple';
+    s.injuryRestDays=0;
+    addLog(`✅ Descanso sin medicina (1d6: ${roll}): la herida de ${s.name} baja de ${injuryDisplayName(prev)} a ${injuryDisplayName(s.injuryLevel)}.`);
   } else {
-    addLog(`🩹 ${label}: la herida de ${s.name} sigue en ${injuryDisplayName(s.injuryLevel)}. (1d6: ${rollValue})`);
+    addLog(`⚠ Descanso sin medicina (1d6: ${roll}): la herida de ${s.name} sigue en ${injuryDisplayName(level)}.`);
   }
-  addTechLog('injury_roll_result', 'Resultado de herida sin medicina.', {survivorId: s.id, survivorName: s.name, roll: rollValue, label, injuryLevel: s.injuryLevel||null, status: s.status});
-  s._injuryTreatedToday=true;
-  return rollValue;
 }
 
 function finalizeInjuriesEndOfDay(){
   aliveSurvivors().forEach(s=>{
-    if(s.status!=='herido'){
+    if(!hasActiveInjury(s)){
       delete s._injuryTreatedToday;
+      delete s._injuryRestedToday;
       return;
     }
     ensureInjuryState(s);
-    if(!s.injuryLevel){
-      s.status='activo';
+    const currentNeeded=INJURY_REST_DAYS[s.injuryLevel]||1;
+    const treated=!!s._injuryTreatedToday;
+    const rested=!!s._injuryRestedToday;
+    if(rested && s.injuryRestDays>=currentNeeded && (s.injuryLevel==='simple' || treated)){
+      s.injuryLevel=null;
       s.injuryRestDays=0;
+      addLog(`✅ ${s.name} se recupera de sus heridas tras descansar.`);
     }
     delete s._injuryTreatedToday;
+    delete s._injuryRestedToday;
   });
   state._pendingTreatmentQueue=null;
   state._currentTreatmentSurvivorId=null;
@@ -4592,16 +4498,23 @@ function finalizeInjuriesEndOfDay(){
 function processInjuriesEndOfDay(){
   const treatmentQueue=[];
   aliveSurvivors().forEach(s=>{
-    if(s.status!=='herido') return;
+    if(!hasActiveInjury(s)) return;
     ensureInjuryState(s);
     s._injuryTreatedToday=false;
-    if(!isRestingForRecovery(s)) return;
-
-    if(s.injuryLevel==='simple'){
-      applyUntreatedInjuryOutcome(s);
-      return;
+    const isResting=s.action?.type==='descansar'||s.action?.type==='descansar_exterior';
+    s._injuryRestedToday=isResting;
+    const needed=INJURY_REST_DAYS[s.injuryLevel]||1;
+    if(isResting){
+      s.injuryRestDays=Math.min(needed, Number(s.injuryRestDays||0)+1);
     }
+  });
 
+  aliveSurvivors().forEach(s=>{
+    if(!hasActiveInjury(s)) return;
+    ensureInjuryState(s);
+    const level=s.injuryLevel;
+    if(level==='simple') return;
+    if(!s._injuryRestedToday) return;
     if(state.meds>0){
       treatmentQueue.push(s.id);
     } else {
@@ -4710,7 +4623,8 @@ function buildEventFromSchema(schema,forcedSurvivor){
     relatedAction:schema.relatedAction||null,
     _explorerId:survivor.id||null,
     _explorerName:survivor.name||null,
-    options:[]
+    options:[],
+    blockAttackThreatWhileActive:!!schema.blockAttackThreatWhileActive
   };
 
   // ── Attack mode: generate Atacar / Retirarse buttons from setAttackThreat effect ──
@@ -4719,21 +4633,17 @@ function buildEventFromSchema(schema,forcedSurvivor){
     if(atkEffect){
       ev.options=[
         {
-          label:'⚔ Atacar el almacén',
+          label:'⚔ Preparar ataque',
           className:'primary',
           action:()=>{
             closeEvent();
-            openHOS001AttackPopup(atkEffect);
+            openAttackSetupPopup(atkEffect, schema);
           }
         },
         {
-          label:'🚪 Retirarse por ahora',
+          label:'🚪 No intervenir',
           className:'secondary',
-          action:()=>{
-            // Mark as deferred — stays in persistent panel, no defeat effects yet
-            state._hos001.deferred=true;
-            addLog(`El grupo decide esperar. Los hostiles siguen en el almacén.`);
-            renderPersistentEvent();
+          action:()=>{            addLog('El grupo decide no intervenir por ahora.');
             closeEvent();
           }
         }
@@ -4904,19 +4814,19 @@ function applyEffect(effect,delayed){
       const bid=effect.building;
       if(bid==='hospital'){
         state.hospitalUnlocked=true;
-        state._hos001.active=false;  // HOS001 won — stop showing it
         if(state.buildings.hospital) state.buildings.hospital.constructible=true;
-        addLog('🏥 ¡El almacén conquistado! El Hospital ya puede construirse.');
+        addLog('🏥 El Hospital ya puede construirse.');
       }
       break;
     }
     case 'injureExplorer':{
       // Injure the specific survivor who triggered this explore event
       const target=state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto');
-      if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}${target.name} resulta ${injuredLabel(target)} durante la exploración.`,{source:'event',level:effect.injuryLevel});
+      const forcedLevel=(effect.injuryLevel==='random'||effect.injuryLevel==='aleatorio') ? rollExplorerRandomInjuryLevel() : effect.injuryLevel;
+      if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}${target.name} resulta {injuryLabel} durante la exploración.`,{source:'event',level:forcedLevel});
       else {
         const candidate=pick(state.survivors.filter(s=>s.status!=='muerto'));
-        if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`,{source:'event',level:effect.injuryLevel});
+        if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta {injuryLabel}.`,{source:'event',level:forcedLevel});
       }
       break;
     }
@@ -4928,7 +4838,7 @@ function applyEffect(effect,delayed){
         ? state.survivors.filter(s=>ids.includes(s.id)&&s.status!=='muerto')
         : state.survivors.filter(s=>s.status!=='muerto');
       const target=pick(pool);
-      if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}🩸 ${target.name} resulta herido.`,{source:'event',level:effect.injuryLevel});
+      if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}🩸 ${target.name} resulta {injuryLabel}.`,{source:'event',level:effect.injuryLevel});
       break;
     }
     case 'injureRandom':
@@ -4936,25 +4846,31 @@ function applyEffect(effect,delayed){
       const candidate=effect.targetId
         ? state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto')
         : pick(state.survivors.filter(s=>s.status!=='muerto'));
-      if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`,{source:'event',level:effect.injuryLevel});
-      if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta herido.`);
+      if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta {injuryLabel}.`,{source:'event',level:effect.injuryLevel});
       break;
     }
     case 'healSurvivor':
     case 'healInjured':{
       const injured=effect.targetId
-        ? state.survivors.find(s=>s.id===effect.targetId&&s.status==='herido')
-        : state.survivors.find(s=>s.status==='herido');
+        ? state.survivors.find(s=>s.id===effect.targetId&&hasActiveInjury(s))
+        : state.survivors.find(s=>hasActiveInjury(s));
       if(injured){
         injured.status='activo';
         injured.injuryLevel=null;
         injured.injuryRestDays=0;
         addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de sus heridas.`);
       }
-      if(injured){injured.status='activo';addLog(`${delayed?'[Retrasado] ':''}${injured.name} se cura de sus heridas.`)}
       break;
     }
     case 'setAttackThreat':{
+      if(state.attackThreat){
+        addLog(`${delayed?'[Retrasado] ':''}⚠ Ya hay una amenaza de ataque activa. No se genera una nueva.`);
+        break;
+      }
+      if(activeEventBlocksAttackThreat({ignorePending:true})){
+        addLog(`${delayed?'[Retrasado] ':''}🚫 Una amenaza de ataque no puede activarse mientras un efecto activo la bloquea.`);
+        break;
+      }
       state.attackThreat=true;
       let hostileType=(effect.hostileType||'raiders');
       if(hostileType==='random'){
@@ -5059,9 +4975,11 @@ function resetForNewDay(){
       s._keepInvestigating=false;
       s.action={type:'investigar'};
       s.status='ocupado';
-    } else if(s._keepBuilding&&s.status!=='muerto'&&s.action?.type==='construir'&&s.action?.target&&state.buildings?.[s.action.target]?._underConstruction&&!requiresForcedRest(s)){
+    } else if(s._keepBuilding&&s.status!=='muerto'){
       s._keepBuilding=false;
+      // Keep same construir action with same target
       s.status='ocupado';
+      // action stays as-is
     } else {
       if(s.location==='travelling'&&s.status!=='muerto'){
         s.status='ocupado';
@@ -5153,32 +5071,23 @@ function renderPersistentEvent(){
   const panel=document.getElementById('persistentEventPanel');
   if(!panel) return;
   const ev=state._activeMultiDayEvent;
-  const hosActive=state._hos001?.active&&!state.hospitalUnlocked;
-  const showPanel=!!(ev&&ev._daysLeft>0&&!(state.pendingEvent&&state.pendingEvent===ev))||hosActive;
+  const showPanel=!!(ev&&ev._daysLeft>0&&!(state.pendingEvent&&state.pendingEvent===ev));
   if(!showPanel){ panel.style.display='none'; return; }
   panel.style.display='block';
   let html='';
 
-  // HOS001 persistent block
-  if(hosActive){
-    const att=state._hos001.attempts;
-    const deferred=state._hos001.deferred;
-    html+=`<div style="border:1px solid var(--danger);border-left:3px solid var(--danger-bright);padding:10px 12px;background:rgba(138,53,53,0.06);margin-bottom:8px;">
-      <div style="font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--danger-bright);margin-bottom:4px;">⚔ Almacén de Medicinas</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Los hostiles siguen en el almacén.${att>0?` Intento ${att}: se han reforzado.`:''} ${deferred?'<span style="color:var(--warn-bright)">Explorar es más peligroso mientras no se ataque.</span>':''}</div>
-      <button onclick="openHOS001FromPanel()" style="background:var(--danger-glow);border:1px solid var(--danger);color:var(--danger-bright);font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;padding:6px 12px;cursor:pointer;">⚔ ATACAR AHORA</button>
-    </div>`;
-  }
-
-  // Active multi-day event
   if(ev&&ev._daysLeft>0&&!(state.pendingEvent&&state.pendingEvent===ev)){
     const left=ev._daysLeft;
     const total=ev._totalDays||1;
     const pips=Array.from({length:total},(_,i)=>`<div class="dur-pip${i>=left?' empty':''}"></div>`).join('');
+    const attackBlockNote=ev.blockAttackThreatWhileActive
+      ? '<div style="font-size:10px;color:var(--danger-bright);margin:0 0 8px 0;letter-spacing:0.06em;">🚫 Mientras este efecto siga activo, no pueden activarse amenazas de ataque.</div>'
+      : '';
     html+=`<div style="font-size:10px;color:var(--amber-bright);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--font-display);margin-bottom:6px;">⏱ Efecto activo</div>
     <div style="border:1px solid var(--amber);border-left:3px solid var(--amber-bright);padding:10px 12px;background:rgba(184,124,42,0.06);">
       <div style="font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--amber-bright);margin-bottom:4px;">${escapeHtml(ev.title||'Evento activo')}</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px;">${escapeHtml(ev.text||'')}</div>
+      ${attackBlockNote}
       <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--amber);">
         <div class="dur-pips">${pips}</div>
         <span>${left} día${left!==1?'s':''} restante${left!==1?'s':''}</span>
@@ -5188,15 +5097,6 @@ function renderPersistentEvent(){
   panel.innerHTML=html;
 }
 
-function openHOS001FromPanel(){
-  // Find the HOS001 event to get the atkEffect
-  const hos=(gameData.events||[]).find(e=>e.id==='HOS001')||
-             (gameData.story_events||[]).find(e=>e.id==='HOS001');
-  if(!hos) return;
-  const atkEffect=(Array.isArray(hos.effects)?hos.effects:[]).find(e=>e.type==='setAttackThreat');
-  if(!atkEffect) return;
-  openHOS001AttackPopup(atkEffect);
-}
 function renderActiveEvents(){
   const list=document.getElementById('activeEventsList');
   if(!list) return;
@@ -5209,7 +5109,7 @@ function renderActiveEvents(){
     const pips=Array.from({length:total},(_,i)=>`<span class="active-event-pip${i>=left?' empty':''}"></span>`).join('');
     return `<div class="active-event-item" onclick="setEvent(state._activeMultiDayEvent)">
       <div class="active-event-name">${escapeHtml(ev.title||'Evento')}</div>
-      <div class="active-event-days">${pips}<span>${left} día${left!==1?'s':''} restante${left!==1?'s':''}</span></div>
+      <div class="active-event-days">${pips}<span>${left} día${left!==1?'s':''} restante${left!==1?'s':''}</span></div>${ev.blockAttackThreatWhileActive?'<div style="font-size:10px;color:var(--danger-bright);margin-top:6px;">🚫 Bloquea amenazas de ataque</div>':''}
     </div>`;
   }).join('');
 }
@@ -5258,7 +5158,7 @@ function actionSummary(s){
   if(s.status==='muerto') return 'No disponible.';
   if(hasLowMoraleRestRestriction(s)&&!s.action) return 'Sin moral. Solo quiere descansar.';
   if(requiresForcedRest(s)&&!s.action) return `Tiene herida ${injuryDisplayName(s.injuryLevel||'simple')}. Solo puede descansar.`;
-  if(s.status==='herido'&&!s.action) return `Está herido (${injuryDisplayName(s.injuryLevel||'simple')}).`;
+  if(hasActiveInjury(s)&&!s.action) return `Está herido (${injuryDisplayName(s.injuryLevel||'simple')}).`;
   if(Number(s.fatigue||0)<=0&&!s.action) return 'Sin fatiga disponible. Solo puede descansar.';
   if(!s.action) return 'Sin acción asignada.';
 
@@ -5277,12 +5177,19 @@ function statusLabel(status){return({activo:'Activo',ocupado:'Ocupado',herido:'H
 
 function getSurvivorImage(s){
   if(s.status==='muerto') return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230a0c09'/%3E%3Crect x='35' y='60' width='30' height='28' rx='2' fill='%23222' stroke='%23444' stroke-width='1.5'/%3E%3Crect x='40' y='65' width='20' height='4' rx='1' fill='%23444'/%3E%3Cpath d='M30 60 Q50 20 70 60 Z' fill='%23222' stroke='%23444' stroke-width='1.5'/%3E%3Ctext x='50' y='52' text-anchor='middle' font-size='14' fill='%23556' font-family='serif'%3E%E2%9C%9D%3C/text%3E%3Cpath d='M44 72 h12 M50 68 v8' stroke='%23445' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E`;
-  if(s.status==='herido'&&s.imageUrlInjured) return s.imageUrlInjured;
+  if(hasActiveInjury(s)&&s.imageUrlInjured) return s.imageUrlInjured;
   return s.imageUrl||'';
 }
 
-const INJURY_LEVELS=['simple','seria','grave'];
-const INJURY_REST_DAYS={simple:1,seria:1,grave:1};
+const INJURY_REST_DAYS={simple:1,seria:2,grave:3};
+const INJURY_NO_MEDS_TABLE={
+  1:'worsen',
+  2:'same',
+  3:'same',
+  4:'same',
+  5:'improve',
+  6:'improve',
+};
 const INJURY_LEVEL_RULES={
   generic:{simple:0.7, seria:0.22, grave:0.08},
   outside:{simple:0.65, seria:0.25, grave:0.10},
@@ -5296,23 +5203,41 @@ function injuryDisplayName(level){
 function nextInjuryLevel(level){
   return level==='simple'?'seria':level==='seria'?'grave':'grave';
 }
-function prevInjuryLevel(level){
-  return level==='grave'?'seria':level==='seria'?'simple':null;
+function hasActiveInjury(s){
+  return !!(s && s.status!=='muerto' && s.injuryLevel && INJURY_REST_DAYS[String(s.injuryLevel).toLowerCase()]);
 }
 function ensureInjuryState(s){
-  if(s.status!=='herido') return;
+  if(!hasActiveInjury(s) && s?.status!=='herido') return;
   if(!s.injuryLevel) s.injuryLevel='simple';
   if(typeof s.injuryRestDays!=='number') s.injuryRestDays=0;
 }
 function requiresForcedRest(s){
-  return !!(s&&s.status==='herido');
+  if(!hasActiveInjury(s)) return false;
+  ensureInjuryState(s);
+  return true;
 }
 function injuredLabel(s){
   const level=s?.injuryLevel||'simple';
   return `herido/a (${injuryDisplayName(level)})`;
 }
+function rollExplorerRandomInjuryLevel(){
+  const r=Math.random();
+  if(r<0.50) return 'simple';
+  if(r<0.85) return 'seria';
+  return 'grave';
+}
+function normalizeForcedInjuryLevel(level, source='generic'){
+  if(!level) return undefined;
+  const value=String(level).toLowerCase();
+  if(INJURY_REST_DAYS[value]) return value;
+  if(value==='random' || value==='aleatorio'){
+    return source==='explorer_random' ? rollExplorerRandomInjuryLevel() : undefined;
+  }
+  return undefined;
+}
 function rollInjuryLevel(source='generic', forcedLevel){
-  if(forcedLevel&&INJURY_LEVELS.includes(forcedLevel)) return forcedLevel;
+  const normalizedForced=normalizeForcedInjuryLevel(forcedLevel, source);
+  if(normalizedForced) return normalizedForced;
   const rules=INJURY_LEVEL_RULES[source]||INJURY_LEVEL_RULES.generic;
   const r=Math.random();
   const sCut=Number(rules.simple||0.7);
@@ -5320,82 +5245,6 @@ function rollInjuryLevel(source='generic', forcedLevel){
   if(r<=sCut) return 'simple';
   if(r<=seCut) return 'seria';
   return 'grave';
-}
-function isRestingForRecovery(s){
-  return s?.action?.type==='descansar'||s?.action?.type==='descansar_exterior';
-}
-function cancelConstructionForSurvivor(s, reason=''){
-  addTechLog('build_cancel_check', 'Se comprueba si hay que cancelar una construcción.', {
-    survivorId: s?.id||null,
-    survivorName: s?.name||null,
-    reason,
-    action: s?.action?.type||null,
-    target: s?.action?.target||null,
-    status: s?.status||null
-  });
-  if(!s) return false;
-  const target=s.action?.type==='construir'&&s.action?.target?s.action.target:null;
-  const bld=target?state.buildings?.[target]:null;
-  if(!bld||!bld._underConstruction) {
-    s._keepBuilding=false;
-    if(s.action?.type==='construir') s.action=null;
-    return false;
-  }
-  const refund=Math.max(0, Number(bld._constructionPaidCost||0));
-  if(refund>0){
-    state.materials+=refund;
-    addLog(`↩ ${refund} materiales devueltos a la base por cancelar ${bld.name}.`);
-  }
-  bld._underConstruction=false;
-  delete bld._constructionDays;
-  delete bld._constructionDaysLeft;
-  delete bld._constructionPaidCost;
-  delete bld._constructionBuilderId;
-  s._keepBuilding=false;
-  if(s.action?.type==='construir') s.action=null;
-  addLog(`🛠 La construcción de ${bld.name} se cancela${reason?`: ${reason}`:''}.`);
-  addTechLog('build_cancelled', 'Construcción cancelada y recursos devueltos.', {
-    survivorId: s.id,
-    survivorName: s.name,
-    buildingId: target,
-    buildingName: bld.name,
-    refund,
-    reason
-  });
-  return true;
-}
-function worsenInjuryOneLevel(s, reasonLabel='Sin medicina'){
-  if(!s||s.status!=='herido') return 'same';
-  ensureInjuryState(s);
-  if(s.injuryLevel==='simple'){
-    s.injuryLevel='seria';
-    addLog(`⚠ ${reasonLabel}: la herida de ${s.name} empeora de simple a seria.`);
-    return 'worse';
-  }
-  if(s.injuryLevel==='seria'){
-    s.injuryLevel='grave';
-    addLog(`⚠ ${reasonLabel}: la herida de ${s.name} empeora de seria a grave.`);
-    return 'worse';
-  }
-  killSurvivor(s, `💀 ${s.name} muere por el empeoramiento de una herida grave.`);
-  return 'dead';
-}
-function improveInjuryOneLevel(s, reasonLabel='Descanso'){
-  if(!s||s.status!=='herido') return 'same';
-  ensureInjuryState(s);
-  const prev=s.injuryLevel;
-  const next=prevInjuryLevel(prev);
-  if(!next){
-    s.status='activo';
-    s.injuryLevel=null;
-    s.injuryRestDays=0;
-    addLog(`✅ ${reasonLabel}: ${s.name} se recupera de su herida simple.`);
-    return 'cured';
-  }
-  s.injuryLevel=next;
-  s.injuryRestDays=0;
-  addLog(`✅ ${reasonLabel}: la herida de ${s.name} baja de ${injuryDisplayName(prev)} a ${injuryDisplayName(next)}.`);
-  return 'better';
 }
 
 function getMoraleEmoji(s){
@@ -5408,22 +5257,16 @@ function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:
 function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
 function injureSurvivor(s,msg,opts={}){
-  if(!s||s.status==='muerto') return;
-  const wasBuilding=!!(s.action?.type==='construir'&&s.action?.target);
-  if(s.status==='herido'){
+  if(s.status==='muerto') return;
+  if(hasActiveInjury(s)){
     ensureInjuryState(s);
     const prev=s.injuryLevel;
     s.injuryLevel=nextInjuryLevel(s.injuryLevel);
     s.injuryRestDays=0;
     addLog(`⚠ La herida de ${s.name} empeora: ${injuryDisplayName(prev)} → ${injuryDisplayName(s.injuryLevel)}.`);
   } else {
-    s.status='herido';
     s.injuryLevel=rollInjuryLevel(opts.source||'generic', opts.level);
     s.injuryRestDays=0;
-    addLog(`🩸 ${s.name} sufre una herida ${injuryDisplayName(s.injuryLevel)}.`);
-  }
-  if(wasBuilding){
-    cancelConstructionForSurvivor(s, `${s.name} ha sido herido/a`);
   }
   const finalLevel=injuryDisplayName(s.injuryLevel||'simple');
   const finalLabel=`herido/a (${finalLevel})`;
@@ -5436,17 +5279,12 @@ function injureSurvivor(s,msg,opts={}){
 }
 
 function killSurvivor(s,msg){
-  if(!s||s.status==='muerto') return;
+  if(s.status==='muerto') return;
   _doKill(s, msg);
 }
 
 function _doKill(s, msg){
-  if(s.action?.type==='construir'&&s.action?.target){
-    cancelConstructionForSurvivor(s, `${s.name} ha muerto`);
-  }
   s.status='muerto';
-  s.action=null;
-  s._keepBuilding=false;
   state.cemetery.push({
     id:s.id,
     name:s.name,
@@ -5456,126 +5294,7 @@ function _doKill(s, msg){
   });
   addLog(msg||`${s.name} ha muerto.`);
 }
-function getTechnicalPhase(){
-  if(state._processingDay) return 'procesando_fin_dia';
-  if(state._currentTreatmentSurvivorId) return 'tratamiento_heridas';
-  if(state.pendingEvent) return 'evento_activo';
-  return 'esperando_acciones';
-}
-function safeDebugClone(value, depth=0){
-  if(depth>4) return '[MaxDepth]';
-  if(value===null||value===undefined) return value;
-  const t=typeof value;
-  if(t==='number'||t==='string'||t==='boolean') return value;
-  if(t==='function') return '[Function]';
-  if(value instanceof Set) return Array.from(value);
-  if(Array.isArray(value)) return value.slice(0,20).map(v=>safeDebugClone(v, depth+1));
-  if(t==='object'){
-    const out={};
-    Object.keys(value).slice(0,30).forEach(key=>{
-      out[key]=safeDebugClone(value[key], depth+1);
-    });
-    return out;
-  }
-  return String(value);
-}
-function addTechLog(kind, message, extra={}){
-  if(!Array.isArray(state.debugLog)) state.debugLog=[];
-  state._debugSeq=(Number(state._debugSeq)||0)+1;
-  const entry={
-    seq: state._debugSeq,
-    iso: new Date().toISOString(),
-    day: Number(state.day)||0,
-    phase: getTechnicalPhase(),
-    kind: kind||'trace',
-    message: String(message||''),
-    pendingEvent: state.pendingEvent?.id||state.pendingEvent?.name||null,
-    processingDay: !!state._processingDay,
-    currentTreatment: state._currentTreatmentSurvivorId||null,
-    extra: safeDebugClone(extra)
-  };
-  state.debugLog.push(entry);
-  if(state.debugLog.length>1200) state.debugLog=state.debugLog.slice(-1200);
-  if(techLogModal?.classList.contains('open')) renderTechnicalLogText();
-  return entry;
-}
-function formatTechnicalLogEntry(entry){
-  const head=`#${String(entry.seq).padStart(4,'0')} | ${entry.iso} | día=${entry.day} | fase=${entry.phase} | tipo=${entry.kind}`;
-  const parts=[head, entry.message||''];
-  if(entry.pendingEvent) parts.push(`evento=${entry.pendingEvent}`);
-  if(entry.currentTreatment) parts.push(`tratamiento=${entry.currentTreatment}`);
-  if(entry.extra&&Object.keys(entry.extra).length){
-    try{ parts.push(JSON.stringify(entry.extra, null, 2)); }
-    catch(_err){ parts.push('[extra no serializable]'); }
-  }
-  return parts.join('\n');
-}
-function buildTechnicalLogText(){
-  const lines=[];
-  lines.push('=== RESURGIR · LOG TÉCNICO DE PARTIDA ===');
-  lines.push(`Generado: ${new Date().toISOString()}`);
-  lines.push(`Día actual: ${state.day}`);
-  lines.push(`Supervivientes vivos: ${aliveSurvivors().length}`);
-  lines.push(`Recursos base: comida=${state.food} | materiales=${state.materials} | meds=${state.meds} | estabilidad=${state.stability}`);
-  lines.push(`Procesando día: ${state._processingDay?'sí':'no'}`);
-  lines.push('');
-  if(!state.debugLog.length){
-    lines.push('Sin eventos técnicos todavía.');
-    return lines.join('\n');
-  }
-  state.debugLog.forEach(entry=>{
-    lines.push(formatTechnicalLogEntry(entry));
-    lines.push('');
-  });
-  return lines.join('\n');
-}
-function renderTechnicalLogText(){
-  const text=buildTechnicalLogText();
-  if(techLogText) techLogText.value=text;
-  return text;
-}
-function openTechLogModal(){
-  renderTechnicalLogText();
-  if(techLogModal) techLogModal.classList.add('open');
-}
-function closeTechLogModal(){
-  if(techLogModal) techLogModal.classList.remove('open');
-}
-async function copyTechnicalLogToClipboard(){
-  const text=renderTechnicalLogText();
-  try{
-    if(navigator.clipboard&&navigator.clipboard.writeText){
-      await navigator.clipboard.writeText(text);
-      addLog('📋 Log técnico copiado al portapapeles.');
-      addTechLog('techlog_copy', 'El usuario ha copiado el log técnico.');
-    }else{
-      throw new Error('Clipboard API no disponible');
-    }
-  }catch(err){
-    addLog(`❌ No se pudo copiar el log técnico: ${err?.message||err}`);
-    addTechLog('techlog_copy_error', 'Fallo al copiar el log técnico.', {error: err?.message||String(err)});
-  }
-}
-function downloadTechnicalLogFile(){
-  const text=renderTechnicalLogText();
-  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
-  a.href=url;
-  a.download=`resurgir_log_tecnico_dia_${state.day}_${stamp}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1500);
-  addLog('💾 Log técnico descargado en TXT.');
-  addTechLog('techlog_download', 'El usuario ha descargado el log técnico.', {filename: a.download});
-}
-function addLog(text){
-  state.log.unshift(`Día ${state.day}: ${text}`);
-  state.log=state.log.slice(0,250);
-  addTechLog('game_log', text);
-}
+function addLog(text){state.log.unshift(`Día ${state.day}: ${text}`);state.log=state.log.slice(0,80)}
 function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No queda ningún superviviente con vida.');if(state.stability<=0)return openGameOver('La estabilidad del asentamiento ha caído a cero. El grupo se disuelve.')}
 function openGameOver(text){document.getElementById('gameOverText').textContent=text;gameOverWrap.classList.add('open')}
 function getBuildingCost(buildingId){const b=state.buildings[buildingId];const base=Number(b?.cost||0);const level=Number(b?.level||0);return Math.ceil(base*Math.pow(2,level))}
@@ -5685,9 +5404,9 @@ function openDecidePopup(options, prompt){
   });
   popup.classList.add('open');
 }
-function openHOS001AttackPopup(atkEffect){
-  const popup=document.getElementById('hos001Popup');
-  const list=document.getElementById('hos001SurvivorList');
+function openAttackSetupPopup(atkEffect, sourceSchema=null){
+  const popup=document.getElementById('attackSetupPopup');
+  const list=document.getElementById('attackSetupSurvivorList');
   const eligible=aliveSurvivors().filter(s=>
     s.status==='activo'&&
     (s.negativeSkill||'').toLowerCase()!=='cobarde'
@@ -5707,44 +5426,43 @@ function openHOS001AttackPopup(atkEffect){
         <div style="font-size:10px;color:var(--muted);">${getMoraleEmoji(s)} · Fatiga: ${s.fatigue}/${s.maxFatigue}${bonus?` · <span style="color:var(--amber-bright)">+${bonus} combate</span>`:''}
         </div>
       </div>
-      <div id="hos-check-${s.id}" style="font-size:20px;color:var(--muted);">○</div>`;
+      <div id="attack-setup-check-${s.id}" style="font-size:20px;color:var(--muted);">○</div>`;
     item.addEventListener('click',()=>{
       if(selected.has(s.id)){
         selected.delete(s.id);
         item.style.borderColor='var(--line2)';
         item.style.background='var(--panel2)';
-        document.getElementById('hos-check-'+s.id).textContent='○';
-        document.getElementById('hos-check-'+s.id).style.color='var(--muted)';
+        document.getElementById('attack-setup-check-'+s.id).textContent='○';
+        document.getElementById('attack-setup-check-'+s.id).style.color='var(--muted)';
       } else {
         selected.add(s.id);
         item.style.borderColor='var(--danger-bright)';
         item.style.background='rgba(138,53,53,0.1)';
-        document.getElementById('hos-check-'+s.id).textContent='●';
-        document.getElementById('hos-check-'+s.id).style.color='var(--danger-bright)';
+        document.getElementById('attack-setup-check-'+s.id).textContent='●';
+        document.getElementById('attack-setup-check-'+s.id).style.color='var(--danger-bright)';
       }
     });
     list.appendChild(item);
   });
   popup.classList.add('open');
 
-  document.getElementById('hos001Confirm').onclick=()=>{
+  document.getElementById('attackSetupConfirm').onclick=()=>{
     if(!selected.size){ addLog('Debes elegir al menos un superviviente para el asalto.'); return; }
     popup.classList.remove('open');
     // Assign 'atacar' action to selected survivors
     state.survivors.forEach(s=>{
       if(selected.has(s.id)){
-        s.action={type:'atacar',target:'hos001'};
+        s.action={type:'atacar',target:'event_attack'};
         s.status='ocupado';
-        addLog(`⚔ ${s.name} se prepara para asaltar el almacén.`);
+        addLog(`⚔ ${s.name} se prepara para el ataque.`);
       }
     });
-    // Activate attack threat with HOS001 params
+    // Activate the configured attack threat
     applyEffect(atkEffect);
-    state._hos001.deferred=false;
     render();
   };
 
-  document.getElementById('hos001Cancel').onclick=()=>{
+  document.getElementById('attackSetupCancel').onclick=()=>{
     popup.classList.remove('open');
   };
 }
@@ -5919,7 +5637,7 @@ function openLoreModal(s){
   document.getElementById('loreModalName').textContent=s.name||'';
   const img=document.getElementById('loreModalImg');
   const loreImg=getSurvivorImage(s);
-  if(loreImg){img.src=loreImg;img.style.display='block';img.style.filter=s.status==='muerto'?'grayscale(1) brightness(0.6)':s.status==='herido'?'grayscale(20%) sepia(20%)':'';}
+  if(loreImg){img.src=loreImg;img.style.display='block';img.style.filter=s.status==='muerto'?'grayscale(1) brightness(0.6)':hasActiveInjury(s)?'grayscale(20%) sepia(20%)':'';}
   else{img.style.display='none';}
   document.getElementById('loreModalStory').textContent=s.story||'Sin historia registrada.';
   document.getElementById('survivorLoreModal').classList.add('open');
@@ -6060,24 +5778,7 @@ function startIntro(){
   btn.addEventListener('click', endIntro);
 }
 
-window.addEventListener('error',(event)=>{
-  addTechLog('window_error', 'Error global de JavaScript.', {
-    message: event?.message||null,
-    source: event?.filename||null,
-    line: event?.lineno||null,
-    column: event?.colno||null,
-    stack: event?.error?.stack||null
-  });
-});
-window.addEventListener('unhandledrejection',(event)=>{
-  const reason=event?.reason;
-  addTechLog('promise_rejection', 'Promesa rechazada sin capturar.', {
-    reason: typeof reason==='string'?reason:(reason?.message||String(reason)),
-    stack: reason?.stack||null
-  });
-});
-
-loadFromFiles().then(() => { const ok=initGame(); if(ok) startIntro(); }).catch((err) => { handleDataLoadError('Carga inicial', err?.message || 'Error inesperado'); addTechLog('initial_load_error', 'Fallo durante la carga inicial.', {error: err?.message||String(err), stack: err?.stack||null}); initGame(); });
+loadFromFiles().then(() => { const ok=initGame(); if(ok) startIntro(); }).catch((err) => { handleDataLoadError('Carga inicial', err?.message || 'Error inesperado'); initGame(); });
 document.getElementById('closeBuildingDetail').addEventListener('click',()=>{
   document.getElementById('buildingDetailPanel').style.display='none';
   state.currentDetail=null;
