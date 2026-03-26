@@ -993,7 +993,20 @@
     .loc-btn.has-survivors { border-color: var(--ok); box-shadow: 0 0 6px rgba(74,138,53,0.3); }
     .loc-btn.being-explored { border-color: var(--amber); }
 
-  </style>
+  
+.small-btn{
+  padding:6px 8px;
+  border:1px solid var(--line2);
+  background:#111;
+  color:var(--text);
+  font-size:11px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.small-btn:hover{border-color:var(--accent);color:#fff}
+
+</style>
 </head>
 <body>
 <div style="background:#060807;border-bottom:1px solid #1a2218;padding:6px 14px;display:flex;justify-content:space-between;align-items:center;">
@@ -1048,7 +1061,7 @@
         <div class="panel-header" style="justify-content:space-between;"><span>Instalación</span><button id="closeBuildingDetail" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;">✕</button></div>
         <div class="panel-body"><div class="detail-grid" id="detailBox"></div></div>
       </div>
-      <div class="panel-header">Registro de operaciones</div>
+      <div class="panel-header" style="justify-content:space-between;align-items:center;"><span>Registro de operaciones</span><span style="display:flex;gap:6px;"><button id="openTechnicalLogBtn" class="small-btn">Log técnico</button><button id="copyTechnicalLogBtn" class="small-btn">Copiar TXT</button><button id="downloadTechnicalLogBtn" class="small-btn">Descargar TXT</button></span></div>
       <div class="panel-body" style="flex:1;overflow:hidden;"><div class="log" id="logBox"></div></div>
     </section>
   </div>
@@ -1293,7 +1306,7 @@
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:1,fuel:3,electricity:0,chickens:0,unlocked:{meds:true,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,baseUpgrades:{electric_fence:false,auto_irrigation:false,biodiesel:false},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0,fuel:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null,eventSchedule:{},baseUpgradeProjects:{}};
+const state={day:1,food:0,materials:0,stability:5,meds:1,fuel:3,electricity:0,chickens:0,unlocked:{meds:true,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,baseUpgrades:{electric_fence:false,auto_irrigation:false,biodiesel:false},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0,fuel:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null,eventSchedule:{},baseUpgradeProjects:{},technicalLog:[]};
 const dataLoadState={errors:[],loaded:[]};
 let activeMapTab='base';
 
@@ -1304,6 +1317,15 @@ document.getElementById('endDayBtn').addEventListener('click',endDay);
 document.getElementById('resetAssignmentsBtn').addEventListener('click',resetAssignments);
 document.getElementById('closeBuildModal').addEventListener('click',()=>buildModalWrap.classList.remove('open'));
 document.getElementById('closeBaseUpgradesModal').addEventListener('click',()=>document.getElementById('baseUpgradesModal').classList.remove('open'));
+
+document.getElementById('openTechnicalLogBtn')?.addEventListener('click',openTechnicalLogModal);
+document.getElementById('copyTechnicalLogBtn')?.addEventListener('click',copyTechnicalLog);
+document.getElementById('downloadTechnicalLogBtn')?.addEventListener('click',downloadTechnicalLog);
+document.getElementById('copyTechnicalLogBtnModal')?.addEventListener('click',copyTechnicalLog);
+document.getElementById('downloadTechnicalLogBtnModal')?.addEventListener('click',downloadTechnicalLog);
+document.getElementById('closeTechnicalLogBtn')?.addEventListener('click',closeTechnicalLogModal);
+document.getElementById('closeTechnicalLogBtnFooter')?.addEventListener('click',closeTechnicalLogModal);
+
 
 function deepClone(v){return JSON.parse(JSON.stringify(v))}
 
@@ -1751,6 +1773,7 @@ function initGame(){
 
   generateLocations();
   addLog('Comienza la partida.');
+  addTechnicalLog('game_start', 'Comienza la partida.', {survivors: aliveSurvivors().map(s=>({id:s.id,name:s.name,skills:getSurvivorSkills(s)})), resources:{food:state.food,materials:state.materials,meds:state.meds,fuel:state.fuel,electricity:state.electricity,chickens:state.chickens,stability:state.stability}});
   const bdp=document.getElementById('buildingDetailPanel');
   if(bdp) bdp.style.display='none';
   closeEvent();
@@ -2209,6 +2232,7 @@ function maybeContinueEndDayAfterPause(){
 }
 
 function endDay(){
+  addTechnicalLog('end_day_start', 'Se ha solicitado finalizar el día.', {pendingEvent: state.pendingEvent ? state.pendingEvent.id || true : null, processing: !!state._processingDay, survivors: aliveSurvivors().map(s=>({id:s.id,name:s.name,status:s.status,action:s.action||null,injury:s.injury||s.injuryLevel||null,location:s.location||'base'}))});
   // Only block if there's a pending event that requires player choice
   if(state.pendingEvent&&state.pendingEvent.options?.length>0&&!state.pendingEvent._multiDayPassive){
     addLog('⚠ Debes resolver el evento actual antes de finalizar el día.');
@@ -3312,6 +3336,93 @@ function triggerExploreEvent(survivor){
     if(!state.seenEvents) state.seenEvents=new Set();
     state.seenEvents.add(schema.id);
   }
+}
+
+
+const ACTION_SKILL_MAP = {
+  forraje: ['recolector', 'cazador'],
+  reciclar: ['chatarrero'],
+  construir: ['ingeniero', 'inventor'],
+  explorar: ['rastreador', 'explorador', 'precavido', 'combatiente']
+};
+
+function addTechnicalLog(type, message, extra = {}){
+  if(!Array.isArray(state.technicalLog)) state.technicalLog = [];
+  const entry = {
+    ts: new Date().toISOString(),
+    day: state.day,
+    phase: getPhaseLabel(),
+    type: type || 'info',
+    message: message || '',
+    extra: extra || {}
+  };
+  state.technicalLog.push(entry);
+  if(state.technicalLog.length > 800) state.technicalLog.shift();
+}
+
+function getPhaseLabel(){
+  if(state._processingDay) return 'procesando_fin_dia';
+  if(state.pendingEvent) return 'evento_activo';
+  return 'esperando_acciones';
+}
+
+function getTechnicalLogText(){
+  const lines = [];
+  lines.push('=== RESURGIR · LOG TÉCNICO DE PARTIDA ===');
+  lines.push(`Generado: ${new Date().toISOString()}`);
+  lines.push(`Día actual: ${state.day}`);
+  lines.push(`Supervivientes vivos: ${aliveSurvivors().length}`);
+  lines.push(`Recursos base: comida=${state.food} | materiales=${state.materials} | meds=${state.meds} | combustible=${state.fuel} | electricidad=${state.electricity} | gallinas=${state.chickens} | estabilidad=${state.stability}`);
+  lines.push(`Procesando día: ${state._processingDay ? 'sí' : 'no'}`);
+  lines.push('');
+  (state.technicalLog || []).forEach((entry, idx) => {
+    lines.push(`#${String(idx+1).padStart(4,'0')} | ${entry.ts} | día=${entry.day} | fase=${entry.phase} | tipo=${entry.type}`);
+    if(entry.message) lines.push(entry.message);
+    if(entry.extra && Object.keys(entry.extra).length){
+      try:
+        lines.push(JSON.stringify(entry.extra, null, 2));
+      } catch(e) {
+        lines.push(String(entry.extra));
+      }
+    }
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+
+function openTechnicalLogModal(){
+  const modal = document.getElementById('technicalLogModal');
+  const box = document.getElementById('technicalLogText');
+  if(box) box.value = getTechnicalLogText();
+  if(modal) modal.classList.add('open');
+}
+
+function closeTechnicalLogModal(){
+  document.getElementById('technicalLogModal')?.classList.remove('open');
+}
+
+async function copyTechnicalLog(){
+  const txt = getTechnicalLogText();
+  try{
+    await navigator.clipboard.writeText(txt);
+    addLog('📋 Log técnico copiado al portapapeles.');
+  }catch(e){
+    addLog('⚠ No se pudo copiar el log técnico.');
+  }
+}
+
+function downloadTechnicalLog(){
+  const txt = getTechnicalLogText();
+  const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `resurgir_log_tecnico_dia_${state.day}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }, 0);
 }
 
 function trackActionXP(survivor, actionType){
@@ -6249,4 +6360,22 @@ document.getElementById('closeLoreModal').addEventListener('click',()=>{
 document.getElementById('survivorLoreModal').addEventListener('click',(e)=>{
   if(e.target===e.currentTarget) e.currentTarget.classList.remove('open');
 });
-</script></body></html>
+</script>
+  <div class="overlay" id="technicalLogModal">
+    <div class="modal" style="width:min(920px,100%);">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>Log técnico</span>
+        <button id="closeTechnicalLogBtn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;">✕</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="technicalLogText" readonly style="width:100%;min-height:420px;background:#090909;color:#ddd;border:1px solid var(--line2);padding:10px;font-family:monospace;font-size:12px;resize:vertical;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" id="copyTechnicalLogBtnModal">Copiar TXT</button>
+        <button class="secondary" id="downloadTechnicalLogBtnModal">Descargar TXT</button>
+        <button class="secondary" id="closeTechnicalLogBtnFooter">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+</body></html>
