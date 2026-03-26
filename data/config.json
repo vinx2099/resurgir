@@ -1,13 +1,270 @@
 {
   "starting": {
+    "day": 1,
     "food": 5,
     "materials": 5,
+    "meds": 1,
+    "fuel": 3,
+    "electricity": 0,
+    "chickens": 0,
+    "stability": 5,
+    "morale": 5,
     "survivors": 3,
-    "morale": 5
+    "startingSurvivorRarity": 4
+  },
+  "ui": {
+    "resourceOrder": [
+      "day",
+      "stability",
+      "survivors",
+      "electricity",
+      "food",
+      "chickens",
+      "materials",
+      "fuel",
+      "meds"
+    ],
+    "resourceLabels": {
+      "day": "Día",
+      "stability": "Estabilidad",
+      "survivors": "Supervivientes",
+      "electricity": "Electricidad",
+      "food": "Comida",
+      "chickens": "Gallinas",
+      "materials": "Materiales",
+      "fuel": "Combustible",
+      "meds": "Medicamentos"
+    }
+  },
+  "resources": {
+    "caps": {
+      "chickens": 10
+    },
+    "clampToZero": [
+      "food",
+      "materials",
+      "meds",
+      "fuel",
+      "electricity",
+      "chickens",
+      "stability",
+      "morale"
+    ]
   },
   "rules": {
     "foodPerSurvivor": 1,
     "barracksCapacity": 4,
-    "recycleValue": 1
+    "recycleValue": 1,
+    "restoresAllFatigueOnRest": true,
+    "injuredSurvivorCanOnlyRest": true,
+    "simpleInjuryNeedsMedicine": false,
+    "seriousOrGraveInjuryNeedsMedicineChoice": true,
+    "medicineImprovesOneLevel": true,
+    "wellThresholdHigh": 3,
+    "trackerAddsSurvivorEventWeight": 10,
+    "inventorUpgradeTimeReduction": 1
+  },
+  "injuries": {
+    "levels": [
+      "simple",
+      "seria",
+      "grave",
+      "muerte"
+    ],
+    "restNoMedicineTable": {
+      "1": "worsen",
+      "2": "same",
+      "3": "same",
+      "4": "same",
+      "5": "improve",
+      "6": "improve"
+    },
+    "restNoMedicineRoll": "1d6"
+  },
+  "stability": {
+    "defenseModifierByRange": [
+      {
+        "min": 0,
+        "max": 2,
+        "modifier": -1
+      },
+      {
+        "min": 3,
+        "max": 7,
+        "modifier": 0
+      },
+      {
+        "min": 8,
+        "max": 10,
+        "modifier": 1
+      }
+    ],
+    "appliesOnlyTo": [
+      "defender_base"
+    ]
+  },
+  "events": {
+    "variableSchedule": {
+      "enabled": true,
+      "basePlusRandomOffset": true,
+      "offsetPool": [
+        -2,
+        -1,
+        1,
+        2
+      ],
+      "minimumIntervalDays": 1
+    },
+    "attackThreats": {
+      "preventNewThreatIfOneIsActive": true,
+      "respectBlockingEventFlag": true
+    }
+  },
+  "exploration": {
+    "weightsByPhase": {
+      "early": {
+        "days": [
+          1,
+          5
+        ],
+        "categories": {
+          "nothing": 25,
+          "resources": 40,
+          "survivor": 15,
+          "narrative": 5,
+          "negative": 8,
+          "danger": 7
+        }
+      },
+      "mid": {
+        "days": [
+          6,
+          15
+        ],
+        "categories": {
+          "nothing": 20,
+          "resources": 30,
+          "survivor": 12,
+          "narrative": 8,
+          "negative": 15,
+          "danger": 15
+        }
+      },
+      "late": {
+        "days": [
+          16,
+          999
+        ],
+        "categories": {
+          "nothing": 15,
+          "resources": 20,
+          "survivor": 8,
+          "narrative": 7,
+          "negative": 20,
+          "danger": 30
+        }
+      }
+    },
+    "resourceSubweights": {
+      "food": 12,
+      "materials": 10,
+      "meds": 8
+    },
+    "randomInjuryDistribution": {
+      "simple": 50,
+      "seria": 35,
+      "grave": 15
+    }
+  },
+  "buildings": {
+    "baseCategoryName": "Base",
+    "wellIsRequirementOnly": true,
+    "farmLevel3Requires": [
+      "pozo"
+    ],
+    "medsUnlockedFromStart": true
+  },
+  "gallinero": {
+    "startingChickens": 0,
+    "maxChickens": 10,
+    "foodByChickenCount": [
+      {
+        "min": 0,
+        "max": 1,
+        "food": 0
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "food": 1
+      },
+      {
+        "min": 3,
+        "max": 6,
+        "food": 2
+      },
+      {
+        "min": 7,
+        "max": 10,
+        "food": 3
+      }
+    ],
+    "sacrifice": {
+      "chickensCost": 1,
+      "foodGain": 2
+    }
+  },
+  "baseUpgrades": [
+    {
+      "id": "electric_fence",
+      "name": "Electrificar muro",
+      "description": "Requiere electricidad activa y aporta +1 defensa.",
+      "requiresBuildings": [
+        "muro",
+        "generador"
+      ],
+      "cost": {
+        "materials": 4
+      },
+      "devDays": 2,
+      "effects": {
+        "defenseBonus": 1,
+        "needsElectricity": true
+      }
+    },
+    {
+      "id": "auto_irrigation",
+      "name": "Riego automático",
+      "description": "Mejora el Huerto y requiere Pozo construido.",
+      "requiresBuildings": [
+        "huerto",
+        "pozo"
+      ],
+      "cost": {
+        "materials": 3
+      },
+      "devDays": 2,
+      "effects": {
+        "farmFoodBonus": 1
+      }
+    },
+    {
+      "id": "biodiesel",
+      "name": "Biodiésel",
+      "description": "Mejora el generador y prepara el uso futuro de vehículos.",
+      "requiresBuildings": [
+        "generador"
+      ],
+      "cost": {
+        "materials": 5
+      },
+      "devDays": 2,
+      "effects": {
+        "generatorCapacityBonus": 1
+      }
+    }
+  ],
+  "modifiers": {
+    "trackerSurvivorBonus": 10
   }
 }

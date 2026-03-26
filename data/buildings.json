@@ -6,7 +6,20 @@
     "effect": "+1 comida por día",
     "initial": true,
     "constructible": true,
-    "maxLevel": 5
+    "maxLevel": 5,
+    "category": "Base",
+    "constructionDays": 2,
+    "upgradeRequirements": {
+      "3": [
+        "pozo"
+      ]
+    },
+    "map": {
+      "left": "10%",
+      "top": "58%",
+      "width": "19%",
+      "height": "16%"
+    }
   },
   {
     "id": "atalaya",
@@ -15,7 +28,15 @@
     "effect": "+1 defensa si se usa Vigilar",
     "initial": false,
     "constructible": true,
-    "maxLevel": 5
+    "maxLevel": 5,
+    "category": "Base",
+    "constructionDays": 3,
+    "map": {
+      "left": "66%",
+      "top": "18%",
+      "width": "16%",
+      "height": "14%"
+    }
   },
   {
     "id": "muros",
@@ -24,7 +45,15 @@
     "effect": "+1 defensa pasiva",
     "initial": true,
     "constructible": true,
-    "maxLevel": 5
+    "maxLevel": 5,
+    "category": "Base",
+    "constructionDays": 3,
+    "map": {
+      "left": "36%",
+      "top": "18%",
+      "width": "26%",
+      "height": "10%"
+    }
   },
   {
     "id": "barracones",
@@ -33,7 +62,15 @@
     "effect": "4 espacios por nivel para supervivientes",
     "initial": true,
     "constructible": true,
-    "maxLevel": 5
+    "maxLevel": 5,
+    "category": "Base",
+    "constructionDays": 2,
+    "map": {
+      "left": "32%",
+      "top": "56%",
+      "width": "24%",
+      "height": "18%"
+    }
   },
   {
     "id": "taller",
@@ -42,16 +79,33 @@
     "effect": "+1 material por día. Permite fabricar objetos y mejoras",
     "initial": false,
     "constructible": true,
-    "maxLevel": 5
+    "maxLevel": 5,
+    "category": "Base",
+    "constructionDays": 3,
+    "map": {
+      "left": "70%",
+      "top": "60%",
+      "width": "18%",
+      "height": "15%"
+    }
   },
   {
     "id": "hospital",
     "name": "Hospital",
     "cost": 5,
-    "effect": "Desbloquea medicamentos e Investigar. Requiere 2 electricidad",
+    "effect": "Permite tratar heridas y usar medicamentos. Requiere desbloqueo por evento y 2 electricidad",
     "initial": false,
     "constructible": false,
-    "maxLevel": 5
+    "maxLevel": 5,
+    "category": "Base",
+    "constructionDays": 4,
+    "electricityCost": 2,
+    "map": {
+      "left": "8%",
+      "top": "20%",
+      "width": "18%",
+      "height": "14%"
+    }
   },
   {
     "id": "generador",
@@ -60,16 +114,49 @@
     "effect": "Produce electricidad: nivel 1=3, nivel 2=4, nivel 3=5",
     "initial": false,
     "constructible": false,
-    "maxLevel": 3
+    "maxLevel": 3,
+    "category": "Base",
+    "constructionDays": 2,
+    "map": {
+      "left": "78%",
+      "top": "36%",
+      "width": "14%",
+      "height": "14%"
+    }
   },
   {
     "id": "pozo",
     "name": "Pozo de Agua",
     "cost": 2,
-    "effect": "Reduce el consumo de comida en 1 por nivel por día",
+    "effect": "Requisito para mejorar el Huerto a nivel 3",
     "initial": false,
     "constructible": true,
-    "maxLevel": 3
+    "maxLevel": 1,
+    "category": "Base",
+    "constructionDays": 1,
+    "map": {
+      "left": "8%",
+      "top": "38%",
+      "width": "16%",
+      "height": "12%"
+    }
+  },
+  {
+    "id": "gallinero",
+    "name": "Gallinero",
+    "cost": 4,
+    "effect": "Produce comida según las gallinas del asentamiento",
+    "initial": false,
+    "constructible": true,
+    "maxLevel": 1,
+    "category": "Base",
+    "constructionDays": 2,
+    "map": {
+      "left": "24%",
+      "top": "34%",
+      "width": "15%",
+      "height": "12%"
+    }
   },
   {
     "id": "almacen",
@@ -78,6 +165,32 @@
     "effect": "Guarda hasta 4 objetos fabricados en el Taller",
     "initial": false,
     "constructible": true,
-    "maxLevel": 1
+    "maxLevel": 1,
+    "category": "Base",
+    "constructionDays": 2,
+    "map": {
+      "left": "58%",
+      "top": "56%",
+      "width": "14%",
+      "height": "12%"
+    }
+  },
+  {
+    "id": "cementerio",
+    "name": "⛼ Cementerio",
+    "cost": 0,
+    "effect": "Memorial para los caídos del asentamiento",
+    "initial": true,
+    "constructible": false,
+    "maxLevel": 1,
+    "category": "Base",
+    "constructionDays": 0,
+    "map": {
+      "left": "40%",
+      "top": "38%",
+      "width": "16%",
+      "height": "12%",
+      "specialStyle": "border-color:rgba(155,84,84,0.5);background:rgba(50,10,10,0.7);color:rgba(200,150,150,0.8);"
+    }
   }
 ]

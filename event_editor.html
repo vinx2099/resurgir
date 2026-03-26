@@ -681,18 +681,6 @@
               <button type="button" class="mode-btn" id="repeatYes" onclick="setRepeatable(true)">↺ Repetible</button>
             </div>
           </div>
-          <div class="field" id="scheduleModeField">
-            <label>Frecuencia repetible</label>
-            <select id="f-scheduleMode" onchange="onScheduleModeChange()">
-              <option value="normal">Normal</option>
-              <option value="every_x_plus_y">Cada X+Y días</option>
-            </select>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4;">Y será aleatorio entre -2, -1, +1 y +2 cada vez que el evento se reprograme.</div>
-          </div>
-          <div class="field" id="scheduleBaseField" style="display:none;">
-            <label>X (días base)</label>
-            <input type="number" id="f-scheduleBaseDays" value="5" min="1" max="999" />
-          </div>
           <div class="field" id="weightField">
             <label>Peso (frecuencia relativa)</label>
             <input type="number" id="f-weight" value="8" min="1" max="99" oninput="updateWeightHint(this.value)" />
@@ -775,17 +763,7 @@
           </div>
           <div class="field" id="condBuildingField" style="display:none;">
             <label>Edificio</label>
-            <select id="f-condBuilding">
-              <option value="huerto">Huerto</option>
-              <option value="atalaya">Atalaya</option>
-              <option value="muros">Muros</option>
-              <option value="barracones">Barracones</option>
-              <option value="taller">Taller</option>
-              <option value="hospital">Hospital</option>
-              <option value="generador">Generador</option>
-              <option value="pozo">Pozo de Agua</option>
-              <option value="almacen">Almacén</option>
-            </select>
+            <select id="f-condBuilding"></select>
           </div>
         </div>
 
@@ -810,12 +788,6 @@
           <input type="checkbox" id="f-skipWhenAttackActive" style="width:14px;height:14px;">
           <label for="f-skipWhenAttackActive" style="font-size:11px;color:var(--text);cursor:pointer;">
             🚫 No elegir este evento si hay una amenaza de ataque activa
-          </label>
-        </div>
-        <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
-          <input type="checkbox" id="f-blockAttackThreatWhileActive" style="width:14px;height:14px;">
-          <label for="f-blockAttackThreatWhileActive" style="font-size:11px;color:var(--text);cursor:pointer;">
-            🛡 Mientras este evento siga activo, no pueden dispararse eventos con amenaza de ataque
           </label>
         </div>
       </div>
@@ -1019,6 +991,7 @@ let events = [];
 // storyEvents merged into events (distinguished by type='story')
 let uploadedImageUrl = '';
 let hostileDefs = [];
+let buildingDefs = [];
 const dataLoadWarnings = new Map();
 function renderDataWarnings(){
   const el = document.getElementById('dataWarningBanner');
@@ -1027,7 +1000,7 @@ function renderDataWarnings(){
   const items = [...dataLoadWarnings.entries()].map(([file,msg])=>`• <strong>${file}</strong>: ${msg}`).join('<br>');
   const hint = window.location.protocol==='file:'
     ? '<br><span style="color:#ffd8a8">Estás abriendo el editor con file://. Muchos navegadores bloquean la lectura de JSON locales en ese modo. Usa un servidor local o la versión web.</span>'
-    : '<br><span style="color:#ffd8a8">Comprueba que events.json y hostiles.json existen dentro de /data y que contienen arrays JSON válidos.</span>';
+    : '<br><span style="color:#ffd8a8">Comprueba que events.json, hostiles.json y buildings.json existen dentro de /data y que contienen arrays JSON válidos.</span>';
   el.innerHTML = `<strong>ERROR DE DATOS</strong> — No se han cargado los datos correctos.<br>${items}${hint}`;
   el.style.display='block';
 }
@@ -1037,10 +1010,72 @@ const EMBEDDED_EVENTS = [];
 const EMBEDDED_HOSTILES = [];
 
 // ── BUILDINGS & RESOURCES (matching the game) ──
-const RESOURCES = ['food','materials','morale','meds','electricity'];
-const RESOURCE_LABELS = { food:'Comida', materials:'Materiales', morale:'Estabilidad (legacy)', stability:'Estabilidad', meds:'Medicamentos', electricity:'Electricidad' };
-const BUILDINGS = ['huerto','atalaya','muros','barracones','camion','hospital','generador'];
-const BUILDING_LABELS = { huerto:'Huerto', atalaya:'Atalaya', muros:'Muros', barracones:'Barracones', camion:'Camión Raider', hospital:'Hospital', generador:'Generador' };
+const RESOURCES = ['food','chickens','materials','fuel','meds','electricity'];
+const RESOURCE_LABELS = {
+  food:'Comida',
+  chickens:'Gallinas',
+  materials:'Materiales',
+  fuel:'Combustible',
+  meds:'Medicamentos',
+  electricity:'Electricidad',
+  morale:'Estabilidad (legacy)',
+  stability:'Estabilidad'
+};
+const DEFAULT_BUILDINGS = [
+  { id:'huerto', name:'Huerto', category:'Base' },
+  { id:'atalaya', name:'Atalaya', category:'Base' },
+  { id:'muros', name:'Muros', category:'Base' },
+  { id:'barracones', name:'Barracones', category:'Base' },
+  { id:'taller', name:'Taller', category:'Base' },
+  { id:'hospital', name:'Hospital', category:'Base' },
+  { id:'generador', name:'Generador', category:'Base' },
+  { id:'pozo', name:'Pozo de Agua', category:'Base' },
+  { id:'gallinero', name:'Gallinero', category:'Base' },
+  { id:'almacen', name:'Almacén', category:'Base' },
+  { id:'cementerio', name:'⛼ Cementerio', category:'Base' }
+];
+
+function getBaseBuildings(){
+  const source = (buildingDefs && buildingDefs.length ? buildingDefs : DEFAULT_BUILDINGS)
+    .filter(b => !b || !b.category || b.category === 'Base');
+  const unique = [];
+  const seen = new Set();
+  source.forEach(b => {
+    if(!b || !b.id || seen.has(b.id)) return;
+    seen.add(b.id);
+    unique.push(b);
+  });
+  return unique;
+}
+
+function getBuildingLabel(id){
+  const found = getBaseBuildings().find(b => b.id === id);
+  return found?.name || id;
+}
+
+function populateBuildingSelects(){
+  const baseBuildings = getBaseBuildings();
+  const options = baseBuildings.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  const condSelect = document.getElementById('f-condBuilding');
+  if(condSelect){
+    const current = condSelect.value;
+    condSelect.innerHTML = options;
+    if(baseBuildings.some(b => b.id === current)) condSelect.value = current;
+  }
+}
+
+function appendBuildingOptions(selectEl){
+  if(!selectEl) return;
+  const current = selectEl.value;
+  selectEl.innerHTML = '';
+  getBaseBuildings().forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.name;
+    selectEl.appendChild(opt);
+  });
+  if([...selectEl.options].some(o => o.value === current)) selectEl.value = current;
+}
 
 function populateHostileSelect(){
   const sel=document.getElementById('f-attackHostile');
@@ -1071,7 +1106,6 @@ const EFFECT_TYPES = [
   { group: '👥 Supervivientes', value: 'injureSurvivor', label: '🩸 Herir superviviente (aleatorio o por ID)' },
   { group: '👥 Supervivientes', value: 'injureExplorer', label: '🧭 Herir al explorador' },
   { group: '👥 Supervivientes', value: 'injureActionSurvivor', label: '🎯 Herir a quien realizó la acción relacionada' },
-  { group: '👥 Supervivientes', value: 'removeSurvivor', label: '👋 Despedir superviviente (por ID)' },
   { group: '⚔ Riesgo y restricciones', value: 'setAttackThreat', label: '⚔ Activar amenaza de ataque' },
   { group: '⚔ Riesgo y restricciones', value: 'limitAction', label: '🚫 Inhabilitar acción (X días)' },
   { group: '🎭 Narrativa', value: 'decide', label: '🎭 DECIDIR — el jugador elige entre opciones personalizadas' },
@@ -1342,18 +1376,10 @@ function updateEffectRowFields(row, type) {
     p1.style.display = '';
     amt.style.display = '';
     amt.placeholder = 'Días';
-    BUILDINGS.forEach(b => {
-      const o = document.createElement('option');
-      o.value = b; o.textContent = BUILDING_LABELS[b];
-      p1.appendChild(o);
-    });
+    appendBuildingOptions(p1);
   } else if (type === 'destroyBuilding') {
     p1.style.display = '';
-    BUILDINGS.forEach(b => {
-      const o = document.createElement('option');
-      o.value = b; o.textContent = BUILDING_LABELS[b];
-      p1.appendChild(o);
-    });
+    appendBuildingOptions(p1);
   } else if (type === 'addSurvivor') {
     p1.style.display = '';
     const any = document.createElement('option');
@@ -1388,19 +1414,7 @@ function updateEffectRowFields(row, type) {
       p2.value = 'simple';
     }
   } else if (type === 'injureExplorer') {
-    p1.style.display = '';
-    [
-      ['simple', 'Herida simple'],
-      ['seria', 'Herida seria'],
-      ['grave', 'Herida grave'],
-      ['random', 'Aleatorio (50% simple · 35% seria · 15% grave)'],
-    ].forEach(([value, label]) => {
-      const opt = document.createElement('option');
-      opt.value = value;
-      opt.textContent = label;
-      p1.appendChild(opt);
-    });
-    p1.value = 'random';
+    // No params — always targets the survivor who triggered the explore event
   } else if (type === 'injureActionSurvivor') {
     p1.style.display = '';
     [
@@ -1430,12 +1444,6 @@ function updateEffectRowFields(row, type) {
       p2.appendChild(opt);
     });
     p2.value = '';
-  } else if (type === 'removeSurvivor') {
-    p1.style.display = '';
-    const oById = document.createElement('option');
-    oById.value = '__by_id__'; oById.textContent = 'Elegir por ID…';
-    p1.appendChild(oById);
-    p1.value = '__by_id__';
   } else if (type === 'decide') {
     // Build dynamic decide option boxes
     const wrapper = document.createElement('div');
@@ -1457,9 +1465,7 @@ function updateEffectRowFields(row, type) {
     addDecideOption(wrapper);
   } else if (type === 'unlockBuilding') {
     p1.style.display = '';
-    ['huerto','atalaya','muros','barracones','taller','hospital','generador','pozo','almacen'].forEach(b=>{
-      const o=document.createElement('option'); o.value=b; o.textContent=b.charAt(0).toUpperCase()+b.slice(1); p1.appendChild(o);
-    });
+    appendBuildingOptions(p1);
   } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
     amt.style.display = '';
     amt.placeholder = type === 'stabilityChange' ? 'Cantidad (+/-)' : 'Moral +/- (ej: 1 o -1)';
@@ -1580,17 +1586,11 @@ function readEffectRows(containerId) {
       if (p1.value === '__by_id__' && row.dataset.customTargetId) effect.targetId = row.dataset.customTargetId;
       if (type === 'healSurvivor') effect.injuryLevel = p2.value || 'simple';
     } else if (type === 'injureExplorer') {
-      effect.injuryLevel = p1.value || 'random';
+      // no extra params
     } else if (type === 'injureActionSurvivor') {
       if (p1.value && p1.value !== 'related') effect.action = p1.value;
       if (p2.value) effect.injuryLevel = p2.value;
-    } else if (type === 'removeSurvivor') {
-    p1.style.display = '';
-    const oById = document.createElement('option');
-    oById.value = '__by_id__'; oById.textContent = 'Elegir por ID…';
-    p1.appendChild(oById);
-    p1.value = '__by_id__';
-  } else if (type === 'decide') {
+    } else if (type === 'decide') {
       effect.options = readDecideOptions(row);
     } else if (type === 'unlockBuilding') {
       effect.building = p1.value;
@@ -1625,15 +1625,14 @@ function effectToString(e) {
   if (e.type === 'addFatigue') return `😮 +${e.amount} fatiga (${e.targetId||'aleatorio'})`;
   if (e.type === 'removeFatigue') return `😌 -${e.amount} fatiga (${e.targetId||'aleatorio'})`;
   if (e.type === 'fatigueAll') return `⚡ Fatiga todos ${e.amount>0?'+':''}${e.amount}`;
-  if (e.type === 'disableBuilding') return `🚧 Inhabilitar ${BUILDING_LABELS[e.building]||e.building} ${e.days}d`;
-  if (e.type === 'destroyBuilding') return `💥 Destruir ${BUILDING_LABELS[e.building]||e.building}`;
+  if (e.type === 'disableBuilding') return `🚧 Inhabilitar ${getBuildingLabel(e.building)} ${e.days}d`;
+  if (e.type === 'destroyBuilding') return `💥 Destruir ${getBuildingLabel(e.building)}`;
   if (e.type === 'addSurvivorRandom') return `🎲 Nuevo superviviente totalmente aleatorio`;
   if (e.type === 'addSurvivor' || e.type === 'addSurvivorByRarity') return `🧲 Nuevo superviviente (rareza ${e.rarity})`;
   if (e.type === 'healSurvivor') return `Curar herida ${(e.injuryLevel||'simple')} (${e.targetId||'aleatorio'})`;
   if (e.type === 'injureSurvivor') return `Herir superviviente (${e.targetId||'aleatorio'})`;
-  if (e.type === 'injureExplorer') return `🩸 Herir al explorador${e.injuryLevel?` [${e.injuryLevel}]`:''}`;
+  if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
   if (e.type === 'injureActionSurvivor') return `🩸 Herir por acción (${e.action||'relacionada'})${e.injuryLevel?` [${e.injuryLevel}]`:''}`;
-  if (e.type === 'removeSurvivor') return `👋 Despedir superviviente (${e.targetId||'ID obligatorio'})`;
   if (e.type === 'setAttackThreat') {
     const hostile = e.hostileType==='random'
       ? 'hostil aleatorio'
@@ -1664,12 +1663,9 @@ function buildEventObject() {
   const dayMin = Number(document.getElementById('f-dayMin')?.value||0) || undefined;
   const dayMax = Number(document.getElementById('f-dayMax')?.value||0) || undefined;
   const relatedAction = document.getElementById('f-relatedAction')?.value || '';
-  const scheduleMode = document.getElementById('f-scheduleMode')?.value || 'normal';
-  const scheduleBaseDays = Math.max(1, Number(document.getElementById('f-scheduleBaseDays')?.value||0) || 5);
   let condition=readCondition();
   const dayRangeConds=[];
   const skipWhenAttackActive = document.getElementById('f-skipWhenAttackActive')?.checked || false;
-  const blockAttackThreatWhileActive = document.getElementById('f-blockAttackThreatWhileActive')?.checked || false;
   if(dayMin!==undefined) dayRangeConds.push({type:'day_min',value:dayMin});
   if(dayMax!==undefined) dayRangeConds.push({type:'day_max',value:dayMax});
   if(dayRangeConds.length){
@@ -1683,12 +1679,10 @@ function buildEventObject() {
   if(condition) ev.condition=condition;
   if(priority) ev.priority=true;
   if(skipWhenAttackActive) ev.skipWhenAttackActive=true;
-  if(blockAttackThreatWhileActive) ev.blockAttackThreatWhileActive=true;
   if(week!==undefined) ev.week=week;
   if(day!==undefined)  ev.day=day;
   if(relatedAction) ev.relatedAction=relatedAction;
-  if(isRepeatable || scheduleMode==='every_x_plus_y') ev.repeatable=true;
-  if(scheduleMode==='every_x_plus_y') ev.schedule={mode:'every_x_plus_y',baseDays:scheduleBaseDays,jitter:[-2,-1,1,2]};
+  if(isRepeatable) ev.repeatable=true;
 
   if (mode === 'direct') {
     ev.choiceMode = 'direct';
@@ -1795,8 +1789,6 @@ function updatePreview() {
   const actionStr = ev.relatedAction ? `  ·  Relacionado con: ${ev.relatedAction}` : '';
   const repeatStr = ev.repeatable ? '  ·  ↺ Repetible' : '';
   const skipAttackStr = ev.skipWhenAttackActive ? '  ·  🚫 con ataque activo' : '';
-  const blockThreatStr = ev.blockAttackThreatWhileActive ? '  ·  🛡 bloquea amenazas' : '';
-  const scheduleStr = ev.schedule?.mode==='every_x_plus_y' ? `  ·  ⏱ cada ${ev.schedule.baseDays}+Y días` : '';
   const rangeFromCond=(cond,type)=>cond?.type===type?cond.value:undefined;
   const extractRange=(cond)=>{
     if(!cond) return {};
@@ -1810,7 +1802,7 @@ function updatePreview() {
   const range=extractRange(ev.condition);
   const rangeStr=(range.min||range.max)?`  ·  Rango: ${range.min?`día ${range.min}`:'inicio'}-${range.max?`día ${range.max}`:'sin tope'}`:'';
   document.getElementById('previewMeta').textContent =
-    `ID: ${ev.id || '—'}  ·  ${typeStr}  ·  ${ev.type!=='weekly'?'Peso: '+ev.weight+'  ·  ':''}Duración: ${ev.days}d${rangeStr}${actionStr}${repeatStr}${scheduleStr}${skipAttackStr}${blockThreatStr}`;
+    `ID: ${ev.id || '—'}  ·  ${typeStr}  ·  ${ev.type!=='weekly'?'Peso: '+ev.weight+'  ·  ':''}Duración: ${ev.days}d${rangeStr}${actionStr}${repeatStr}${skipAttackStr}`;
 
   // JSON output
   document.getElementById('currentJsonOutput').textContent = JSON.stringify(ev, null, 2);
@@ -1904,7 +1896,7 @@ function onTypeChange(){
 }
 
 // ── ALL FORM INPUTS → PREVIEW ──
-['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-week','f-day','f-dayMin','f-dayMax','f-relatedAction','f-scheduleMode','f-scheduleBaseDays'].forEach(id => {
+['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-week','f-day','f-dayMin','f-dayMax','f-relatedAction'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', updatePreview);
 });
@@ -1916,10 +1908,6 @@ if(attackStrengthInput) attackStrengthInput.addEventListener('input', updatePrev
     el.addEventListener('change', updatePreview);
     el.addEventListener('input', updatePreview);
   }
-});
-['f-priority','f-skipWhenAttackActive','f-blockAttackThreatWhileActive'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(el) el.addEventListener('change', updatePreview);
 });
 
 // ── ADD EVENT ──
@@ -1984,7 +1972,7 @@ function renderEventList() {
     const typeTag = ev.type==='weekly' ? `📅 Semanal (semana ${ev.week||'?'})` : ev.type==='explore'?'🗺 Exploración':'📋 Diario';
     const actionTag = ev.relatedAction ? `  ·  ⚡ ${ev.relatedAction}` : '';
     const repeatTag = ev.repeatable ? '  ·  ↺' : '';
-    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  ${typeTag}  ·  ${modeTag}  ·  ${effectCount}  ·  ${ev.days}d${ev.type!=='weekly'?' · peso '+ev.weight:''}${actionTag}${repeatTag}${ev.schedule?.mode==='every_x_plus_y'?' · cada '+ev.schedule.baseDays+'+Yd':''}${ev.skipWhenAttackActive?' · 🚫 con ataque':''}${ev.blockAttackThreatWhileActive?' · 🛡 bloquea amenazas':''}</div>`;
+    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  ${typeTag}  ·  ${modeTag}  ·  ${effectCount}  ·  ${ev.days}d${ev.type!=='weekly'?' · peso '+ev.weight:''}${actionTag}${repeatTag}</div>`;
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn';
@@ -2041,7 +2029,7 @@ function renderEventList() {
     const effectCount = ev.choiceMode === 'direct'
       ? (ev.effects?.length || 0) + ' efecto(s)'
       : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0} · C: ${ev.options?.C?.effects?.length||0}`;
-    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  📅 Día ${ev.day}  ·  ${modeTag}  ·  ${effectCount}${ev.schedule?.mode==='every_x_plus_y'?' · cada '+ev.schedule.baseDays+'+Yd':''}${ev.skipWhenAttackActive?' · 🚫 con ataque':''}${ev.blockAttackThreatWhileActive?' · 🛡 bloquea amenazas':''}</div>`;
+    info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  📅 Día ${ev.day}  ·  ${modeTag}  ·  ${effectCount}</div>`;
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn'; editBtn.style.cssText = 'font-size:11px;padding:6px 10px;';
@@ -2079,11 +2067,7 @@ function loadEventForEditing(idx) {
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = dayMax??'';
   loadConditionIntoUI(condition);
   if(document.getElementById('f-relatedAction')) document.getElementById('f-relatedAction').value = ev.relatedAction || '';
-  if(document.getElementById('f-scheduleMode')) document.getElementById('f-scheduleMode').value = ev.schedule?.mode || 'normal';
-  if(document.getElementById('f-scheduleBaseDays')) document.getElementById('f-scheduleBaseDays').value = ev.schedule?.baseDays || 5;
   if(document.getElementById('f-skipWhenAttackActive')) document.getElementById('f-skipWhenAttackActive').checked = !!ev.skipWhenAttackActive;
-  if(document.getElementById('f-blockAttackThreatWhileActive')) document.getElementById('f-blockAttackThreatWhileActive').checked = !!ev.blockAttackThreatWhileActive;
-  onScheduleModeChange();
   setRepeatable(!!ev.repeatable);
   onTypeChange();
 
@@ -2166,8 +2150,6 @@ function loadStoryEventForEditing(idx) {
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = '';
   loadConditionIntoUI(ev.condition);
   if(document.getElementById('f-skipWhenAttackActive')) document.getElementById('f-skipWhenAttackActive').checked = !!ev.skipWhenAttackActive;
-  if(document.getElementById('f-blockAttackThreatWhileActive')) document.getElementById('f-blockAttackThreatWhileActive').checked = !!ev.blockAttackThreatWhileActive;
-  onScheduleModeChange();
   setRepeatable(!!ev.repeatable);
   onTypeChange();
 
@@ -2222,7 +2204,6 @@ function loadEffectIntoRow(row, eff) {
   if (eff.type === 'addResource' || eff.type === 'removeResource') uiType = 'modifyResource';
   else if (eff.type === 'addFatigue' || eff.type === 'removeFatigue') uiType = 'modifyFatigue';
   else if (eff.type === 'addSurvivorByRarity' || eff.type === 'addSurvivorRandom') uiType = 'addSurvivor';
-  else if (eff.type === 'removeSurvivor') uiType = 'removeSurvivor';
 
   typeSelect.value = uiType;
   updateEffectRowFields(row, uiType);
@@ -2259,18 +2240,9 @@ function loadEffectIntoRow(row, eff) {
     if (eff.type === 'healSurvivor' && p2) {
       p2.value = eff.injuryLevel || 'simple';
     }
-  } else if (eff.type === 'injureExplorer') {
-    p1.value = eff.injuryLevel || 'random';
   } else if (eff.type === 'injureActionSurvivor') {
     p1.value = eff.action || 'related';
     if (p2) p2.value = eff.injuryLevel || '';
-  } else if (eff.type === 'removeSurvivor') {
-    if (eff.targetId) {
-      row.dataset.customTargetId = eff.targetId;
-      const byIdOpt = [...p1.options].find(o => o.value === '__by_id__');
-      if (byIdOpt) byIdOpt.textContent = `Por ID: ${eff.targetId}`;
-      p1.value = '__by_id__';
-    }
   } else if (eff.type === 'limitAction') {
     p1.value = eff.action || 'forraje';
     amt.value = eff.days || 1;
@@ -2295,8 +2267,6 @@ function clearForm() {
   });
   document.getElementById('f-days').value = 1;
   document.getElementById('f-weight').value = 8;
-  if(document.getElementById('f-scheduleMode')) document.getElementById('f-scheduleMode').value = 'normal';
-  if(document.getElementById('f-scheduleBaseDays')) document.getElementById('f-scheduleBaseDays').value = 5;
   if(document.getElementById('f-day')) document.getElementById('f-day').value = 7;
   if(document.getElementById('f-dayMin')) document.getElementById('f-dayMin').value = '';
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = '';
@@ -2308,9 +2278,6 @@ function clearForm() {
   if(document.getElementById('f-condId')) document.getElementById('f-condId').value='';
   if(document.getElementById('f-priority')) document.getElementById('f-priority').checked=false;
   if(document.getElementById('f-skipWhenAttackActive')) document.getElementById('f-skipWhenAttackActive').checked=false;
-  if(document.getElementById('f-blockAttackThreatWhileActive')) document.getElementById('f-blockAttackThreatWhileActive').checked=false;
-  if(document.getElementById('f-scheduleMode')) document.getElementById('f-scheduleMode').value='normal';
-  if(document.getElementById('f-scheduleBaseDays')) document.getElementById('f-scheduleBaseDays').value=5;
   if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = 'random';
   if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
   if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';
@@ -2414,6 +2381,7 @@ function showToast(msg, isErr = false) {
 // ── INIT ──
 updateWeightHint(8);
 setRepeatable(false);
+populateBuildingSelects();
 populateHostileSelect();
 updatePreview();
 
@@ -2459,6 +2427,24 @@ async function autoLoadFromServer() {
   } catch(e) {
     setDataWarning('hostiles.json', e?.message || 'No se pudo cargar');
     populateHostileSelect();
+    updatePreview();
+  }
+
+  try {
+    const resBuildings = await fetch('./data/buildings.json');
+    if (!resBuildings.ok) throw new Error(`HTTP ${resBuildings.status}`);
+    const incomingBuildings = await resBuildings.json();
+    if (Array.isArray(incomingBuildings)) {
+      buildingDefs = incomingBuildings;
+      clearDataWarning('buildings.json');
+      populateBuildingSelects();
+      updatePreview();
+    } else {
+      throw new Error('buildings.json no contiene un array');
+    }
+  } catch(e) {
+    setDataWarning('buildings.json', e?.message || 'No se pudo cargar');
+    populateBuildingSelects();
     updatePreview();
   }
 }

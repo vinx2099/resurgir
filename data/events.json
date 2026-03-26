@@ -60,7 +60,7 @@
     "id": "sabotaje",
     "name": "Sabotaje",
     "image": "https://i.ibb.co/v0S0SvC/sabotaje.jpg",
-    "text": "EVENTO que debe salir con Generador funcionando (Añadir condición IF)",
+    "text": "Alguien ha manipulado el generador durante la noche. Chispazos, humo y gritos en la oscuridad: el sabotaje ha sido intencionado.",
     "days": 1,
     "weight": 8,
     "type": "city",
@@ -74,7 +74,12 @@
         "type": "destroyBuilding",
         "building": "generador"
       }
-    ]
+    ],
+    "condition": {
+      "type": "building",
+      "id": "generador"
+    },
+    "skipWhenAttackActive": true
   },
   {
     "id": "semanal_2",
@@ -179,7 +184,7 @@
     "id": "noche_tranquila",
     "name": "Noche tranquila",
     "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
-    "text": "Por una vez, todo está en calma. El grupo aprovecha para descansar y recuperar fuerzas. (HACER CONDICION ALL)",
+    "text": "Por una vez, todo está en calma. El grupo aprovecha para descansar y recuperar fuerzas.",
     "days": 1,
     "weight": 9,
     "type": "city",
@@ -188,13 +193,14 @@
     "effects": [
       {
         "type": "fatigueAll",
-        "amount": 1
+        "amount": -1
       },
       {
         "type": "healSurvivor",
         "target": "random"
       }
-    ]
+    ],
+    "skipWhenAttackActive": true
   },
   {
     "id": "fanatic_cerca",
@@ -233,7 +239,8 @@
           }
         ]
       }
-    ]
+    ],
+    "skipWhenAttackActive": true
   },
   {
     "id": "raiders_cerca",
@@ -280,7 +287,8 @@
           }
         ]
       }
-    ]
+    ],
+    "skipWhenAttackActive": true
   },
   {
     "id": "explore_comida",
@@ -427,31 +435,25 @@
         "effects": [
           {
             "type": "setAttackThreat",
+            "hostileType": "random",
             "arrivalDays": 1,
-            "attackStrength": 3,
+            "combatPopupVictory": {
+              "text": "El sótano escondía más cajas de las esperadas. El riesgo ha merecido la pena."
+            },
+            "combatPopupDefeat": {
+              "text": "El ruido ha atraído problemas. Se ha pagado caro rebuscar más de la cuenta."
+            },
             "effectOnDefeat": [
               {
-                "type": "injureExplorer"
-              },
-              {
-                "type": "addResource",
-                "resource": "food",
-                "amount": 1
+                "type": "injureExplorer",
+                "injuryLevel": "seria"
               }
             ]
           },
           {
             "type": "addResource",
-            "resource": "food",
-            "amount": 2
-          },
-          {
-            "type": "addResource",
             "resource": "meds",
             "amount": 2
-          },
-          {
-            "type": "injureExplorer"
           },
           {
             "type": "addResource",
@@ -484,7 +486,7 @@
       },
       {
         "type": "disableBuilding",
-        "building": "camion",
+        "building": "taller",
         "days": 1
       }
     ]
@@ -581,9 +583,6 @@
         "label": "Acogerlos (+2 Supervivientes)",
         "effects": [
           {
-            "type": ""
-          },
-          {
             "type": "stabilityChange",
             "amount": 2
           },
@@ -657,5 +656,195 @@
         "effectOnDefeat": []
       }
     ]
+  },
+  {
+    "id": "combustible_olvidado",
+    "name": "Bidones olvidados",
+    "image": "",
+    "text": "{survivor} encuentra dos garrafas todavía selladas bajo una lona mugrienta. Huelen fatal, pero el combustible sigue siendo útil.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "fuel",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "gallinas_errantes",
+    "name": "Gallinas errantes",
+    "image": "",
+    "text": "Entre chatarra y maleza, {survivor} localiza un pequeño gallinero destrozado. Un par de gallinas siguen vivas y corretean sin rumbo.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Atraparlas y traerlas a la base",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "chickens",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Matar una para comer hoy",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "cables_rebuscados",
+    "name": "Bobinas de cobre",
+    "image": "",
+    "text": "En una nave saqueada quedan restos de cableado y piezas eléctricas. No es mucho, pero podría sacar al asentamiento de un apuro.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "electricity",
+        "amount": 1
+      },
+      {
+        "type": "addResource",
+        "resource": "materials",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "fiebre_en_barracones",
+    "name": "Fiebre en barracones",
+    "image": "",
+    "text": "Una noche sofocante y la falta de higiene pasan factura. Varios supervivientes amanecen agotados y el humor del campamento se resiente.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "skipWhenAttackActive": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Gastar medicinas para controlarlo",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Aguantar y racionar esfuerzos",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "discusion_turnos",
+    "name": "Discusión por los turnos",
+    "image": "",
+    "text": "La tensión por el reparto de tareas estalla en plena cena. Dos supervivientes casi llegan a las manos y el resto observa en silencio.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "skipWhenAttackActive": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Ceder y darles una noche libre",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          }
+        ]
+      },
+      "B": {
+        "label": "Imponer disciplina",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "familia_en_la_carretera",
+    "name": "Familia en la carretera",
+    "image": "",
+    "text": "{survivor} se cruza con una pequeña familia escondida en una furgoneta. Llevan días sobreviviendo con lo puesto y dudan de cualquiera que se acerque.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Ofrecer comida y convencerlos",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addSurvivorRandom"
+          }
+        ]
+      },
+      "B": {
+        "label": "Seguir de largo",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
   }
 ]

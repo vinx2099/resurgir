@@ -201,7 +201,6 @@ const RISK_LEVELS = [
 ];
 const RISK_NAMES = ['Seguro','Bajo','Medio','Alto','Extremo'];
 
-const EMBEDDED_ZONES = [{"id":"outskirts","name":"Afueras del asentamiento","description":"Las calles más cercanas al campamento. Saqueadas pero relativamente seguras. Aquí empezó todo.","flavor":"El polvo cubre las aceras. Algún cartel publicitario todavía resiste, como si el mundo no hubiera terminado.","unlockDay":1,"slots":[{"riskLevel":0,"count":2},{"riskLevel":1,"count":2},{"riskLevel":2,"count":1}]},{"id":"industrial","name":"Zona Industrial","description":"Almacenes y fábricas abandonadas. Mucho material, pero los grupos hostiles también lo saben.","flavor":"Las chimeneas ya no humean. El silencio de las naves industriales tiene algo perturbador.","unlockDay":7,"slots":[{"riskLevel":1,"count":1},{"riskLevel":2,"count":2},{"riskLevel":3,"count":2},{"riskLevel":0,"count":1}]},{"id":"manhunters","name":"Territorio de Cazadores","description":"Una zona controlada por grupos organizados y peligrosos. Entrar aquí requiere valentía o desesperación.","flavor":"Cráneos en los postes. Marcas en las paredes. Alguien quiere que sepas que este territorio tiene dueño.","unlockDay":14,"slots":[{"riskLevel":0,"count":1},{"riskLevel":2,"count":2},{"riskLevel":3,"count":2},{"riskLevel":4,"count":1}]},{"id":"suburbs","name":"Barrio Residencial","description":"Casas y tiendas de barrio. Más comida que materiales, y a veces supervivientes escondidos.","flavor":"Juguetes en la calle. Fotos de familia tiradas. Este lugar recuerda demasiado a lo que fue.","unlockDay":5,"slots":[{"riskLevel":0,"count":3},{"riskLevel":1,"count":2},{"riskLevel":2,"count":1}]},{"id":"deadzone","name":"Zona Muerta","description":"Nadie sabe exactamente qué pasó aquí. Pocos entran. Menos vuelven.","flavor":"El cielo tiene un color extraño sobre este sector. Los pájaros no se acercan.","unlockDay":21,"slots":[{"riskLevel":2,"count":1},{"riskLevel":3,"count":2},{"riskLevel":4,"count":3}]}];
 const state = { zones: [], editingId: null, slotCounts: [0,0,0,0,0] };
 
 function uid(){ return 'zone_'+Math.random().toString(36).slice(2,8); }
@@ -378,14 +377,7 @@ async function autoLoad(){
     if(!Array.isArray(data)) return;
     data.forEach(z=>{ if(!state.zones.find(x=>x.id===z.id)) state.zones.push(z); });
     render(); showToast(`${data.length} zonas cargadas desde /data/ ✓`);
-  } catch(e){
-    if(!state.zones.length && Array.isArray(EMBEDDED_ZONES) && EMBEDDED_ZONES.length){
-      EMBEDDED_ZONES.forEach(z=>{ if(!state.zones.find(x=>x.id===z.id)) state.zones.push(z); });
-      render();
-      showToast(`${state.zones.length} zonas cargadas (fallback embebido) ✓`);
-      return;
-    }
-  }
+  } catch(e){}
 }
 
 $('saveBtn').addEventListener('click',saveZone);
