@@ -2049,39 +2049,40 @@ function renderBuildings(){
   });
 }
 
-function renderLog(){
-  const el=document.getElementById('log');
-  if(!el) return;
-  el.innerHTML = state.log.map(l=>{
-    let cls='';
-    if(l.includes('forraje')) cls='log-forraje';
-    else if(l.includes('recicla')) cls='log-reciclar';
-    else if(l.includes('constru')) cls='log-construir';
-    else if(l.includes('explor')) cls='log-explorar';
-    else if(l.includes('descans')) cls='log-descansar';
-    else if(l.includes('ataca')) cls='log-atacar';
-    return `<div class="${cls}">${l}</div>`;
-  }).join('');
+
+function formatLogLine(line){
+  let safe=escapeHtml(String(line||''));
+  safe=safe.replace(/(\+\d+)/g,'<span class="log-positive">$1</span>');
+  safe=safe.replace(/(^|[\s(])(-\d+)(?=[\s).,]|$)/g,'$1<span class="log-negative">$2</span>');
+  safe=safe.replace(/\b(forrajea|recicla|construye|construyendo|explora|descansa|ataca|defiende|investiga|viaja|saquea|desarrolla|vigila)\b/gi,'<span class="log-action">$1</span>');
+  return safe;
 }
+
+function renderLog(){
+  const logBox=document.getElementById('log');
+  if(!logBox) return;
   let html='';
   let lastDay=null;
   state.log.forEach(x=>{
-    // Extract day number from "Día N: ..."
-    const dayMatch=x.match(/^Día (\d+):/);
+    const dayMatch=String(x).match(/^Día (\d+):/);
     const day=dayMatch?Number(dayMatch[1]):null;
-    if(day!==null&&day!==lastDay){
+    if(day!==null && day!==lastDay){
       html+=`<div class="log-day-separator">Día ${day}</div>`;
       lastDay=day;
     }
     let cls='log-entry';
-    const t=x.toLowerCase();
-    if(x.includes('💀')||t.includes('muere')||t.includes('muerto')||t.includes('fallece')) cls+=' log-muerto';
-    else if(x.includes('🩸')||t.includes('herido')) cls+=' log-herido';
-    else if(x.startsWith('★')) cls+=' log-skill';
-    else if(x.includes('🗺')) cls+=' log-explore';
-    // Strip "Día N: " prefix since the separator already shows it
-    const text=x.replace(/^Día \d+: /,'');
-    html+=`<div class="${cls}">${escapeHtml(text)}</div>`;
+    const t=String(x).toLowerCase();
+    if(String(x).includes('💀')||t.includes('muere')||t.includes('muerto')||t.includes('fallece')) cls+=' log-muerto';
+    else if(String(x).includes('🩸')||t.includes('herido')) cls+=' log-herido';
+    else if(String(x).startsWith('★')) cls+=' log-skill';
+    else if(String(x).includes('🧭')) cls+=' log-explore';
+    else if(t.includes('forraje')) cls+=' log-forraje';
+    else if(t.includes('recicla')) cls+=' log-reciclar';
+    else if(t.includes('constru')) cls+=' log-construir';
+    else if(t.includes('descans')) cls+=' log-descansar';
+    else if(t.includes('ataca')||t.includes('emboscada')||t.includes('combate')) cls+=' log-atacar';
+    const plainText=String(x).replace(/^Día \d+: /,'');
+    html+=`<div class="${cls}">${formatLogLine(plainText)}</div>`;
   });
   logBox.innerHTML=html;
 }
