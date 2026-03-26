@@ -1814,6 +1814,7 @@ function initGame(){
   if(bdp) bdp.style.display='none';
   closeEvent();
   render();
+  try{ renderLog(); }catch(e){}
   return true;
 }
 
@@ -3454,6 +3455,23 @@ function getTechnicalLogText(){
   return lines.join('\n');
 }
 
+
+function bindTechnicalLogControls(){
+  const modal = document.getElementById('technicalLogModal');
+  const closeIds = ['closeTechnicalLogBtn','closeTechnicalLogBtnFooter'];
+  closeIds.forEach(id=>{
+    const btn = document.getElementById(id);
+    if(btn){
+      btn.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); closeTechnicalLogModal(); };
+    }
+  });
+  if(modal){
+    modal.onclick = (e)=>{
+      if(e.target === modal) closeTechnicalLogModal();
+    };
+  }
+}
+
 function openTechnicalLogModal(){
   const modal = document.getElementById('technicalLogModal');
   const box = document.getElementById('technicalLogText');
@@ -3462,7 +3480,8 @@ function openTechnicalLogModal(){
 }
 
 function closeTechnicalLogModal(){
-  document.getElementById('technicalLogModal')?.classList.remove('open');
+  const modal = document.getElementById('technicalLogModal');
+  if(modal) modal.classList.remove('open');
 }
 
 async function copyTechnicalLog(){
@@ -6046,7 +6065,11 @@ function _doKill(s, msg){
   addLog(deathMsg);
   addTechnicalLog('survivor_dead','Un superviviente ha muerto.', {survivorId:s.id,survivorName:s.name,message:deathMsg});
 }
-function addLog(text){state.log.unshift(`Día ${state.day}: ${text}`);state.log=state.log.slice(0,80)}
+function addLog(text){
+  state.log.unshift(`Día ${state.day}: ${text}`);
+  state.log = state.log.slice(0, 80);
+  try{ renderLog(); }catch(e){}
+}: ${text}`);state.log=state.log.slice(0,80)}
 function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No queda ningún superviviente con vida.');if(state.stability<=0)return openGameOver('La estabilidad del asentamiento ha caído a cero. El grupo se disuelve.')}
 function openGameOver(text){document.getElementById('gameOverText').textContent=text;gameOverWrap.classList.add('open')}
 function getBuildingCost(buildingId){const b=state.buildings[buildingId];const base=Number(b?.cost||0);const level=Number(b?.level||0);return Math.ceil(base*Math.pow(2,level))}
@@ -6566,6 +6589,12 @@ document.addEventListener('click',e=>{
     });
     document.getElementById('multiTreatmentPopup').classList.remove('open');
   }
+});
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  try{ bindTechnicalLogControls(); }catch(e){}
+  try{ renderLog(); }catch(e){}
 });
 
 </script>
