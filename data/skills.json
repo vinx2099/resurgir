@@ -1,0 +1,62 @@
+[
+  {
+    "id": "ingeniero",
+    "name": "Ingeniero",
+    "label": "⚙ Ingeniero — edificios -1 recurso",
+    "description": "Reduce en 1 el coste de materiales al construir o mejorar edificios."
+  },
+  {
+    "id": "explorador",
+    "name": "Explorador",
+    "label": "🗺 Explorador — +10% eventos positivos",
+    "description": "Reduce ligeramente la probabilidad de sucesos negativos al explorar."
+  },
+  {
+    "id": "precavido",
+    "name": "Precavido",
+    "label": "🛡 Precavido — -10% eventos negativos",
+    "description": "Reduce el riesgo de encontrarse problemas al explorar."
+  },
+  {
+    "id": "rastreador",
+    "name": "Rastreador",
+    "label": "👁 Rastreador — mejora la probabilidad de encontrar supervivientes",
+    "description": "Aumenta la probabilidad de que al explorar aparezcan eventos de encontrar supervivientes."
+  },
+  {
+    "id": "inventor",
+    "name": "Inventor",
+    "label": "💡 Inventor — desarrollo de mejoras -1 día",
+    "description": "Reduce en 1 día el tiempo de desarrollo de una mejora de base."
+  },
+  {
+    "id": "recolector",
+    "name": "Recolector",
+    "label": "📦 Recolector — +1 recurso al explorar",
+    "description": "Cuando encuentra recursos explorando, obtiene 1 unidad adicional."
+  },
+  {
+    "id": "cazador",
+    "name": "Cazador",
+    "label": "🏹 Cazador — +1 comida al explorar",
+    "description": "Cuando obtiene comida explorando, suma 1 adicional."
+  },
+  {
+    "id": "chatarrero",
+    "name": "Chatarrero",
+    "label": "🧰 Chatarrero — +1 material al reciclar",
+    "description": "Obtiene 1 material extra al realizar la acción de reciclar."
+  },
+  {
+    "id": "combatiente",
+    "name": "Combatiente",
+    "label": "⚔ Combatiente — +1 en combate",
+    "description": "Aporta +1 en acciones de ataque preventivo y defensa."
+  },
+  {
+    "id": "ninguna",
+    "name": "Ninguna",
+    "label": "—",
+    "description": "Sin habilidad especial."
+  }
+]
