@@ -1006,6 +1006,19 @@
 }
 .small-btn:hover{border-color:var(--accent);color:#fff}
 
+
+.log-forraje{color:#6bd968;}
+.log-reciclar{color:#c9a86a;}
+.log-construir{color:#e0e06b;}
+.log-explorar{color:#6bb6ff;}
+.log-descansar{color:#9aa0a6;}
+.log-atacar{color:#ff6b6b;}
+
+
+.log-positive{color:var(--ok-bright);font-weight:700;}
+.log-negative{color:var(--danger-bright);font-weight:700;}
+.log-action{color:var(--amber-bright);font-weight:700;}
+
 </style>
 </head>
 <body>
@@ -1328,7 +1341,7 @@
 <script>
 
 const gameData={events:[],story_events:[],survivors:[],buildings:[],config:null,locationTemplates:[],hostiles:[],zones:[]};
-const state={day:1,food:0,materials:0,stability:5,meds:1,fuel:3,electricity:0,chickens:0,unlocked:{meds:true,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,baseUpgrades:{electric_fence:false,auto_irrigation:false,biodiesel:false},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0,fuel:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null,eventSchedule:{},baseUpgradeProjects:{},technicalLog:[]};
+const state={day:1,food:0,materials:0,stability:5,meds:1,fuel:3,electricity:0,chickens:0,unlocked:{meds:true,electricity:false},electricityCapacity:0,electricityUsed:0,hospitalUnlocked:false,vallaElectrica:false,baseUpgrades:{electric_fence:false,auto_irrigation:false,biodiesel:false},attackThreat:false,attackHostileType:"raiders",attackStrength:3,attackArrivalDay:0,attackEffectVictory:[],attackEffectDefeat:[],attackPopupVictory:null,attackPopupDefeat:null,pendingEvent:null,eventDaysLeft:0,eventTotalDays:1,_activeMultiDayEvent:null,_lastDayActions:{},seenEvents:new Set(),cemetery:[],actionXP:{},inventory:[],locations:[],activeZone:null,camp:{food:0,materials:0,meds:0,fuel:0},_processingDay:false,survivors:[],buildings:{},delayedQueue:[],actionLimits:{},_queuedEventSchemas:[],log:[],currentDetail:null,_pendingTreatmentQueue:null,_currentTreatmentSurvivorId:null,eventSchedule:{},baseUpgradeProjects:{},technicalLog:[],departureQueue:[]};
 const dataLoadState={errors:[],loaded:[]};
 let activeMapTab='base';
 
@@ -1339,6 +1352,7 @@ document.getElementById('endDayBtn').addEventListener('click',endDay);
 document.getElementById('resetAssignmentsBtn').addEventListener('click',resetAssignments);
 document.getElementById('closeBuildModal').addEventListener('click',()=>buildModalWrap.classList.remove('open'));
 document.getElementById('closeBaseUpgradesModal').addEventListener('click',()=>document.getElementById('baseUpgradesModal').classList.remove('open'));
+document.getElementById('departurePopupConfirm')?.addEventListener('click',closeDeparturePopup);
 
 document.getElementById('openTechnicalLogBtn')?.addEventListener('click',openTechnicalLogModal);
 document.getElementById('copyTechnicalLogBtn')?.addEventListener('click',copyTechnicalLog);
@@ -2036,7 +2050,19 @@ function renderBuildings(){
 }
 
 function renderLog(){
-  if(!state.log.length){logBox.innerHTML='<div class="mini">Sin registros todavía.</div>';return;}
+  const el=document.getElementById('log');
+  if(!el) return;
+  el.innerHTML = state.log.map(l=>{
+    let cls='';
+    if(l.includes('forraje')) cls='log-forraje';
+    else if(l.includes('recicla')) cls='log-reciclar';
+    else if(l.includes('constru')) cls='log-construir';
+    else if(l.includes('explor')) cls='log-explorar';
+    else if(l.includes('descans')) cls='log-descansar';
+    else if(l.includes('ataca')) cls='log-atacar';
+    return `<div class="${cls}">${l}</div>`;
+  }).join('');
+}
   let html='';
   let lastDay=null;
   state.log.forEach(x=>{
@@ -3120,6 +3146,10 @@ function checkPriorityEvent(){
     if(!isEventEligibleBySchedule(e)) return false;
     if(state.attackThreat&&e.skipWhenAttackActive) return false;
     if(activeEventBlocksAttackThreat()&&schemaContainsAttackThreat(e)) return false;
+    if(e.type==='personal'){
+      const protagonistId=e.personalSurvivorId||e.survivorId||e.targetSurvivorId||'';
+      if(!protagonistId || !getAliveSurvivorById(protagonistId)) return false;
+    }
     if(!evaluateCondition(e.condition)) return false;
     return true;
   });
@@ -3161,6 +3191,10 @@ function chooseEvent(){
     if(isRaiderEvent&&state.attackThreat) return false;
     if(isRaiderEvent&&activeEventBlocksAttackThreat()) return false;
     // Evaluate condition if present
+    if(e.type==='personal'){
+      const protagonistId=e.personalSurvivorId||e.survivorId||e.targetSurvivorId||'';
+      if(!protagonistId || !getAliveSurvivorById(protagonistId)) return false;
+    }
     if(e.condition&&!evaluateCondition(e.condition)) return false;
     return true;
   });
@@ -3179,6 +3213,10 @@ function chooseEvent(){
     if(e.id==='sabotaje'&&murosLvl>=3&&Math.random()<0.30) return false;
     const _isRaider=(Array.isArray(e.effects)?e.effects:[]).some(ef=>ef.type==='setAttackThreat');
     if(_isRaider&&state.attackThreat) return false;
+    if(e.type==='personal'){
+      const protagonistId=e.personalSurvivorId||e.survivorId||e.targetSurvivorId||'';
+      if(!protagonistId || !getAliveSurvivorById(protagonistId)) return false;
+    }
     if(e.condition&&!evaluateCondition(e.condition)) return false;
     return true;
   });
@@ -4922,6 +4960,34 @@ function showQueuedOrDailyEvent(){
   return !!state.pendingEvent;
 }
 
+
+function queueDeparturePopup(entry){
+  if(!Array.isArray(state.departureQueue)) state.departureQueue=[];
+  state.departureQueue.push(entry);
+}
+function closeDeparturePopup(){
+  document.getElementById('departurePopup')?.classList.remove('open');
+  if(Array.isArray(state.departureQueue) && state.departureQueue.length) state.departureQueue.shift();
+  if(Array.isArray(state.departureQueue) && state.departureQueue.length) openNextDeparturePopup();
+}
+function openNextDeparturePopup(){
+  const entry=Array.isArray(state.departureQueue) ? state.departureQueue[0] : null;
+  if(!entry) return;
+  const popup=document.getElementById('departurePopup');
+  const portrait=document.getElementById('departurePopupPortrait');
+  const nameEl=document.getElementById('departurePopupName');
+  const titleEl=document.getElementById('departurePopupTitle');
+  const textEl=document.getElementById('departurePopupText');
+  const effectsEl=document.getElementById('departurePopupEffects');
+  if(!popup||!portrait||!nameEl||!titleEl||!textEl||!effectsEl) return;
+  titleEl.textContent = entry.betrayed ? 'Traición y abandono' : 'Abandono del asentamiento';
+  nameEl.textContent = entry.name || 'Superviviente';
+  portrait.innerHTML = entry.imageUrl ? `<img src="${escapeAttr(entry.imageUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:42px;">🚪</div>';
+  textEl.textContent = entry.text || `${entry.name} abandona la base por baja moral.`;
+  effectsEl.innerHTML = formatLogLine(entry.effectsText || '-2 estabilidad');
+  popup.classList.add('open');
+}
+
 function checkLowMorale(){
   aliveSurvivors().forEach(s=>{
     if(s.morale>0){
@@ -4967,47 +5033,65 @@ function triggerSurvivorLeaving(s, opts={}){
   const stabilityAbandonBonus=Number(getStabilityModifiers().abandonChanceBonus||0);
   const betrayChance=Math.max(0,Math.min(1,0.4+stabilityAbandonBonus));
   const forcedBetrayal=typeof opts.forceBetrayal==='boolean'?opts.forceBetrayal:null;
-  const betrays=forcedBetrayal!==null?forcedBetrayal:(Math.random()<betrayChance); // base 40%, modified by estabilidad
+  const betrays=forcedBetrayal!==null?forcedBetrayal:(Math.random()<betrayChance);
+  let popupText=`La tensión, el hambre y el miedo han podido con ${s.name}. Aprovecha la noche para marcharse sin mirar atrás.`;
   if(betrays){
-    // Betrayal: sabotage event
-    addLog(`💢 ${s.name} ha traicionado al asentamiento antes de marcharse!`);
+    addLog(`💢 ${s.name} ha traicionado al asentamiento antes de marcharse.`);
     const betrayalType=Math.floor(Math.random()*3);
     if(betrayalType===0){
-      // Destroy random building
       const built=Object.values(state.buildings).filter(b=>b.built&&b.active);
       if(built.length){
         const b=pick(built);
         b.built=false; b.level=0;
         addLog(`🔥 ${s.name} destruyó ${b.name} antes de irse.`);
+        popupText=`${s.name} abandona la base en plena crisis moral y, antes de irse, destruye ${b.name}.`;
       }
     } else if(betrayalType===1){
-      // Disable random building
       const built=Object.values(state.buildings).filter(b=>b.built&&b.active);
       if(built.length){
         const b=pick(built);
         b.active=false;
         addLog(`⚠ ${s.name} saboteó ${b.name} antes de irse.`);
+        popupText=`${s.name} abandona la base con resentimiento y sabotea ${b.name} antes de desaparecer.`;
       }
     } else {
-      // Steal resources
       const stolen=Math.min(state.food,Math.floor(Math.random()*3)+1);
       state.food=Math.max(0,state.food-stolen);
       const stolenMat=Math.min(state.materials,Math.floor(Math.random()*3)+1);
       state.materials=Math.max(0,state.materials-stolenMat);
       addLog(`💰 ${s.name} robó ${stolen} comida y ${stolenMat} materiales antes de irse.`);
+      popupText=`${s.name} huye del asentamiento y se lleva provisiones: ${stolen} comida y ${stolenMat} materiales.`;
     }
   } else {
     addLog(`🚪 ${s.name} ha abandonado el asentamiento.`);
   }
   state.stability=Math.max(0,state.stability-2);
-  // Move to cemetery-style tracking but as "departed"
   state.cemetery.push({
     id:s.id, name:s.name, imageUrl:s.imageUrl||'',
     story:s.story||'', diedOnDay:state.day,
     departed:true, betrayed:betrays
   });
-  s.status='muerto'; // remove from active roster
-  addLog(`-2 estabilidad por la ${betrays?'traición':'partida'} de ${s.name}.`);
+  s.status='muerto';
+  const effectsText=`-2 estabilidad por la ${betrays?'traición':'partida'} de ${s.name}.`;
+  addLog(effectsText);
+  addTechnicalLog('survivor_departure','Un superviviente abandona el asentamiento por baja moral.', {
+    survivorId:s.id,
+    survivorName:s.name,
+    betrayed:betrays,
+    stabilityAfter:state.stability,
+    text:popupText
+  });
+  queueDeparturePopup({
+    id:s.id,
+    name:s.name,
+    imageUrl:s.imageUrl||'',
+    betrayed:betrays,
+    text:popupText,
+    effectsText
+  });
+  if(document.getElementById('departurePopup') && !document.getElementById('departurePopup').classList.contains('open')){
+    openNextDeparturePopup();
+  }
 }
 
 function applyDailyMoraleDecay(){
@@ -5168,8 +5252,70 @@ function normaliseOptions(schema, survivor){
   return [];
 }
 
+
+function replacePersonalVars(text, survivor){
+  return String(text||'').replaceAll('{survivor}', survivor?.name||'Alguien');
+}
+
+function normalisePersonalNodeOptions(node){
+  const raw=node?.options;
+  if(!raw) return [];
+  if(Array.isArray(raw)) return raw;
+  const arr=[];
+  ['A','B','C'].forEach(key=>{
+    if(raw[key]?.label){
+      arr.push({...raw[key], _slot:key});
+    }
+  });
+  return arr;
+}
+
+function buildPersonalEventNode(schema, survivor, nodeId){
+  const nodes=schema.nodes||{};
+  const resolvedNodeId=nodeId||schema.startNode||'intro';
+  const node=nodes[resolvedNodeId]||{};
+  const title=node.title||schema.name||schema.title||'Evento personal';
+  const fallbackText=schema.text||'';
+  const text=replacePersonalVars(node.text||fallbackText, survivor);
+  const portrait=survivor?.image||'';
+  const ev={
+    title,
+    text,
+    image:(node.image||schema.image||portrait||''),
+    days:1,
+    relatedAction:schema.relatedAction||null,
+    _schemaId:schema.id||null,
+    _personal:true,
+    _personalNodeId:resolvedNodeId,
+    _personalSurvivorId:survivor?.id||null,
+    _personalSurvivorName:survivor?.name||null,
+    subtitle: node.subtitle || (survivor ? `Evento personal — ${survivor.name}` : 'Evento personal'),
+    options:[]
+  };
+  const options=normalisePersonalNodeOptions(node);
+  if(!options.length){
+    ev.options=[{label:'Continuar', className:'primary', action:()=>closeEvent()}];
+    return ev;
+  }
+  ev.options=options.map((opt,idx)=>({
+    label: opt.label || `Opción ${idx+1}`,
+    className: idx===0 ? 'primary' : 'secondary',
+    action:()=>{
+      const effects=injectExplorer(normaliseEffects(opt.effects||[]), survivor?.id||null);
+      if(effects.length) applyEffectList(effects);
+      if(opt.next){
+        setEvent(buildPersonalEventNode(schema, survivor, opt.next));
+      } else {
+        closeEvent();
+      }
+    }
+  }));
+  return ev;
+}
+
 function buildEventFromSchema(schema,forcedSurvivor){
-  const survivor=forcedSurvivor||pick(aliveSurvivors())||{name:'Alguien'};
+  const personalSurvivorId=schema.personalSurvivorId||schema.survivorId||schema.targetSurvivorId||null;
+  const survivor=forcedSurvivor||getAliveSurvivorById(personalSurvivorId)||pick(aliveSurvivors())||{name:'Alguien'};
   // Mark as seen only if not repeatable
   if(schema.id && schema.type!=='story' && schema.type!=='weekly' && !schema.repeatable) state.seenEvents.add(schema.id);
   rescheduleEventInterval(schema);
@@ -5190,6 +5336,10 @@ function buildEventFromSchema(schema,forcedSurvivor){
 
   // Build options
   const normOpts = normaliseOptions(schema, survivor);
+
+  if(schema.type==='personal' || schema.nodes){
+    return buildPersonalEventNode(schema, survivor, schema.startNode||'intro');
+  }
 
   const ev={
     title,
@@ -5840,6 +5990,8 @@ function getMoraleEmoji(s){
 }
 function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Moral',stability:'Estabilidad',meds:'Medicamentos',electricity:'Electricidad',chickens:'Gallinas',fuel:'Combustible'})[key]||key}
 function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
+function getAliveSurvivorById(id){ return aliveSurvivors().find(s=>s.id===id)||null; }
+
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
 function injureSurvivor(s,msg,opts={}){
   if(s.status==='muerto') return;
@@ -5863,6 +6015,14 @@ function injureSurvivor(s,msg,opts={}){
         .replaceAll('{injuryLabel}', finalLabel)
         .replaceAll('{injuryLevel}', finalLevel);
   addLog(finalMsg);
+  addTechnicalLog('injury_applied','Se aplica una herida a un superviviente.', {
+    survivorId:s.id,
+    survivorName:s.name,
+    source:opts.source||'generic',
+    forcedLevel:opts.level||null,
+    injuryLevel:s.injuryLevel,
+    message:finalMsg
+  });
 }
 
 function killSurvivor(s,msg){
@@ -5881,7 +6041,9 @@ function _doKill(s, msg){
     story:s.story||'',
     diedOnDay:state.day
   });
-  addLog(msg||`${s.name} ha muerto.`);
+  const deathMsg=(msg||`${s.name} ha muerto.`);
+  addLog(deathMsg);
+  addTechnicalLog('survivor_dead','Un superviviente ha muerto.', {survivorId:s.id,survivorName:s.name,message:deathMsg});
 }
 function addLog(text){state.log.unshift(`Día ${state.day}: ${text}`);state.log=state.log.slice(0,80)}
 function checkGameOver(){if(aliveSurvivors().length<=0)return openGameOver('No queda ningún superviviente con vida.');if(state.stability<=0)return openGameOver('La estabilidad del asentamiento ha caído a cero. El grupo se disuelve.')}
@@ -6385,6 +6547,26 @@ document.getElementById('closeLoreModal').addEventListener('click',()=>{
 document.getElementById('survivorLoreModal').addEventListener('click',(e)=>{
   if(e.target===e.currentTarget) e.currentTarget.classList.remove('open');
 });
+
+function openMultiTreatmentPopup(list){
+  const el=document.getElementById('multiTreatmentList');
+  el.innerHTML = list.map(s=>`
+    <label><input type="checkbox" value="${s.id}"> ${s.name} (${s.injuryLevel})</label>
+  `).join('');
+  document.getElementById('multiTreatmentPopup').classList.add('open');
+}
+
+document.addEventListener('click',e=>{
+  if(e.target.id==='multiTreatmentConfirm'){
+    const checked=[...document.querySelectorAll('#multiTreatmentList input:checked')].map(i=>i.value);
+    checked.slice(0,state.meds).forEach(id=>{
+      const s=aliveSurvivors().find(x=>x.id===id);
+      if(s) s.injuryLevel='simple';
+    });
+    document.getElementById('multiTreatmentPopup').classList.remove('open');
+  }
+});
+
 </script>
   <div class="overlay" id="technicalLogModal">
     <div class="modal" style="width:min(920px,100%);">
@@ -6399,6 +6581,37 @@ document.getElementById('survivorLoreModal').addEventListener('click',(e)=>{
         <button class="secondary" id="copyTechnicalLogBtnModal">Copiar TXT</button>
         <button class="secondary" id="downloadTechnicalLogBtnModal">Descargar TXT</button>
         <button class="secondary" id="closeTechnicalLogBtnFooter">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+
+<div class="overlay" id="multiTreatmentPopup">
+  <div class="modal">
+    <div class="modal-header">Repartir medicina</div>
+    <div class="modal-body" id="multiTreatmentList"></div>
+    <div class="modal-footer">
+      <button id="multiTreatmentConfirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+
+  <div class="overlay" id="departurePopup">
+    <div class="modal" style="width:min(760px,100%);">
+      <div class="modal-header" id="departurePopupTitle">Abandono del asentamiento</div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;">
+          <div id="departurePopupPortrait" style="width:110px;height:110px;border:1px solid var(--line2);background:var(--panel3);overflow:hidden;"></div>
+          <div>
+            <div id="departurePopupName" style="font-size:20px;font-weight:700;margin-bottom:6px;"></div>
+            <div id="departurePopupText" style="line-height:1.6;margin-bottom:12px;"></div>
+            <div id="departurePopupEffects" style="color:var(--danger-bright);font-weight:700;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="departurePopupConfirm">Aceptar</button>
       </div>
     </div>
   </div>
