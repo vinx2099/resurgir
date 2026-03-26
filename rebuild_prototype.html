@@ -1280,7 +1280,7 @@
     <div style="width:min(760px,100%);background:#0f120d;border:1px solid #5f2323;box-shadow:0 0 40px rgba(0,0,0,0.5);">
       <div style="padding:14px 18px;border-bottom:1px solid rgba(196,78,78,0.35);font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:0.12em;text-transform:uppercase;color:#e28181;">Datos obligatorios no cargados</div>
       <div style="padding:18px;display:grid;gap:14px;">
-        <div style="font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.7;color:#d8c4c4;">No se han cargado los datos correctos. El juego no arrancará con datos falsos o incompletos.</div><div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7;color:#b79a9a;">Comprueba especialmente survivors.json, events.json, locations.json, buildings.json y config.json.</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.7;color:#d8c4c4;">No se han cargado los datos correctos. El juego no arrancará con datos falsos o incompletos.</div><div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7;color:#b79a9a;">Comprueba especialmente survivors.json, events.json, locations.json, buildings.json, config.json y skills.json.</div>
         <div id="dataErrorOverlayList" style="font-family:'Share Tech Mono',monospace;font-size:12px;line-height:1.8;color:#f0c1c1;"></div>
         <div id="dataErrorOverlayHint" style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7;color:#b79a9a;"></div>
         <div style="display:flex;justify-content:flex-end;gap:10px;">
@@ -3600,20 +3600,36 @@ function getActiveSkillBonuses(context){
     .filter(b=>Object.keys(b).length>0);
 }
 
+
+// Helper: get all skills declared on a survivor, keeping legacy compatibility
+function getSurvivorSkills(survivor){
+  if(!survivor) return [];
+  const arr = Array.isArray(survivor.skills) ? survivor.skills.slice() : [];
+  const legacy = typeof survivor.skill === 'string' ? survivor.skill.trim() : '';
+  if(legacy && !arr.includes(legacy)) arr.unshift(legacy);
+  return arr
+    .map(v => (v || '').toString().trim().toLowerCase())
+    .filter(v => v && v !== 'ninguna')
+    .filter((v, i, a) => a.indexOf(v) === i);
+}
+
 // Helper: get skill bonus for a specific survivor
 function getSurvivorSkillLabel(s){
-  const labels={
+  const builtInLabels={
     'ingeniero':'⚙ Ingeniero — edificios -1 recurso',
     'explorador':'🗺 Explorador — +10% eventos positivos',
     'precavido':'🛡 Precavido — -10% eventos negativos',
-    'rastreador':'👁 Rastreador — duplica la probabilidad de encontrar supervivientes',
+    'rastreador':'👁 Rastreador — mejora la probabilidad de encontrar supervivientes',
     'inventor':'💡 Inventor — desarrollo de mejoras -1 día',
     'recolector':'📦 Recolector — +1 recurso al explorar',
     'cazador':'🏹 Cazador — +1 comida al explorar',
+    'combatiente':'⚔ Combatiente — +1 en combate',
+    'chatarrero':'🧰 Chatarrero — +1 material al reciclar',
     'ninguna':'—',
   };
-  const key=(s.skill||'ninguna').toLowerCase().trim();
-  return labels[key]||s.skill;
+  const key=((Array.isArray(s?.skills)&&s.skills[0]) || s?.skill || 'ninguna').toLowerCase().trim();
+  const fromJson=(gameData.skills||[]).find(sk => (sk.id||'').toLowerCase()===key);
+  return fromJson?.label || fromJson?.name || builtInLabels[key] || s?.skill || '—';
 }
 
 
