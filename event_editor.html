@@ -640,6 +640,7 @@
               <option value="weekly">Semanal fijo (cada 7 días)</option>
               <option value="story">Historia — día exacto</option>
               <option value="explore">Exploración (se activa al explorar)</option>
+              <option value="personal">Personal (survivor por ID)</option>
             </select>
           </div>
           <div class="field" id="weekField" style="display:none;">
@@ -670,6 +671,65 @@
               <option value="descansar">💤 Descansar</option>
             </select>
           </div>
+
+          <div class="field" id="personalSurvivorField" style="display:none;">
+            <label>Survivor protagonista por ID <span class="req">*</span></label>
+            <input type="text" id="f-personalSurvivorId" placeholder="ej: survivor_kirk" />
+          </div>
+          <div class="field" id="personalStartNodeField" style="display:none;">
+            <label>Nodo inicial</label>
+            <input type="text" id="f-personalStartNode" value="intro" placeholder="intro" />
+          </div>
+          
+          <div class="field" id="personalNodesField" style="display:none;grid-column:1 / -1;">
+            <label>Nodo de conversación inicial</label>
+            <div class="effect-block" style="border-left-color:var(--accent-bright);background:rgba(106,184,158,0.04);">
+              <div class="field" style="margin-bottom:8px;">
+                <label>Título del nodo <span style="color:var(--muted)">(opcional)</span></label>
+                <input type="text" id="f-personalNodeTitle" placeholder="Ej: Marie quiere hablar" />
+              </div>
+              <div class="field" style="margin-bottom:10px;">
+                <label>Texto del nodo <span class="req">*</span></label>
+                <textarea id="f-personalNodeText" style="min-height:100px;" placeholder="Texto principal de la conversación"></textarea>
+              </div>
+
+              <div class="section-divider"><span>Opción A</span></div>
+              <div class="effect-block" style="margin-bottom:10px;">
+                <div class="option-label-field">
+                  <span class="option-tag">OPCIÓN A</span>
+                  <input type="text" id="f-personalLabelA" placeholder="Texto del botón A" />
+                </div>
+                <div class="block-title">Efectos al elegir A</div>
+                <div class="effect-rows" id="personalOptionAEffectRows"></div>
+                <button class="add-effect-btn" type="button" onclick="addEffectRow('personalOptionA')">+ Añadir efecto</button>
+              </div>
+
+              <div class="section-divider"><span>Opción B</span></div>
+              <div class="effect-block option-b" style="margin-bottom:10px;">
+                <div class="option-label-field">
+                  <span class="option-tag b">OPCIÓN B</span>
+                  <input type="text" id="f-personalLabelB" placeholder="Texto del botón B" />
+                </div>
+                <div class="block-title">Efectos al elegir B</div>
+                <div class="effect-rows" id="personalOptionBEffectRows"></div>
+                <button class="add-effect-btn" type="button" onclick="addEffectRow('personalOptionB')">+ Añadir efecto</button>
+              </div>
+
+              <div class="section-divider"><span>Opción C <span style="color:var(--muted);font-size:10px;font-weight:400;">— opcional</span></span></div>
+              <div class="effect-block option-c">
+                <div class="option-label-field">
+                  <span class="option-tag c">OPCIÓN C</span>
+                  <input type="text" id="f-personalLabelC" placeholder="Dejar vacío si no se usa opción C" />
+                </div>
+                <div class="block-title">Efectos al elegir C</div>
+                <div class="effect-rows" id="personalOptionCEffectRows"></div>
+                <button class="add-effect-btn" type="button" onclick="addEffectRow('personalOptionC')">+ Añadir efecto</button>
+              </div>
+
+              <div style="font-size:11px;color:var(--muted);margin-top:8px;">Este editor genera el nodo inicial de la conversación con hasta 3 opciones y sus efectos. Más adelante se podrán encadenar más nodos.</div>
+            </div>
+          </div>
+
           <div class="field">
             <label>Días de duración</label>
             <input type="number" id="f-days" value="1" min="1" max="10" />
@@ -1295,6 +1355,9 @@ function addEffectRow(target) {
     optionC: 'optionCEffectRows',
     attackVictory: 'attackVictoryRows',
     attackDefeat: 'attackDefeatRows',
+    personalOptionA: 'personalOptionAEffectRows',
+    personalOptionB: 'personalOptionBEffectRows',
+    personalOptionC: 'personalOptionCEffectRows',
   };
   const container = document.getElementById(idMap[target] || target);
   const row = document.createElement('div');
@@ -1663,6 +1726,9 @@ function buildEventObject() {
   const dayMin = Number(document.getElementById('f-dayMin')?.value||0) || undefined;
   const dayMax = Number(document.getElementById('f-dayMax')?.value||0) || undefined;
   const relatedAction = document.getElementById('f-relatedAction')?.value || '';
+  const personalSurvivorId = document.getElementById('f-personalSurvivorId')?.value.trim() || '';
+  const personalStartNode = document.getElementById('f-personalStartNode')?.value.trim() || 'intro';
+
   let condition=readCondition();
   const dayRangeConds=[];
   const skipWhenAttackActive = document.getElementById('f-skipWhenAttackActive')?.checked || false;
@@ -1683,6 +1749,28 @@ function buildEventObject() {
   if(day!==undefined)  ev.day=day;
   if(relatedAction) ev.relatedAction=relatedAction;
   if(isRepeatable) ev.repeatable=true;
+  if(type==='personal'){
+    ev.personalSurvivorId = personalSurvivorId;
+    ev.startNode = personalStartNode || 'intro';
+    const nodeId = ev.startNode;
+    const nodeTitle = document.getElementById('f-personalNodeTitle')?.value?.trim() || '';
+    const nodeText = document.getElementById('f-personalNodeText')?.value?.trim() || story || 'Conversación personal.';
+    const personalLabelA = document.getElementById('f-personalLabelA')?.value?.trim() || 'Opción A';
+    const personalLabelB = document.getElementById('f-personalLabelB')?.value?.trim() || 'Opción B';
+    const personalLabelC = document.getElementById('f-personalLabelC')?.value?.trim() || '';
+    ev.nodes = {};
+    ev.nodes[nodeId] = {
+      text: nodeText,
+      options: {
+        A: { label: personalLabelA, effects: readEffectRows('personalOptionAEffectRows') },
+        B: { label: personalLabelB, effects: readEffectRows('personalOptionBEffectRows') }
+      }
+    };
+    if(nodeTitle) ev.nodes[nodeId].title = nodeTitle;
+    if(personalLabelC){
+      ev.nodes[nodeId].options.C = { label: personalLabelC, effects: readEffectRows('personalOptionCEffectRows') };
+    }
+  }
 
   if (mode === 'direct') {
     ev.choiceMode = 'direct';
@@ -1723,12 +1811,14 @@ function buildEventObject() {
     };
   }
 
+  if(type==='personal') ev.choiceMode='personal';
   return ev;
 }
 
 // ── PREVIEW ──
 function updatePreview() {
-  const ev = buildEventObject();
+  let ev;
+  try{ ev = buildEventObject(); }catch(err){ document.getElementById('previewTitle').textContent='Error en evento personal'; document.getElementById('previewText').textContent=err.message||'JSON inválido'; return; }
 
   // Image
   const previewImg = document.getElementById('previewImg');
@@ -1743,7 +1833,12 @@ function updatePreview() {
   }
 
   document.getElementById('previewTitle').textContent = ev.name || 'Nombre del evento';
-  document.getElementById('previewText').textContent = ev.text || 'El texto narrativo del evento aparecerá aquí…';
+  if(ev.type==='personal' && ev.nodes){
+    const startNode = ev.nodes[ev.startNode || 'intro'] || {};
+    document.getElementById('previewText').textContent = startNode.text || ev.text || 'Conversación personal…';
+  } else {
+    document.getElementById('previewText').textContent = ev.text || 'El texto narrativo del evento aparecerá aquí…';
+  }
 
   const durEl = document.getElementById('previewDuration');
   if (ev.days > 1) {
@@ -1885,18 +1980,22 @@ function setRepeatable(val) {
 // ── TYPE CHANGE ──
 function onTypeChange(){
   const t=document.getElementById('f-type').value;
+  const isPersonal=t==='personal';
   document.getElementById('weekField').style.display=t==='weekly'?'':'none';
   document.getElementById('dayField').style.display=t==='story'?'':'none';
   document.getElementById('dayMinField').style.display=t==='story'?'none':'';
   document.getElementById('dayMaxField').style.display=t==='story'?'none':'';
   document.getElementById('weightField').style.display=(t==='weekly'||t==='story')?'none':'';
-  document.getElementById('relatedActionField').style.display=(t==='weekly'||t==='story'||t==='explore')?'none':'';
+  document.getElementById('relatedActionField').style.display=(t==='weekly'||t==='story'||t==='explore'||isPersonal)?'none':'';
   document.getElementById('repeatableField').style.display=(t==='weekly'||t==='story')?'none':'';
+  document.getElementById('personalSurvivorField').style.display=isPersonal?'':'none';
+  document.getElementById('personalStartNodeField').style.display=isPersonal?'':'none';
+  document.getElementById('personalNodesField').style.display=isPersonal?'':'none';
   updatePreview();
 }
 
 // ── ALL FORM INPUTS → PREVIEW ──
-['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-week','f-day','f-dayMin','f-dayMax','f-relatedAction'].forEach(id => {
+['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-week','f-day','f-dayMin','f-dayMax','f-relatedAction','f-personalSurvivorId','f-personalStartNode','f-personalNodeTitle','f-personalNodeText','f-personalLabelA','f-personalLabelB','f-personalLabelC'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', updatePreview);
 });
@@ -1912,7 +2011,8 @@ if(attackStrengthInput) attackStrengthInput.addEventListener('input', updatePrev
 
 // ── ADD EVENT ──
 function addEvent() {
-  const ev = buildEventObject();
+  let ev;
+  try{ ev = buildEventObject(); }catch(err){ showToast(err.message || 'Error al construir el evento', true); return; }
   if (!ev.id) { showToast('El ID es obligatorio', true); return; }
   if (!ev.name) { showToast('El nombre es obligatorio', true); return; }
   if (!ev.text) { showToast('El texto narrativo es obligatorio', true); return; }
@@ -2067,6 +2167,14 @@ function loadEventForEditing(idx) {
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = dayMax??'';
   loadConditionIntoUI(condition);
   if(document.getElementById('f-relatedAction')) document.getElementById('f-relatedAction').value = ev.relatedAction || '';
+  if(document.getElementById('f-personalSurvivorId')) document.getElementById('f-personalSurvivorId').value = ev.personalSurvivorId || ev.survivorId || '';
+  if(document.getElementById('f-personalStartNode')) document.getElementById('f-personalStartNode').value = ev.startNode || 'intro';
+  const personalNode = ev.nodes ? (ev.nodes[ev.startNode || 'intro'] || Object.values(ev.nodes)[0]) : null;
+  if(document.getElementById('f-personalNodeTitle')) document.getElementById('f-personalNodeTitle').value = personalNode?.title || '';
+  if(document.getElementById('f-personalNodeText')) document.getElementById('f-personalNodeText').value = personalNode?.text || ev.text || '';
+  if(document.getElementById('f-personalLabelA')) document.getElementById('f-personalLabelA').value = personalNode?.options?.A?.label || '';
+  if(document.getElementById('f-personalLabelB')) document.getElementById('f-personalLabelB').value = personalNode?.options?.B?.label || '';
+  if(document.getElementById('f-personalLabelC')) document.getElementById('f-personalLabelC').value = personalNode?.options?.C?.label || '';
   if(document.getElementById('f-skipWhenAttackActive')) document.getElementById('f-skipWhenAttackActive').checked = !!ev.skipWhenAttackActive;
   setRepeatable(!!ev.repeatable);
   onTypeChange();
@@ -2099,7 +2207,7 @@ function loadEventForEditing(idx) {
   }
 
   // Clear effect rows
-  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows'].forEach(id => {
+  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows','personalOptionAEffectRows','personalOptionBEffectRows','personalOptionCEffectRows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
 
@@ -2126,6 +2234,24 @@ function loadEventForEditing(idx) {
     (ev.options.C?.effects || []).forEach(eff => {
       addEffectRow('optionC');
       const rows = document.getElementById('optionCEffectRows').querySelectorAll('.effect-row');
+      loadEffectIntoRow(rows[rows.length - 1], eff);
+    });
+  }
+
+  if(ev.type === 'personal' && personalNode?.options){
+    (personalNode.options.A?.effects || []).forEach(eff => {
+      addEffectRow('personalOptionA');
+      const rows = document.getElementById('personalOptionAEffectRows').querySelectorAll('.effect-row');
+      loadEffectIntoRow(rows[rows.length - 1], eff);
+    });
+    (personalNode.options.B?.effects || []).forEach(eff => {
+      addEffectRow('personalOptionB');
+      const rows = document.getElementById('personalOptionBEffectRows').querySelectorAll('.effect-row');
+      loadEffectIntoRow(rows[rows.length - 1], eff);
+    });
+    (personalNode.options.C?.effects || []).forEach(eff => {
+      addEffectRow('personalOptionC');
+      const rows = document.getElementById('personalOptionCEffectRows').querySelectorAll('.effect-row');
       loadEffectIntoRow(rows[rows.length - 1], eff);
     });
   }
@@ -2175,7 +2301,7 @@ function loadStoryEventForEditing(idx) {
     setMode(ev.choiceMode === 'choice' ? 'choice' : 'direct');
   }
 
-  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows'].forEach(id => {
+  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows','personalOptionAEffectRows','personalOptionBEffectRows','personalOptionCEffectRows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
 
@@ -2288,7 +2414,7 @@ function clearForm() {
   if(document.getElementById('f-attackPopupDefeatText')) document.getElementById('f-attackPopupDefeatText').value = '';
   if(document.getElementById('f-attackPopupDefeatIcon')) document.getElementById('f-attackPopupDefeatIcon').value = '';
   ['attackVictoryRows','attackDefeatRows'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=''; });
-  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows'].forEach(id => {
+  ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows','personalOptionAEffectRows','personalOptionBEffectRows','personalOptionCEffectRows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
   uploadedImageUrl = '';
