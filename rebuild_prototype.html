@@ -1228,6 +1228,28 @@
   </div>
 
   <!-- Food choice popup -->
+  
+  <div class="overlay" id="injuryTreatmentPopup">
+    <div class="modal" style="width:min(760px,100%);">
+      <div class="modal-header">Tratamiento de heridas</div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;">
+          <div id="injuryTreatmentPortrait" style="width:110px;height:110px;border:1px solid var(--line2);background:var(--panel3);overflow:hidden;"></div>
+          <div>
+            <div id="injuryTreatmentName" style="font-size:20px;font-weight:700;margin-bottom:6px;"></div>
+            <div id="injuryTreatmentMeta" style="color:var(--muted);margin-bottom:10px;"></div>
+            <div id="injuryTreatmentText" style="line-height:1.5;margin-bottom:12px;"></div>
+            <div id="injuryTreatmentStock" style="color:var(--warn);font-weight:700;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" id="injuryTreatmentDecline">No usar medicina</button>
+        <button id="injuryTreatmentConfirm">Usar medicina</button>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay" id="foodChoicePopup">
     <div class="modal" style="width:min(520px,100%);background:var(--panel);">
       <div class="modal-header" style="color:var(--warn-bright);background:#0f0d08;border-bottom:1px solid #3a2a10;">
@@ -2816,7 +2838,7 @@ function openInjuryTreatmentPopup(){
   const stockEl=document.getElementById('injuryTreatmentStock');
   const confirmBtn=document.getElementById('injuryTreatmentConfirm');
   const declineBtn=document.getElementById('injuryTreatmentDecline');
-  if(!popup||!portrait||!nameEl||!metaEl||!textEl||!stockEl||!confirmBtn||!declineBtn) return;
+  if(!popup||!portrait||!nameEl||!metaEl||!textEl||!stockEl||!confirmBtn||!declineBtn){ addTechnicalLog('injury_popup_missing','No se ha podido abrir el popup de tratamiento porque faltan nodos del DOM.'); return; }
 
   const img=getSurvivorImage(survivor);
   portrait.innerHTML=img
@@ -2824,6 +2846,7 @@ function openInjuryTreatmentPopup(){
     : '<div style="width:100%;height:100%;background:var(--panel3);"></div>';
 
   const level=injuryDisplayName(survivor.injuryLevel||'simple');
+  addTechnicalLog('injury_popup_open','Se abre el popup de tratamiento.', {survivorId: survivor.id, survivorName: survivor.name, injuryLevel: survivor.injuryLevel, meds: state.meds});
   const restNeeded=Math.max(0,(INJURY_REST_DAYS[survivor.injuryLevel]||1)-Number(survivor.injuryRestDays||0));
   nameEl.textContent=survivor.name;
   metaEl.textContent=`Herida ${level} · Descanso restante: ${restNeeded} día${restNeeded===1?'':'s'}`;
@@ -2839,11 +2862,13 @@ function openInjuryTreatmentPopup(){
     survivor.injuryLevel = prevLevel==='grave' ? 'seria' : 'simple';
     survivor.injuryRestDays=0;
     addLog(`💊 ${survivor.name} recibe tratamiento: ${injuryDisplayName(prevLevel)} → ${injuryDisplayName(survivor.injuryLevel)} (-1 medicamento).`);
+    addTechnicalLog('injury_treated','Se ha administrado medicina.', {survivorId: survivor.id, survivorName: survivor.name, from: prevLevel, to: survivor.injuryLevel, meds: state.meds});
     if(Array.isArray(state._pendingTreatmentQueue)) state._pendingTreatmentQueue.shift();
     advanceTreatmentFlow();
   };
   declineBtn.onclick=()=>{
     addLog(`⚠ Decides no tratar la herida de ${survivor.name}.`);
+    addTechnicalLog('injury_declined','Se decide no administrar medicina.', {survivorId: survivor.id, survivorName: survivor.name, injuryLevel: survivor.injuryLevel, meds: state.meds});
     applyUntreatedInjuryOutcome(survivor,{fromChoice:true});
     if(Array.isArray(state._pendingTreatmentQueue)) state._pendingTreatmentQueue.shift();
     advanceTreatmentFlow();
