@@ -3379,7 +3379,7 @@ function getTechnicalLogText(){
     lines.push(`#${String(idx+1).padStart(4,'0')} | ${entry.ts} | día=${entry.day} | fase=${entry.phase} | tipo=${entry.type}`);
     if(entry.message) lines.push(entry.message);
     if(entry.extra && Object.keys(entry.extra).length){
-      try:
+      try {
         lines.push(JSON.stringify(entry.extra, null, 2));
       } catch(e) {
         lines.push(String(entry.extra));
