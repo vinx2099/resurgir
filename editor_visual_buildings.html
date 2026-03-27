@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor visual de edificios — RESURGIR</title>
+<style>
+  :root{
+    --bg:#071007;
+    --panel:#0d170d;
+    --panel2:#101d10;
+    --line:#274227;
+    --text:#d8e7d0;
+    --muted:#93a38d;
+    --accent:#60d060;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+  .wrap{display:grid;grid-template-columns:340px 1fr;min-height:100vh}
+  .sidebar{background:var(--panel);border-right:1px solid var(--line);padding:14px;overflow:auto}
+  h1{margin:0 0 12px;font-size:18px}
+  .muted{color:var(--muted)}
+  .toolbar{display:grid;gap:8px;margin-bottom:12px}
+  button,input,textarea{font:inherit}
+  button{padding:10px 12px;background:var(--panel2);color:var(--text);border:1px solid var(--line);cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  .building-list{display:grid;gap:8px;margin:12px 0}
+  .building-item{padding:10px;border:1px solid var(--line);background:var(--panel2);cursor:pointer}
+  .building-item.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .coords{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .coords label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+  .coords .span2{grid-column:1 / -1}
+  input[type="number"], input[type="text"], textarea{
+    width:100%;padding:8px;background:#0a130a;color:var(--text);border:1px solid var(--line)
+  }
+  textarea{min-height:180px;resize:vertical}
+  .main{padding:14px}
+  .map-shell{
+    border:1px solid var(--line);
+    background:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+      radial-gradient(circle at 30% 20%, rgba(40,110,40,.25), transparent 45%),
+      var(--bg);
+    background-size:40px 40px, 40px 40px, auto, auto;
+    position:relative;width:100%;aspect-ratio:16/9;overflow:hidden
+  }
+  .map-title{
+    position:absolute;left:12px;top:12px;z-index:2;padding:8px 12px;border:1px solid var(--accent);
+    background:rgba(10,20,10,.95);color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase
+  }
+  .building{
+    position:absolute;border:1px solid rgba(96,208,96,.65);background:rgba(0,0,0,.42);
+    background-size:cover;background-position:center;background-repeat:no-repeat;
+    color:#f0f4ed;user-select:none;overflow:hidden
+  }
+  .building.not-built{opacity:.45;border-style:dashed}
+  .building.selected{outline:2px solid #7ff57f;box-shadow:0 0 0 1px #7ff57f inset}
+  .building-label{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:4px;background:rgba(0,0,0,.35);text-shadow:0 1px 2px rgba(0,0,0,.8);pointer-events:none;font-size:12px
+  }
+  .handle{position:absolute;width:12px;height:12px;right:-1px;bottom:-1px;background:#7ff57f;cursor:nwse-resize}
+  .legend{font-size:12px;color:var(--muted);margin-top:8px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{padding:4px 8px;border:1px solid var(--line);background:var(--panel2);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="sidebar">
+    <h1>Editor visual de edificios</h1>
+    <div class="muted">Carga tu <b>buildings.json</b>, arrastra los edificios, añade imágenes y exporta el JSON actualizado.</div>
+
+    <div class="toolbar">
+      <input id="fileInput" type="file" accept=".json,application/json">
+      <button id="loadSampleBtn">Cargar ejemplo base</button>
+      <button id="exportBtn">Descargar JSON</button>
+      <button id="copyBtn">Copiar JSON</button>
+    </div>
+
+    <div class="row">
+      <div class="pill">Arrastrar = mover</div>
+      <div class="pill">Esquina = redimensionar</div>
+    </div>
+
+    <div id="list" class="building-list"></div>
+
+    <div id="editor" style="display:none">
+      <div class="coords">
+        <label class="span2">Imagen URL
+          <input id="imageUrlInput" type="text" placeholder="https://... o data:image/...">
+        </label>
+        <label class="span2">Cargar imagen local
+          <input id="imageFileInput" type="file" accept="image/*">
+        </label>
+        <label>Nombre
+          <input id="nameInput" type="text">
+        </label>
+        <label>ID
+          <input id="idInput" type="text" disabled>
+        </label>
+        <label>Left %
+          <input id="leftInput" type="number" min="0" max="100" step="0.1">
+        </label>
+        <label>Top %
+          <input id="topInput" type="number" min="0" max="100" step="0.1">
+        </label>
+        <label>Width %
+          <input id="widthInput" type="number" min="1" max="100" step="0.1">
+        </label>
+        <label>Height %
+          <input id="heightInput" type="number" min="1" max="100" step="0.1">
+        </label>
+      </div>
+    </div>
+
+    <h3 style="margin:18px 0 8px;font-size:14px;">JSON actual</h3>
+    <textarea id="jsonPreview" spellcheck="false"></textarea>
+  </aside>
+
+  <main class="main">
+    <div style="font-weight:700">Mapa visual</div>
+    <div class="muted">Ajusta posiciones hasta que encajen con tu diseño.</div>
+    <div id="map" class="map-shell">
+      <div class="map-title">⬡ SECTOR ALFA — BASE</div>
+    </div>
+    <div class="legend">Puedes usar URL de imagen o subir archivo local. El editor lo guarda en el campo <b>image</b> del JSON.</div>
+  </main>
+</div>
+
+<script>
+const sampleBuildings = [
+  {id:"barracones",name:"Barracones",category:"Base",initial:true,map:{left:"5%",top:"20%",width:"12%",height:"42%"},image:""},
+  {id:"muros",name:"Muros",category:"Base",initial:true,map:{left:"20%",top:"6%",width:"40%",height:"12%"},image:""},
+  {id:"atalaya",name:"Atalaya",category:"Base",initial:false,map:{left:"63%",top:"6%",width:"12%",height:"14%"},image:""},
+  {id:"huerto",name:"Huerto",category:"Base",initial:true,map:{left:"76%",top:"16%",width:"20%",height:"18%"},image:""},
+  {id:"pozo",name:"Pozo",category:"Base",initial:false,map:{left:"57%",top:"26%",width:"10%",height:"12%"},image:""},
+  {id:"hospital",name:"Hospital",category:"Base",initial:false,map:{left:"9%",top:"44%",width:"16%",height:"18%"},image:""},
+  {id:"generador",name:"Generador",category:"Base",initial:false,map:{left:"27%",top:"48%",width:"10%",height:"15%"},image:""},
+  {id:"taller",name:"Taller",category:"Base",initial:false,map:{left:"45%",top:"45%",width:"18%",height:"18%"},image:""},
+  {id:"almacen",name:"Almacén",category:"Base",initial:false,map:{left:"64%",top:"49%",width:"12%",height:"14%"},image:""},
+  {id:"gallinero",name:"Gallinero",category:"Base",initial:false,map:{left:"71%",top:"36%",width:"11%",height:"12%"},image:""},
+  {id:"cementerio",name:"⛼ Cementerio",category:"Base",initial:true,map:{left:"89%",top:"50%",width:"12%",height:"12%"},image:""}
+];
+
+let buildings = [];
+let selectedId = null;
+let drag = null;
+
+const map = document.getElementById('map');
+const list = document.getElementById('list');
+const jsonPreview = document.getElementById('jsonPreview');
+const editor = document.getElementById('editor');
+
+const leftInput = document.getElementById('leftInput');
+const topInput = document.getElementById('topInput');
+const widthInput = document.getElementById('widthInput');
+const heightInput = document.getElementById('heightInput');
+const nameInput = document.getElementById('nameInput');
+const idInput = document.getElementById('idInput');
+const imageUrlInput = document.getElementById('imageUrlInput');
+const imageFileInput = document.getElementById('imageFileInput');
+
+function percentToNum(v){ return parseFloat(String(v || '0').replace('%','')) || 0; }
+function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+function ensureMaps(arr){
+  return arr.map((b, i) => ({
+    ...b,
+    image: b.image || '',
+    category: b.category || 'Base',
+    map: {
+      left: b.map?.left || `${5 + i*2}%`,
+      top: b.map?.top || `${10 + i*2}%`,
+      width: b.map?.width || '12%',
+      height: b.map?.height || '12%'
+    }
+  }));
+}
+
+function setBuildings(arr){
+  buildings = ensureMaps(arr);
+  if (!selectedId && buildings.length) selectedId = buildings[0].id;
+  renderAll();
+}
+
+function renderAll(){
+  renderList();
+  renderMap();
+  renderEditor();
+  jsonPreview.value = JSON.stringify(buildings, null, 2);
+}
+
+function renderList(){
+  list.innerHTML = '';
+  buildings.filter(b => String(b.category || 'Base').toLowerCase() === 'base').forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'building-item' + (b.id === selectedId ? ' active' : '');
+    el.textContent = `${b.name} (${b.id})`;
+    el.onclick = () => { selectedId = b.id; renderAll(); };
+    list.appendChild(el);
+  });
+}
+
+function renderMap(){
+  map.querySelectorAll('.building').forEach(el => el.remove());
+  buildings.filter(b => String(b.category || 'Base').toLowerCase() === 'base').forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'building' + (!b.initial ? ' not-built' : '') + (b.id === selectedId ? ' selected' : '');
+    el.dataset.id = b.id;
+    el.style.left = b.map.left;
+    el.style.top = b.map.top;
+    el.style.width = b.map.width;
+    el.style.height = b.map.height;
+    if (b.image) {
+      el.style.backgroundImage = `linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.08)), url("${String(b.image).replace(/"/g, '&quot;')}")`;
+    }
+    const label = document.createElement('div');
+    label.className = 'building-label';
+    label.textContent = b.initial ? `${b.name}` : `${b.name} (sin construir)`;
+    el.appendChild(label);
+    el.addEventListener('mousedown', e => startDrag(e, b.id, 'move'));
+    el.addEventListener('click', e => { e.stopPropagation(); selectedId = b.id; renderAll(); });
+    const handle = document.createElement('div');
+    handle.className = 'handle';
+    handle.addEventListener('mousedown', e => startDrag(e, b.id, 'resize'));
+    el.appendChild(handle);
+    map.appendChild(el);
+  });
+}
+
+function renderEditor(){
+  const b = buildings.find(x => x.id === selectedId);
+  if (!b) { editor.style.display = 'none'; return; }
+  editor.style.display = '';
+  nameInput.value = b.name || '';
+  idInput.value = b.id || '';
+  imageUrlInput.value = b.image || '';
+  leftInput.value = percentToNum(b.map.left);
+  topInput.value = percentToNum(b.map.top);
+  widthInput.value = percentToNum(b.map.width);
+  heightInput.value = percentToNum(b.map.height);
+}
+
+function updateSelectedFromInputs(){
+  const b = buildings.find(x => x.id === selectedId);
+  if (!b) return;
+  b.name = nameInput.value;
+  b.image = imageUrlInput.value.trim();
+  b.map.left = `${clamp(parseFloat(leftInput.value)||0,0,100).toFixed(1)}%`;
+  b.map.top = `${clamp(parseFloat(topInput.value)||0,0,100).toFixed(1)}%`;
+  b.map.width = `${clamp(parseFloat(widthInput.value)||1,1,100).toFixed(1)}%`;
+  b.map.height = `${clamp(parseFloat(heightInput.value)||1,1,100).toFixed(1)}%`;
+  renderAll();
+}
+
+[leftInput, topInput, widthInput, heightInput, nameInput, imageUrlInput].forEach(inp => inp.addEventListener('input', updateSelectedFromInputs));
+
+imageFileInput.addEventListener('change', async e => {
+  const file = e.target.files?.[0];
+  if (!file || !selectedId) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const b = buildings.find(x => x.id === selectedId);
+    if (!b) return;
+    b.image = String(reader.result || '');
+    renderAll();
+  };
+  reader.readAsDataURL(file);
+});
+
+function startDrag(e, id, mode){
+  e.preventDefault();
+  e.stopPropagation();
+  selectedId = id;
+  const b = buildings.find(x => x.id === id);
+  const rect = map.getBoundingClientRect();
+  drag = { id, mode, startX:e.clientX, startY:e.clientY, rect, left:percentToNum(b.map.left), top:percentToNum(b.map.top), width:percentToNum(b.map.width), height:percentToNum(b.map.height) };
+  renderAll();
+}
+
+window.addEventListener('mousemove', e => {
+  if (!drag) return;
+  const b = buildings.find(x => x.id === drag.id);
+  if (!b) return;
+  const dxPct = ((e.clientX - drag.startX) / drag.rect.width) * 100;
+  const dyPct = ((e.clientY - drag.startY) / drag.rect.height) * 100;
+  if (drag.mode === 'move'){
+    b.map.left = `${clamp(drag.left + dxPct, 0, 100).toFixed(1)}%`;
+    b.map.top = `${clamp(drag.top + dyPct, 0, 100).toFixed(1)}%`;
+  } else {
+    b.map.width = `${clamp(drag.width + dxPct, 2, 100).toFixed(1)}%`;
+    b.map.height = `${clamp(drag.height + dyPct, 2, 100).toFixed(1)}%`;
+  }
+  renderAll();
+});
+window.addEventListener('mouseup', () => drag = null);
+
+document.getElementById('loadSampleBtn').onclick = () => setBuildings(sampleBuildings);
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(buildings, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'buildings.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 0);
+};
+document.getElementById('copyBtn').onclick = async () => {
+  try { await navigator.clipboard.writeText(JSON.stringify(buildings, null, 2)); alert('JSON copiado.'); }
+  catch { alert('No se pudo copiar.'); }
+};
+document.getElementById('fileInput').addEventListener('change', async e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const txt = await file.text();
+  const data = JSON.parse(txt);
+  setBuildings(Array.isArray(data) ? data : []);
+});
+
+setBuildings(sampleBuildings);
+</script>
+</body>
+</html>

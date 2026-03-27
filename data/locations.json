@@ -2,65 +2,134 @@
   {
     "id": "supermarket",
     "name": "Supermercado {adj}",
-    "adjectives": ["abandonado", "en ruinas", "saqueado"],
+    "adjectives": [
+      "abandonado",
+      "en ruinas",
+      "saqueado"
+    ],
     "icon": "🏪",
+    "description": "Un antiguo supermercado. Puede quedar algo de comida entre los estantes.",
     "riskLevel": 1,
-    "explorable": true,
-    "exhaustible": true,
+    "hostilesChance": 0.1,
+    "hostileTypes": [
+      "raiders"
+    ],
+    "hostileStrength": [
+      2,
+      4
+    ],
     "exploreDays": 1,
-    "resources": { "food": [2, 4], "materials": [1, 2] },
-    "raidersChance": 0.25,
-    "description": "Un antiguo supermercado. Puede quedar algo de comida entre los estantes."
+    "weight": 5,
+    "resourceMode": "once",
+    "resources": {
+      "food": [
+        2,
+        4
+      ],
+      "materials": [
+        1,
+        2
+      ]
+    },
+    "exhaustible": true,
+    "survivorSpawn": {
+      "chance": 0.12,
+      "type": "random"
+    }
   },
   {
     "id": "gas_station",
     "name": "Gasolinera {adj}",
-    "adjectives": ["abandonada", "quemada", "semidestruida"],
+    "adjectives": [
+      "abandonada",
+      "quemada",
+      "semidestruida"
+    ],
     "icon": "⛽",
     "riskLevel": 1,
     "explorable": true,
     "exhaustible": true,
     "exploreDays": 1,
-    "resources": { "materials": [2, 4] },
+    "resources": {
+      "materials": [
+        2,
+        4
+      ]
+    },
     "raidersChance": 0.2,
     "description": "Una gasolinera de carretera. Herramientas y materiales pueden quedar en el taller."
   },
   {
     "id": "military_outpost",
     "name": "Puesto militar {adj}",
-    "adjectives": ["abandonado", "destruido", "en ruinas"],
+    "adjectives": [
+      "abandonado",
+      "destruido",
+      "en ruinas"
+    ],
     "icon": "🪖",
     "riskLevel": 3,
     "explorable": true,
     "exhaustible": true,
     "exploreDays": 2,
-    "resources": { "materials": [3, 5], "meds": [1, 2] },
+    "resources": {
+      "materials": [
+        3,
+        5
+      ],
+      "meds": [
+        1,
+        2
+      ]
+    },
     "raidersChance": 0.5,
     "description": "Un antiguo puesto militar. Peligroso pero con buenas recompensas."
   },
   {
     "id": "clinic",
     "name": "Clínica {adj}",
-    "adjectives": ["abandonada", "en ruinas", "saqueada"],
+    "adjectives": [
+      "abandonada",
+      "en ruinas",
+      "saqueada"
+    ],
     "icon": "🏥",
     "riskLevel": 2,
     "explorable": true,
     "exhaustible": true,
     "exploreDays": 1,
-    "resources": { "meds": [2, 4] },
+    "resources": {
+      "meds": [
+        2,
+        4
+      ]
+    },
     "raidersChance": 0.3,
     "description": "Una clínica de barrio. Los medicamentos son el objetivo."
   },
   {
     "id": "warehouse",
     "name": "Almacén {adj}",
-    "adjectives": ["industrial", "abandonado", "semiderruido"],
+    "adjectives": [
+      "industrial",
+      "abandonado",
+      "semiderruido"
+    ],
     "icon": "🏭",
     "riskLevel": 2,
     "explorable": true,
     "exhaustible": true,
     "exploreDays": 2,
-    "resources": { "materials": [4, 7], "food": [1, 3] },
+    "resources": {
+      "materials": [
+        4,
+        7
+      ],
+      "food": [
+        1,
+        3
+      ]
+    },
     "raidersChance": 0.4,
     "description": "Un gran almacén industrial. Mucho material pero probablemente vigilado."
   },
@@ -73,22 +142,44 @@
     "explorable": true,
     "exhaustible": false,
     "exploreDays": 1,
-    "resources": { "food": [6, 6] },
+    "resources": {
+      "food": [
+        6,
+        6
+      ]
+    },
     "regenerateDays": 7,
-    "exploitResources": { "food": [4, 4] },
+    "exploitResources": {
+      "food": [
+        4,
+        4
+      ]
+    },
     "raidersChance": 0.1,
     "description": "Un campo de maíz que aún produce. Explotarlo da comida inmediata pero lo agota."
   },
   {
     "id": "school",
     "name": "Escuela {adj}",
-    "adjectives": ["abandonada", "en ruinas"],
+    "adjectives": [
+      "abandonada",
+      "en ruinas"
+    ],
     "icon": "🏫",
     "riskLevel": 1,
     "explorable": true,
     "exhaustible": true,
     "exploreDays": 1,
-    "resources": { "materials": [1, 3], "food": [1, 2] },
+    "resources": {
+      "materials": [
+        1,
+        3
+      ],
+      "food": [
+        1,
+        2
+      ]
+    },
     "raidersChance": 0.2,
     "survivorChance": 0.3,
     "description": "Una escuela. A veces hay supervivientes escondidos en estos sitios."
@@ -102,36 +193,72 @@
     "explorable": true,
     "exhaustible": true,
     "exploreDays": 3,
-    "resources": { "materials": [5, 8], "food": [3, 5], "meds": [1, 3] },
-    "raidersChance": 1.0,
+    "resources": {
+      "materials": [
+        5,
+        8
+      ],
+      "food": [
+        3,
+        5
+      ],
+      "meds": [
+        1,
+        3
+      ]
+    },
+    "raidersChance": 1,
     "description": "Un campamento de raiders. Limpiar esto sería muy valioso pero extremadamente peligroso."
   },
   {
     "id": "pharmacy",
     "name": "Farmacia {adj}",
-    "adjectives": ["abandonada", "saqueada a medias"],
+    "adjectives": [
+      "abandonada",
+      "saqueada a medias"
+    ],
     "icon": "💊",
     "riskLevel": 1,
     "explorable": true,
     "exhaustible": true,
     "exploreDays": 1,
-    "resources": { "meds": [3, 5] },
+    "resources": {
+      "meds": [
+        3,
+        5
+      ]
+    },
     "raidersChance": 0.2,
     "description": "Una farmacia. Si no ha sido completamente saqueada, puede ser una mina de oro médica."
   },
   {
     "id": "river",
     "name": "Río {adj}",
-    "adjectives": ["contaminado", "seco a medias", "turbio"],
+    "adjectives": [
+      "contaminado",
+      "seco a medias",
+      "turbio"
+    ],
     "icon": "🌊",
-    "riskLevel": 0,
-    "explorable": true,
-    "exhaustible": false,
+    "description": "Un río cercano. Pesca y agua potable si se trata bien.",
+    "riskLevel": 1,
+    "hostilesChance": 0.05,
+    "hostileTypes": [
+      "dogs"
+    ],
+    "hostileStrength": [
+      2,
+      4
+    ],
     "exploreDays": 1,
-    "resources": { "food": [3, 5] },
-    "regenerateDays": 7,
-    "exploitResources": { "food": [5, 7] },
-    "raidersChance": 0.15,
-    "description": "Un río cercano. Pesca y agua potable si se trata bien."
+    "weight": 5,
+    "resourceMode": "fixed",
+    "lootYield": {
+      "food": [
+        1,
+        2
+      ]
+    },
+    "exhaustible": false
   }
 ]

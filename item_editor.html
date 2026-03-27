@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RESURGIR · Item Editor</title>
+<style>
+:root{--bg:#0b100b;--panel:#111711;--panel2:#151d15;--line:#2b3a2b;--text:#dde7d8;--muted:#8fa18a;--ok:#72c44e;--amber:#c6a15e;--danger:#d26a6a}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;padding:18px}
+h1{margin:0 0 14px;font-size:24px}.layout{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line)} .hd{padding:10px 12px;border-bottom:1px solid var(--line);font-weight:700} .bd{padding:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px} input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px} textarea{min-height:70px;resize:vertical}
+button{padding:9px 12px;background:var(--panel2);border:1px solid var(--line);color:var(--text);cursor:pointer} button:hover{border-color:var(--ok)}
+.effect-row{display:grid;grid-template-columns:1fr 90px auto;gap:8px;margin-bottom:8px}
+.item-row{border:1px solid var(--line);padding:8px;margin-bottom:8px;background:var(--panel2)}
+.small{font-size:11px;color:var(--muted)} .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+pre{white-space:pre-wrap;background:#0d140d;border:1px solid var(--line);padding:10px;font-size:12px}
+</style>
+</head>
+<body>
+<h1>RESURGIR · Item Editor</h1>
+<div class="layout">
+  <section class="panel">
+    <div class="hd">Editor</div>
+    <div class="bd">
+      <div class="grid">
+        <div><label>ID</label><input id="f-id" placeholder="ej: melee_knife"></div>
+        <div><label>Nombre</label><input id="f-name" placeholder="Cuchillo"></div>
+        <div><label>Tipo</label>
+          <select id="f-type">
+            <option value="weapon">Arma</option>
+            <option value="equipment">Equipo</option>
+            <option value="consumable">Consumible</option>
+            <option value="tool">Herramienta</option>
+          </select>
+        </div>
+        <div><label>Habilidad requerida</label>
+          <select id="f-skill">
+            <option value="">— ninguna —</option>
+            <option value="combatiente">combatiente</option>
+            <option value="manitas">manitas</option>
+            <option value="explorador">explorador</option>
+          </select>
+        </div>
+        <div><label>Durabilidad máxima</label><input id="f-durability" type="number" value="4" min="0" max="99"></div>
+        <div><label>Apilable</label>
+          <select id="f-stackable"><option value="false">No</option><option value="true">Sí</option></select>
+        </div>
+        <div class="full"><label>Descripción</label><textarea id="f-description" placeholder="Descripción breve..."></textarea></div>
+      </div>
+
+      <div style="margin-top:12px;font-weight:700;">Efectos (hasta 2)</div>
+      <div class="small">Efectos disponibles: melee, ranged, armor, heal, worker, food, fun.</div>
+      <div id="effectsWrap"></div>
+      <button type="button" id="addEffectBtn">+ Añadir efecto</button>
+
+      <div class="actions">
+        <button id="saveBtn">Guardar / actualizar</button>
+        <button id="newBtn" type="button">Nuevo</button>
+        <button id="loadBtn" type="button">Cargar items.json</button>
+        <button id="downloadBtn" type="button">Descargar JSON</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="hd">Lista y preview</div>
+    <div class="bd">
+      <div id="itemList"></div>
+      <div style="margin-top:12px;font-weight:700;">Preview JSON</div>
+      <pre id="preview"></pre>
+    </div>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const state={items:[], editingId:null};
+const EFFECT_OPTIONS=[
+  ['melee','melee · + combate fijo'],
+  ['ranged','ranged · d4 combate'],
+  ['armor','armor · menos probabilidad/gravedad de herida'],
+  ['heal','heal · cura un nivel de herida'],
+  ['worker','worker · 1 día menos al construir'],
+  ['food','food · + comida'],
+  ['fun','fun · + moral']
+];
+function esc(s){return String(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function addEffectRow(data={}){
+  const wrap=$('effectsWrap');
+  if(wrap.querySelectorAll('.effect-row').length>=2) return;
+  const row=document.createElement('div');
+  row.className='effect-row';
+  row.innerHTML=`<select class="eff-kind">${EFFECT_OPTIONS.map(([v,l])=>`<option value="${v}" ${data.kind===v||data.type===v?'selected':''}>${l}</option>`).join('')}</select>
+  <input class="eff-amount" type="number" value="${data.amount??1}" min="1" max="10">
+  <button type="button">✕</button>`;
+  row.querySelector('button').onclick=()=>{row.remove(); renderPreview();};
+  row.querySelectorAll('select,input').forEach(el=>el.addEventListener('input',renderPreview));
+  wrap.appendChild(row); renderPreview();
+}
+function readEffects(){
+  return [...$('effectsWrap').querySelectorAll('.effect-row')].map(r=>({
+    kind:r.querySelector('.eff-kind').value,
+    amount:Number(r.querySelector('.eff-amount').value)||1
+  }));
+}
+function getFormData(){
+  const type=$('f-type').value;
+  const stackable=$('f-stackable').value==='true';
+  const item={
+    id:$('f-id').value.trim(),
+    name:$('f-name').value.trim(),
+    type,
+    description:$('f-description').value.trim(),
+    stackable,
+    effects:readEffects().slice(0,2)
+  };
+  const skill=$('f-skill').value;
+  if(skill) item.requiredSkill=skill;
+  if(type!=='consumable'){
+    const d=Math.max(1, Number($('f-durability').value)||1);
+    item.durability=d; item.maxDurability=d; item.repairable=true;
+  } else {
+    item.use='consume';
+    item.usableIn=['base','event'];
+  }
+  return item;
+}
+function fillForm(item){
+  state.editingId=item.id;
+  $('f-id').value=item.id||'';
+  $('f-name').value=item.name||'';
+  $('f-type').value=item.type||item.itemType||'equipment';
+  $('f-skill').value=item.requiredSkill||'';
+  $('f-description').value=item.description||'';
+  $('f-stackable').value=String(!!item.stackable);
+  $('f-durability').value=item.maxDurability||item.maxQuality||item.durability||item.quality||4;
+  $('effectsWrap').innerHTML='';
+  (item.effects||[]).slice(0,2).forEach(addEffectRow);
+  renderPreview();
+}
+function resetForm(){
+  state.editingId=null;
+  $('f-id').value=''; $('f-name').value=''; $('f-type').value='weapon'; $('f-skill').value=''; $('f-description').value=''; $('f-stackable').value='false'; $('f-durability').value='4'; $('effectsWrap').innerHTML=''; addEffectRow({kind:'melee',amount:1});
+}
+function renderList(){
+  $('itemList').innerHTML = state.items.map(it=>`<div class="item-row"><div><strong>${esc(it.name||it.id)}</strong> · ${esc(it.type||it.itemType||'item')}</div><div class="small">${esc(it.description||'')} ${it.requiredSkill?`· requiere ${esc(it.requiredSkill)}`:''}</div><div class="small">${(it.effects||[]).map(e=>`${e.kind||e.type}:${e.amount||1}`).join(' · ')}</div><div class="actions"><button type="button" onclick="editItem('${esc(it.id)}')">Editar</button><button type="button" onclick="deleteItem('${esc(it.id)}')">Eliminar</button></div></div>`).join('') || '<div class="small">Sin items.</div>';
+}
+function renderPreview(){
+  $('preview').textContent = JSON.stringify(getFormData(), null, 2);
+}
+function saveItem(){
+  const item=getFormData();
+  if(!item.id || !item.name){ alert('ID y nombre son obligatorios'); return; }
+  const idx=state.items.findIndex(x=>x.id===item.id || x.id===state.editingId);
+  if(idx>=0) state.items[idx]=item; else state.items.push(item);
+  state.editingId=item.id; renderList(); renderPreview();
+}
+function editItem(id){ const item=state.items.find(x=>x.id===id); if(item) fillForm(item); }
+function deleteItem(id){ state.items=state.items.filter(x=>x.id!==id); renderList(); renderPreview(); }
+async function loadItems(){
+  try{
+    const res=await fetch('./data/items.json',{cache:'no-store'});
+    if(!res.ok) throw new Error('No se pudo cargar items.json');
+    const data=await res.json();
+    if(Array.isArray(data)){ state.items=data; renderList(); if(data[0]) fillForm(data[0]); }
+  }catch(e){ alert(e.message); }
+}
+function downloadJson(){
+  const blob=new Blob([JSON.stringify(state.items,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='items.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+$('addEffectBtn').onclick=()=>addEffectRow();
+$('saveBtn').onclick=saveItem;
+$('newBtn').onclick=resetForm;
+$('loadBtn').onclick=loadItems;
+$('downloadBtn').onclick=downloadJson;
+resetForm(); renderList(); renderPreview();
+</script>
+</body>
+</html>

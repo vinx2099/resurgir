@@ -1,40 +1,5 @@
 [
   {
-    "id": "story_dia21_radio",
-    "name": "Señal de radio",
-    "type": "story",
-    "day": 21,
-    "weight": 0,
-    "days": 1,
-    "repeatable": false,
-    "text": "Una vieja radio capta una señal intermitente. Parece un asentamiento cercano intentando contactar. No se sabe si son amigos.",
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Responder la señal",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": 2
-          },
-          {
-            "type": "moraleAll",
-            "amount": 1
-          }
-        ]
-      },
-      "B": {
-        "label": "Ignorarla, no arriesgar",
-        "effects": [
-          {
-            "type": "moraleAll",
-            "amount": -1
-          }
-        ]
-      }
-    }
-  },
-  {
     "id": "lluvia_acida",
     "name": "Lluvia ácida",
     "image": "https://i.ibb.co/HfTD9shg/lluvia-acida.jpg",
@@ -55,152 +20,6 @@
         "days": 2
       }
     ]
-  },
-  {
-    "id": "sabotaje",
-    "name": "Sabotaje",
-    "image": "https://i.ibb.co/v0S0SvC/sabotaje.jpg",
-    "text": "Alguien ha manipulado el generador durante la noche. Chispazos, humo y gritos en la oscuridad: el sabotaje ha sido intencionado.",
-    "days": 1,
-    "weight": 8,
-    "type": "city",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "stabilityChange",
-        "amount": -1
-      },
-      {
-        "type": "destroyBuilding",
-        "building": "generador"
-      }
-    ],
-    "condition": {
-      "type": "building",
-      "id": "generador"
-    },
-    "skipWhenAttackActive": true
-  },
-  {
-    "id": "semanal_2",
-    "name": "Segunda semana",
-    "image": "",
-    "text": "Dos semanas en pie. {survivor} propone reorganizar las tareas para ser más eficientes.",
-    "days": 1,
-    "weight": 0,
-    "type": "story",
-    "day": 14,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Hacer una pequeña fiesta (-2 alimento)",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": 2
-          },
-          {
-            "type": "moraleAll",
-            "amount": 1
-          },
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 2
-          }
-        ]
-      },
-      "B": {
-        "label": "Seguir como estamos",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          }
-        ]
-      }
-    }
-  },
-  {
-    "id": "comerciante",
-    "name": "Comerciante ambulante",
-    "image": "https://i.ibb.co/VpBGZrrr/comerciante.jpg",
-    "text": "Basilio y el fiel Rocinante han vuelto al asentamiento. Los niños corren en su búsqueda con la esperanza de obtener algún juguete o golosina.",
-    "days": 1,
-    "weight": 8,
-    "type": "city",
-    "repeatable": true,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Comerciar (-2 mat, +2 comida)",
-        "effects": [
-          {
-            "type": "removeResource",
-            "resource": "materials",
-            "amount": 2
-          },
-          {
-            "type": "addResource",
-            "resource": "food",
-            "amount": 2
-          }
-        ]
-      },
-      "B": {
-        "label": "Comerciar (-2 comida, +2 materiales)",
-        "effects": [
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 3
-          },
-          {
-            "type": "addResource",
-            "resource": "materials",
-            "amount": 2
-          }
-        ]
-      },
-      "C": {
-        "label": "No hacer negocios",
-        "effects": []
-      }
-    }
-  },
-  {
-    "id": "semanal_1",
-    "name": "Revisión semanal",
-    "image": "",
-    "text": "Al final de la semana, el grupo hace balance. Han sobrevivido, pero el camino por delante es largo.",
-    "days": 1,
-    "weight": 0,
-    "type": "story",
-    "day": 7,
-    "choiceMode": "direct",
-    "effects": []
-  },
-  {
-    "id": "noche_tranquila",
-    "name": "Noche tranquila",
-    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
-    "text": "Por una vez, todo está en calma. El grupo aprovecha para descansar y recuperar fuerzas.",
-    "days": 1,
-    "weight": 9,
-    "type": "city",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "fatigueAll",
-        "amount": -1
-      },
-      {
-        "type": "healSurvivor",
-        "target": "random"
-      }
-    ],
-    "skipWhenAttackActive": true
   },
   {
     "id": "fanatic_cerca",
@@ -236,54 +55,6 @@
           },
           {
             "type": "injureSurvivor"
-          }
-        ]
-      }
-    ],
-    "skipWhenAttackActive": true
-  },
-  {
-    "id": "raiders_cerca",
-    "name": "Carroñeros en la zona",
-    "image": "https://i.ibb.co/JFG6hg9y/raiders001.jpg",
-    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de carroñeros parece estar vigilando el asentamiento.",
-    "days": 1,
-    "weight": 9,
-    "type": "city",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "random",
-        "attackStrength": 3,
-        "arrivalDays": 2,
-        "combatPopupVictory": {
-          "text": "Seguro que tardarán en pensar a volver por este sitio..."
-        },
-        "combatPopupDefeat": {
-          "text": "Los bastardos han conseguido robarnos materiales del almacén y se han largado."
-        },
-        "effectOnVictory": [
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          },
-          {
-            "type": "addResource",
-            "resource": "materials",
-            "amount": 2
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "stabilityChange",
-            "amount": -2
-          },
-          {
-            "type": "removeResource",
-            "resource": "materials",
-            "amount": 2
           }
         ]
       }
@@ -551,30 +322,339 @@
     }
   },
   {
-    "id": "lowmorale",
-    "name": "Revuelta",
-    "image": "",
-    "text": "Se ha producido una revuelta en el campamento por la gestión del mismo. Voces cansadas y hambrientas ponen en peligro la estabilidad del lugar.",
+    "id": "comercio002",
+    "name": "Caponata",
+    "image": "https://i.ibb.co/8nzRtT8H/comercio002.jpg",
+    "text": "Caponata hace su ruta de venta de sus preciadas gallinas. Cada vez que le compras una gallina te recita alguna receta para hacer con la carne o con los huevos.",
     "days": 1,
-    "weight": 1,
+    "weight": 8,
     "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Comerciar (-2 mat, +1 gallina)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "chickens",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "No hacer negocios",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "discusion_turnos",
+    "name": "Discusión por los turnos",
+    "image": "https://i.ibb.co/8nzRtT8H/comercio002.jpg",
+    "text": "La tensión por el reparto de tareas estalla en plena cena. Dos supervivientes casi llegan a las manos y el resto observa en silencio.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Ceder y darles una noche libre",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          }
+        ]
+      },
+      "B": {
+        "label": "Imponer disciplina",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "noche_tranquila",
+    "name": "Noche tranquila",
+    "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
+    "text": "Por una vez, todo está en calma. El grupo aprovecha para descansar y recuperar fuerzas.",
+    "days": 1,
+    "weight": 9,
+    "type": "city",
+    "skipWhenAttackActive": true,
     "repeatable": true,
     "choiceMode": "direct",
     "effects": [
       {
-        "type": "stabilityChange",
-        "amount": -2
+        "type": "addFatigue",
+        "amount": 1
+      },
+      {
+        "type": "healSurvivor",
+        "injuryLevel": "simple"
       }
     ]
   },
   {
+    "id": "combustible_olvidado",
+    "name": "Bidones olvidados",
+    "image": "",
+    "text": "{survivor} encuentra dos garrafas todavía selladas bajo una lona mugrienta. Huelen fatal, pero el combustible sigue siendo útil.",
+    "days": 1,
+    "weight": 10,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "fuel",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "personal001",
+    "name": "el dormitorio",
+    "image": "",
+    "text": "Quieren hablar contigo",
+    "days": 1,
+    "weight": 8,
+    "type": "personal",
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "day_min",
+          "value": 4
+        },
+        {
+          "type": "day_max",
+          "value": 6
+        }
+      ]
+    },
+    "personalSurvivorId": "survivor_vw4cahg8",
+    "startNode": "Test",
+    "nodes": {
+      "Test": {
+        "text": "Mi dormitorio tiene goteras y no consigo descansar correctamente. Me gustaría contar con algo de cemento y madera para repararlo.",
+        "options": {
+          "A": {
+            "label": "Entregar materiales",
+            "effects": [
+              {
+                "type": "removeResource",
+                "resource": "materials",
+                "amount": 1
+              }
+            ]
+          },
+          "B": {
+            "label": "No entregar nada",
+            "effects": [
+              {
+                "type": "moraleSurvivor",
+                "amount": -1,
+                "targetId": "survivor_vw4cahg8"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "choiceMode": "personal",
+    "effects": []
+  },
+  {
+    "id": "raiders_cerca",
+    "name": "Carroñeros en la zona",
+    "image": "https://i.ibb.co/Y4cS5PGR/grupo-caza.jpg",
+    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de carroñeros parece estar vigilando el asentamiento.",
+    "days": 1,
+    "weight": 9,
+    "type": "city",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "random",
+        "attackStrength": 3,
+        "arrivalDays": 2,
+        "combatPopupVictory": {
+          "text": "Seguro que tardarán en pensar a volver por este sitio..."
+        },
+        "combatPopupDefeat": {
+          "text": "Los bastardos han conseguido robarnos materiales del almacén y se han largado."
+        },
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "explorar_lobos",
+    "name": "bestias salvajes",
+    "image": "https://i.ibb.co/Y4cS5PGR/grupo-caza.jpg",
+    "text": "¡Lobos!",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "skipWhenAttackActive": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "random",
+        "attackStrength": 3,
+        "arrivalDays": 1,
+        "combatPopupVictory": {},
+        "combatPopupDefeat": {},
+        "effectOnVictory": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ],
+        "effectOnDefeat": []
+      }
+    ]
+  },
+  {
+    "id": "fiebre_en_barracones",
+    "name": "Fiebre en los barracones",
+    "image": "https://i.ibb.co/8gHY12mQ/fiebre.jpg",
+    "text": "Una noche sofocante y la falta de higiene pasan factura. Varios supervivientes amanecen agotados y el humor del campamento se resiente.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Gastar medicinas para controlarlo",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Aguantar y racionar esfuerzos",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "familia_en_la_carretera",
+    "name": "Familia en la carretera",
+    "image": "https://i.ibb.co/JwHtgPjn/survivor-van.jpg",
+    "text": "{survivor} se cruza con una pequeña familia escondida en una furgoneta. Llevan días sobreviviendo con lo puesto y dudan de cualquiera que se acerque.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Ofrecer comida y convencerlos",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "addSurvivorRandom"
+          },
+          {
+            "type": "addSurvivorRandom"
+          },
+          {
+            "type": "removeResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Seguir de largo",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
     "id": "story_dia14_refugiados",
     "name": "Grupo de refugiados",
-    "image": "",
+    "image": "https://i.ibb.co/HpdT4zQ7/idea1.jpg",
     "text": "Un pequeño grupo llega al asentamiento pidiendo refugio. Están agotados y hambrientos. Acogerlos supondrá un esfuerzo.",
     "days": 1,
     "weight": 0,
     "type": "story",
+    "condition": {
+      "type": "stability_min",
+      "value": 7
+    },
     "priority": true,
     "day": 14,
     "choiceMode": "choice",
@@ -584,11 +664,6 @@
         "effects": [
           {
             "type": "stabilityChange",
-            "amount": 2
-          },
-          {
-            "type": "removeResource",
-            "resource": "food",
             "amount": 2
           },
           {
@@ -605,7 +680,7 @@
         "effects": [
           {
             "type": "stabilityChange",
-            "amount": -4
+            "amount": -3
           },
           {
             "type": "moraleAll",
@@ -630,221 +705,17 @@
     }
   },
   {
-    "id": "explorar_lobos",
-    "name": "bestias salvajes",
+    "id": "npc_joe_intro",
+    "name": "Joe, solo joe",
     "image": "",
-    "text": "¡Lobos!",
+    "text": "Joe está aquí, y quiere partirte la crisma.",
     "days": 1,
-    "weight": 4,
-    "type": "explore",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "random",
-        "attackStrength": 3,
-        "arrivalDays": 1,
-        "combatPopupVictory": {},
-        "combatPopupDefeat": {},
-        "effectOnVictory": [
-          {
-            "type": "addResource",
-            "resource": "food",
-            "amount": 1
-          }
-        ],
-        "effectOnDefeat": []
-      }
-    ]
-  },
-  {
-    "id": "combustible_olvidado",
-    "name": "Bidones olvidados",
-    "image": "",
-    "text": "{survivor} encuentra dos garrafas todavía selladas bajo una lona mugrienta. Huelen fatal, pero el combustible sigue siendo útil.",
-    "days": 1,
-    "weight": 4,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "fuel",
-        "amount": 2
-      }
-    ]
-  },
-  {
-    "id": "gallinas_errantes",
-    "name": "Gallinas errantes",
-    "image": "",
-    "text": "Entre chatarra y maleza, {survivor} localiza un pequeño gallinero destrozado. Un par de gallinas siguen vivas y corretean sin rumbo.",
-    "days": 1,
-    "weight": 4,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Atraparlas y traerlas a la base",
-        "effects": [
-          {
-            "type": "addResource",
-            "resource": "chickens",
-            "amount": 2
-          }
-        ]
-      },
-      "B": {
-        "label": "Matar una para comer hoy",
-        "effects": [
-          {
-            "type": "addResource",
-            "resource": "food",
-            "amount": 2
-          }
-        ]
-      }
-    }
-  },
-  {
-    "id": "cables_rebuscados",
-    "name": "Bobinas de cobre",
-    "image": "",
-    "text": "En una nave saqueada quedan restos de cableado y piezas eléctricas. No es mucho, pero podría sacar al asentamiento de un apuro.",
-    "days": 1,
-    "weight": 5,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "electricity",
-        "amount": 1
-      },
-      {
-        "type": "addResource",
-        "resource": "materials",
-        "amount": 1
-      }
-    ]
-  },
-  {
-    "id": "fiebre_en_barracones",
-    "name": "Fiebre en barracones",
-    "image": "",
-    "text": "Una noche sofocante y la falta de higiene pasan factura. Varios supervivientes amanecen agotados y el humor del campamento se resiente.",
-    "days": 1,
-    "weight": 5,
-    "type": "city",
-    "repeatable": true,
+    "weight": 0,
+    "type": "story",
+    "priority": true,
     "skipWhenAttackActive": true,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Gastar medicinas para controlarlo",
-        "effects": [
-          {
-            "type": "removeResource",
-            "resource": "meds",
-            "amount": 1
-          },
-          {
-            "type": "moraleAll",
-            "amount": 1
-          }
-        ]
-      },
-      "B": {
-        "label": "Aguantar y racionar esfuerzos",
-        "effects": [
-          {
-            "type": "fatigueAll",
-            "amount": 1
-          },
-          {
-            "type": "moraleAll",
-            "amount": -1
-          }
-        ]
-      }
-    }
-  },
-  {
-    "id": "discusion_turnos",
-    "name": "Discusión por los turnos",
-    "image": "",
-    "text": "La tensión por el reparto de tareas estalla en plena cena. Dos supervivientes casi llegan a las manos y el resto observa en silencio.",
-    "days": 1,
-    "weight": 5,
-    "type": "city",
-    "repeatable": true,
-    "skipWhenAttackActive": true,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Ceder y darles una noche libre",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          },
-          {
-            "type": "fatigueAll",
-            "amount": -1
-          }
-        ]
-      },
-      "B": {
-        "label": "Imponer disciplina",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": -1
-          },
-          {
-            "type": "moraleAll",
-            "amount": -1
-          }
-        ]
-      }
-    }
-  },
-  {
-    "id": "familia_en_la_carretera",
-    "name": "Familia en la carretera",
-    "image": "",
-    "text": "{survivor} se cruza con una pequeña familia escondida en una furgoneta. Llevan días sobreviviendo con lo puesto y dudan de cualquiera que se acerque.",
-    "days": 1,
-    "weight": 4,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Ofrecer comida y convencerlos",
-        "effects": [
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 2
-          },
-          {
-            "type": "addSurvivorRandom"
-          }
-        ]
-      },
-      "B": {
-        "label": "Seguir de largo",
-        "effects": [
-          {
-            "type": "moraleAll",
-            "amount": -1
-          }
-        ]
-      }
-    }
+    "day": 10,
+    "choiceMode": "direct",
+    "effects": []
   }
 ]

@@ -208,5 +208,51 @@
     ],
     "lootOnFlee": [],
     "lootOnDefeat": []
+  },
+  {
+    "id": "npc_joe",
+    "name": "Joe",
+    "label": "Joe",
+    "labelType": "npc",
+    "icon": "💀",
+    "description": "Joe el bruto",
+    "force": 5,
+    "attackDice": "1d8",
+    "defenseDice": "1d6",
+    "injuryChanceBonus": 0,
+    "fleeChance": 0,
+    "preAttackEventId": "npc_joe_intro",
+    "variants": [],
+    "weapons": [
+      {
+        "itemId": "old_pistol",
+        "chance": 1,
+        "dropOnVictory": true
+      }
+    ],
+    "lootOnVictory": [],
+    "lootItemsOnVictory": [
+      {
+        "itemId": "old_pistol",
+        "chance": 0.5,
+        "amount": [
+          1,
+          1
+        ]
+      }
+    ],
+    "lootOnFlee": [],
+    "lootItemsOnFlee": [],
+    "lootOnDefeat": [
+      {
+        "resource": "food",
+        "chance": 0.5,
+        "amount": [
+          2,
+          4
+        ]
+      }
+    ],
+    "lootItemsOnDefeat": []
   }
 ]

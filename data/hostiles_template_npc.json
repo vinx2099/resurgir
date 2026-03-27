@@ -1,0 +1,51 @@
+[
+  {
+    "id": "raiders",
+    "name": "Raiders",
+    "icon": "💀",
+    "force": 3,
+    "variants": [
+      {
+        "id": "basicos",
+        "name": "Raiders básicos",
+        "forceBonus": 0
+      },
+      {
+        "id": "tiradores",
+        "name": "Raiders tiradores",
+        "forceBonus": 1
+      },
+      {
+        "id": "brutos",
+        "name": "Raiders brutos",
+        "forceBonus": 2
+      }
+    ]
+  },
+  {
+    "id": "wolves",
+    "name": "Lobos salvajes",
+    "icon": "🐺",
+    "force": 2,
+    "variants": [
+      {
+        "id": "hambrientos",
+        "name": "Lobos hambrientos",
+        "forceBonus": 0
+      },
+      {
+        "id": "alfa",
+        "name": "Manada alfa",
+        "forceBonus": 2
+      }
+    ]
+  },
+  {
+    "id": "saul_el_tuerto",
+    "name": "Saúl el Tuerto",
+    "icon": "🎭",
+    "force": 5,
+    "label": "npc",
+    "preAttackEventId": "npc_saul_intro"
+  }
+]

@@ -1,0 +1,117 @@
+[
+  {
+    "id": "melee_knife",
+    "name": "Cuchillo",
+    "type": "weapon",
+    "description": "+1 combate cuerpo a cuerpo.",
+    "effects": [
+      {
+        "kind": "melee",
+        "amount": 1
+      }
+    ],
+    "durability": 4,
+    "maxDurability": 4,
+    "repairable": true
+  },
+  {
+    "id": "ranged_pistol",
+    "name": "Pistola",
+    "type": "weapon",
+    "description": "Añade 1d4 en combate.",
+    "effects": [
+      {
+        "kind": "ranged",
+        "amount": 4
+      }
+    ],
+    "durability": 4,
+    "maxDurability": 4,
+    "repairable": true
+  },
+  {
+    "id": "armor_jacket",
+    "name": "Chaqueta reforzada",
+    "type": "equipment",
+    "description": "Reduce la posibilidad y gravedad de herida.",
+    "effects": [
+      {
+        "kind": "armor",
+        "amount": 1
+      }
+    ],
+    "durability": 4,
+    "maxDurability": 4,
+    "repairable": true
+  },
+  {
+    "id": "worker_toolkit",
+    "name": "Herramientas de obra",
+    "type": "tool",
+    "description": "Reduce 1 día de construcción.",
+    "effects": [
+      {
+        "kind": "worker",
+        "amount": 1
+      }
+    ],
+    "durability": 5,
+    "maxDurability": 5,
+    "repairable": true,
+    "requiredSkill": "manitas"
+  },
+  {
+    "id": "medkit",
+    "name": "Botiquín",
+    "type": "consumable",
+    "description": "Cura un nivel de herida.",
+    "stackable": false,
+    "effects": [
+      {
+        "kind": "heal",
+        "amount": 1
+      }
+    ],
+    "use": "consume",
+    "usableIn": [
+      "base",
+      "event"
+    ]
+  },
+  {
+    "id": "snack_pack",
+    "name": "Ración energética",
+    "type": "consumable",
+    "description": "+1 comida.",
+    "stackable": true,
+    "effects": [
+      {
+        "kind": "food",
+        "amount": 1
+      }
+    ],
+    "use": "consume",
+    "usableIn": [
+      "base",
+      "event"
+    ]
+  },
+  {
+    "id": "comic_book",
+    "name": "Cómic viejo",
+    "type": "consumable",
+    "description": "+1 moral.",
+    "stackable": true,
+    "effects": [
+      {
+        "kind": "fun",
+        "amount": 1
+      }
+    ],
+    "use": "consume",
+    "usableIn": [
+      "base",
+      "event"
+    ]
+  }
+]

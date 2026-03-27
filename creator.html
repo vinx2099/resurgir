@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESURGIR — Creator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0c09; --panel: #0f120d; --panel2: #141a11;
+      --line: #2a3525; --line2: #3a4a30; --text: #c8d4b8;
+      --muted: #6b7a5e; --dim: #3d4a33;
+      --ok: #4a8a35; --ok-bright: #72c44e;
+      --amber: #b87c2a; --amber-bright: #e8a83e;
+      --accent-bright: #6ab89e;
+      --danger-bright: #d87070;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 26px 18px 34px;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,20,0,0.06) 0px, rgba(0,20,0,0.06) 1px, transparent 1px, transparent 3px);
+      pointer-events: none;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 1040px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .top {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .logo {
+      width: min(88vw, 420px);
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 0 18px rgba(74,138,53,0.18));
+    }
+    .tagline {
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .back-link {
+      font-size: 10px;
+      color: var(--dim);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      transition: all 0.15s;
+    }
+    .back-link:hover {
+      color: var(--ok-bright);
+      border-color: var(--ok);
+      background: rgba(74,138,53,0.05);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      width: 100%;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      min-height: 188px;
+    }
+    .card::after {
+      content: '';
+      position: absolute; bottom: 0; right: 0;
+      width: 12px; height: 12px;
+      background: var(--bg);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+    .card:hover {
+      border-color: var(--line2);
+      background: var(--panel2);
+      transform: translateY(-2px);
+    }
+    .card:hover .card-arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .card-header {
+      padding: 10px 14px;
+      background: var(--panel2);
+      border-bottom: 1px solid var(--line2);
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-header::before { content: '▶'; font-size: 7px; color: var(--ok); }
+    .card-header.ok { color: var(--ok-bright); }
+    .card-header.amber { color: var(--amber-bright); }
+    .card-header.accent { color: var(--accent-bright); }
+    .card-header.danger { color: var(--danger-bright); }
+    .card-body { padding: 16px 14px 22px; }
+    .card-body p {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.7;
+      letter-spacing: 0.04em;
+    }
+    .card-body ul {
+      margin-top: 10px;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .card-body ul li {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 0.06em;
+    }
+    .card-body ul li::before {
+      content: '// ';
+      color: var(--ok);
+    }
+    .card-arrow {
+      position: absolute;
+      bottom: 14px; right: 18px;
+      font-size: 18px;
+      color: var(--ok-bright);
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: all 0.2s;
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 0.10em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <img class="logo" src="./pics/logo.png" alt="RESURGIR" />
+      <div class="tagline">// Creator · Herramientas conectadas a /data</div>
+      <a class="back-link" href="index.html">← Volver al inicio</a>
+    </div>
+
+    <div class="cards">
+      <a class="card" href="char_editor.html">
+        <div class="card-header accent">Personajes</div>
+        <div class="card-body">
+          <p>Crea y edita supervivientes para <code>survivors.json</code>.</p>
+          <ul>
+            <li>fatiga, historia y habilidades</li>
+            <li>rareza e imágenes</li>
+          </ul>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+
+      <a class="card" href="editor_visual_buildings.html">
+        <div class="card-header ok">Mapa de base</div>
+        <div class="card-body">
+          <p>Coloca visualmente los edificios del asentamiento.</p>
+          <ul>
+            <li>posiciones y tamaños</li>
+            <li>lectura desde data</li>
+          </ul>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+
+      <a class="card" href="hostile_editor.html">
+        <div class="card-header danger">Hostiles</div>
+        <div class="card-body">
+          <p>Define enemigos, variantes, NPC, armas y loot para <code>hostiles.json</code>.</p>
+          <ul>
+            <li>némesis y evento previo</li>
+            <li>armas y botín</li>
+          </ul>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+
+      <a class="card" href="item_editor.html">
+        <div class="card-header amber">Items</div>
+        <div class="card-body">
+          <p>Gestiona objetos y equipo para <code>items.json</code>.</p>
+          <ul>
+            <li>consumibles y permanentes</li>
+            <li>hasta dos efectos</li>
+          </ul>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+
+      <a class="card" href="location_editor.html">
+        <div class="card-header ok">Locations</div>
+        <div class="card-body">
+          <p>Edita edificios y puntos de interés exteriores para <code>locations.json</code>.</p>
+          <ul>
+            <li>riesgo, loot y hostiles</li>
+            <li>renovables y únicos</li>
+          </ul>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+
+      <a class="card" href="zone_editor.html">
+        <div class="card-header accent">Zonas</div>
+        <div class="card-body">
+          <p>Configura perfiles y ambientación para <code>zones.json</code>.</p>
+          <ul>
+            <li>riesgo y desbloqueo</li>
+            <li>texto y estructura</li>
+          </ul>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+
+      <a class="card" href="event_editor.html">
+        <div class="card-header amber">Eventos</div>
+        <div class="card-body">
+          <p>Crea eventos, historia y encuentros para <code>events.json</code>.</p>
+          <ul>
+            <li>elecciones, amenazas y efectos</li>
+            <li>imágenes y condiciones</li>
+          </ul>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+    </div>
+
+    <div class="footer">Creator central para edición de datos de RESURGIR.</div>
+  </div>
+</body>
+</html>

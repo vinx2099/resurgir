@@ -57,6 +57,19 @@ textarea{resize:vertical;min-height:52px;}
 /* Variants */
 .variant-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center;border:1px solid var(--line2);padding:6px 8px;background:rgba(138,53,53,0.04);}
 .variant-row input{font-size:11px;}
+.weapon-row,.itemloot-row{display:grid;grid-template-columns:1.4fr 72px auto auto;gap:6px;margin-bottom:6px;align-items:center;border:1px solid var(--line2);padding:6px 8px;background:rgba(74,138,53,0.04);}
+.weapon-row select,.itemloot-row select,.weapon-row input,.itemloot-row input{font-size:11px;}
+.mini-note{font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.hidden{display:none!important;}
+.icon-source-box{border:1px solid var(--line2);background:rgba(184,124,42,0.05);padding:10px 12px;margin-top:8px;}
+.icon-source-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.icon-source-links a{font-size:10px;padding:6px 10px;border:1px solid var(--line2);color:var(--text);text-decoration:none;background:var(--panel2);}
+.icon-source-links a:hover{border-color:var(--ok);color:var(--ok-bright);}
+.icon-picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(40px,1fr));gap:6px;margin-top:8px;}
+.icon-pick-btn{border:1px solid var(--line2);background:var(--panel2);color:var(--text);font-size:18px;padding:8px 0;cursor:pointer;}
+.icon-pick-btn:hover{border-color:var(--amber);color:var(--amber-bright);}
+.icon-picker-group{margin-top:10px;}
+.icon-picker-group-title{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
 
 /* Hostile list */
 .hostile-list{display:flex;flex-direction:column;gap:6px;}
@@ -101,9 +114,31 @@ textarea{resize:vertical;min-height:52px;}
         <div class="section-divider"><span>Identificación</span></div>
         <div class="form-grid">
           <div class="field"><label>ID único</label><input type="text" id="f-id" placeholder="ej: wolves"/></div>
-          <div class="field"><label>Icono</label><input type="text" id="f-icon" placeholder="🐺" maxlength="4"/></div>
+          <div class="field">
+            <label>Icono</label>
+            <input type="text" id="f-icon" placeholder="🐺" maxlength="4"/>
+            <div class="icon-source-box">
+              <div class="mini-note">Para el juego seguimos usando un icono simple tipo emoji. Aquí puedes elegir uno rápido o abrir fuentes externas para buscar ideas y luego pegar el símbolo que prefieras.</div>
+              <div class="icon-source-links">
+                <a href="https://game-icons.net" target="_blank" rel="noopener">Game-Icons</a>
+                <a href="https://fontawesome.com/icons" target="_blank" rel="noopener">Font Awesome</a>
+                <a href="https://heroicons.com" target="_blank" rel="noopener">Heroicons</a>
+                <a href="https://emojipedia.org" target="_blank" rel="noopener">Emojipedia</a>
+              </div>
+              <div id="iconPickerHostile"></div>
+            </div>
+          </div>
           <div class="field"><label>Nombre base</label><input type="text" id="f-label" placeholder="ej: Lobos salvajes"/></div>
+          <div class="field">
+            <label>Tipo narrativo</label>
+            <select id="f-labelType">
+              <option value="standard">Hostil normal</option>
+              <option value="npc">NPC / Némesis</option>
+            </select>
+          </div>
           <div class="field"><label>Probabilidad de huida (0-100%)</label><input type="number" id="f-flee" value="0" min="0" max="100"/></div>
+          <div class="field"><label>Fuerza base</label><input type="number" id="f-force" value="3" min="1" max="20"/></div>
+          <div class="field full" id="npcEventField"><label>ID del evento previo al ataque (NPC)</label><input type="text" id="f-preAttackEventId" placeholder="ej: npc_saul_intro"/></div>
           <div class="field full"><label>Descripción</label><textarea id="f-description" placeholder="Descripción narrativa..."></textarea></div>
         </div>
 
@@ -139,6 +174,11 @@ textarea{resize:vertical;min-height:52px;}
         <div id="variantRows"></div>
         <button class="btn" id="addVariantBtn" style="margin-top:4px;font-size:10px;padding:5px 10px;">+ Añadir variante</button>
 
+        <div class="section-divider"><span>Armas del hostil</span></div>
+        <div class="mini-note">Estas armas se eligen al azar cuando se genera el hostil. Si una fila tiene “soltar al morir”, esa arma podrá caer como botín cuando el enemigo sea derrotado.</div>
+        <div id="weaponRows"></div>
+        <button class="btn" id="addWeaponBtn" style="margin-top:4px;font-size:10px;padding:5px 10px;">+ Añadir arma</button>
+
         <!-- LOOT ON VICTORY -->
         <div class="section-divider"><span>Loot — Victoria (hostil eliminado)</span></div>
         <div id="lootVictorySection">
@@ -148,6 +188,11 @@ textarea{resize:vertical;min-height:52px;}
           </table>
           <div class="loot-add-row">
             <button class="btn" onclick="addLootRow('victory')" style="font-size:10px;padding:4px 10px;">+ Recurso</button>
+          </div>
+          <div class="mini-note" style="margin-top:10px;">Equipo u objetos que puede soltar al ser derrotado.</div>
+          <div id="itemLootVictoryRows"></div>
+          <div class="loot-add-row">
+            <button class="btn" onclick="addItemLootRow('victory')" style="font-size:10px;padding:4px 10px;">+ Objeto</button>
           </div>
         </div>
 
@@ -160,6 +205,11 @@ textarea{resize:vertical;min-height:52px;}
         <div class="loot-add-row">
           <button class="btn" onclick="addLootRow('flee')" style="font-size:10px;padding:4px 10px;">+ Recurso</button>
         </div>
+        <div class="mini-note" style="margin-top:10px;">Equipo u objetos que pueden dejar atrás al huir.</div>
+        <div id="itemLootFleeRows"></div>
+        <div class="loot-add-row">
+          <button class="btn" onclick="addItemLootRow('flee')" style="font-size:10px;padding:4px 10px;">+ Objeto</button>
+        </div>
 
         <!-- LOOT ON DEFEAT -->
         <div class="section-divider"><span>Loot — Derrota (jugador pierde)</span></div>
@@ -170,6 +220,11 @@ textarea{resize:vertical;min-height:52px;}
         </table>
         <div class="loot-add-row">
           <button class="btn" onclick="addLootRow('defeat')" style="font-size:10px;padding:4px 10px;">+ Recurso</button>
+        </div>
+        <div class="mini-note" style="margin-top:10px;">Equipo u objetos que roban o arrasan si la base pierde.</div>
+        <div id="itemLootDefeatRows"></div>
+        <div class="loot-add-row">
+          <button class="btn" onclick="addItemLootRow('defeat')" style="font-size:10px;padding:4px 10px;">+ Objeto</button>
         </div>
 
       </div>
@@ -207,7 +262,7 @@ textarea{resize:vertical;min-height:52px;}
 
 <script>
 const $ = id => document.getElementById(id);
-const state = { hostiles: [], editingId: null };
+const state = { hostiles: [], editingId: null, items: [] };
 
 function uid(){ return 'hostile_'+Math.random().toString(36).slice(2,8); }
 function escapeHtml(s){ return String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
@@ -215,6 +270,47 @@ function showToast(msg,err=false){
   const t=$('toast'); t.textContent=msg;
   t.className='toast show'+(err?' err':'');
   clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',2800);
+}
+function getAllItems(){ return Array.isArray(state.items) ? state.items : []; }
+function getWeaponItems(){ return getAllItems().filter(it => (it.type||it.itemType)==='weapon'); }
+function getItemName(id){
+  const found=getAllItems().find(it => (it.id||it.itemId)===id);
+  return found?.name || id || 'objeto';
+}
+function updateNpcUi(){
+  const isNpc = $('f-labelType').value === 'npc';
+  $('npcEventField')?.classList.toggle('hidden', !isNpc);
+}
+function pickIconValue(value){
+  $('f-icon').value = value;
+  updatePreview();
+}
+function renderIconPicker(){
+  const wrap = $('iconPickerHostile');
+  if(!wrap) return;
+  const groups = [
+    { title:'Hostiles humanos', icons:['💀','🔪','🪓','⚔️','🧨','🎭','🩸','☠️'] },
+    { title:'Animales y bestias', icons:['🐺','🐕','🐗','🐍','🦂','🦇','🦅','🐀'] },
+    { title:'Tecnología y saqueo', icons:['📻','🔋','🛠️','🔧','⛽','📦','🎒','🧪'] },
+    { title:'Amenaza y entorno', icons:['🔥','☣️','⚡','🌑','🌫️','🧱','🚧','🏚️'] }
+  ];
+  wrap.innerHTML = groups.map(group => `
+    <div class="icon-picker-group">
+      <div class="icon-picker-group-title">${group.title}</div>
+      <div class="icon-picker-grid">
+        ${group.icons.map(icon => `<button type="button" class="icon-pick-btn" onclick="pickIconValue(${JSON.stringify(icon)})" title="Usar ${icon}">${icon}</button>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+async function autoLoadItems(){
+  try{
+    const res = await fetch('./data/items.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('No se pudo cargar items.json');
+    const data = await res.json();
+    if(Array.isArray(data)) state.items = data;
+    updatePreview();
+  }catch(e){}
 }
 
 // ── LOOT ROWS ──
@@ -244,6 +340,41 @@ function readLootRows(tbodyId){
   }));
 }
 
+function addItemLootRow(type, data={}){
+  const container = $('itemLoot'+type.charAt(0).toUpperCase()+type.slice(1)+'Rows');
+  const row=document.createElement('div');
+  row.className='itemloot-row';
+  const items = getAllItems();
+  const opts = items.length
+    ? items.map(it => {
+        const id = it.id || it.itemId;
+        const t = it.type || it.itemType || 'item';
+        return `<option value="${id}" ${data.itemId===id?'selected':''}>${escapeHtml(it.name||id)} · ${escapeHtml(t)}</option>`;
+      }).join('')
+    : `<option value="bandage">bandage</option>`;
+  row.innerHTML = `
+    <select class="itemloot-id">${opts}</select>
+    <input type="number" class="itemloot-chance" value="${Math.round((data.chance||0.5)*100)}" min="1" max="100" title="Probabilidad %">
+    <div class="dice-row">
+      <input type="number" class="itemloot-min" value="${data.amount?.[0]??1}" min="1" max="20" style="width:52px;">
+      <span class="dice-label">a</span>
+      <input type="number" class="itemloot-max" value="${data.amount?.[1]??1}" min="1" max="20" style="width:52px;">
+    </div>
+    <button onclick="this.closest('.itemloot-row').remove();updatePreview();" style="background:none;border:none;color:var(--danger-bright);cursor:pointer;font-size:14px;padding:0 4px;">×</button>`;
+  container.appendChild(row);
+  row.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',updatePreview));
+}
+function readItemLootRows(containerId){
+  return Array.from($(containerId).querySelectorAll('.itemloot-row')).map(row=>({
+    itemId: row.querySelector('.itemloot-id').value,
+    chance: Number(row.querySelector('.itemloot-chance').value)/100||0.5,
+    amount: [
+      Number(row.querySelector('.itemloot-min').value)||1,
+      Number(row.querySelector('.itemloot-max').value)||1
+    ]
+  })).filter(x=>x.itemId);
+}
+
 // ── VARIANTS ──
 $('addVariantBtn').addEventListener('click',()=>{ addVariantRow(); updatePreview(); });
 function addVariantRow(data={}){
@@ -270,21 +401,57 @@ function readVariants(){
   })).filter(v=>v.id&&v.label);
 }
 
+$('addWeaponBtn').addEventListener('click',()=>{ addWeaponRow(); updatePreview(); });
+function addWeaponRow(data={}){
+  const container=$('weaponRows');
+  const row=document.createElement('div');
+  row.className='weapon-row';
+  const weapons = getWeaponItems();
+  const opts = ['<option value="">— arma —</option>'].concat(
+    weapons.map(it=>{
+      const id=it.id||it.itemId;
+      return `<option value="${id}" ${data.itemId===id?'selected':''}>${escapeHtml(it.name||id)}</option>`;
+    })
+  ).join('');
+  row.innerHTML = `
+    <select class="weapon-id">${opts}</select>
+    <input type="number" class="weapon-chance" value="${Math.round((data.chance??1)*100)}" min="1" max="100" title="Probabilidad % de llevarla">
+    <label style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);"><input type="checkbox" class="weapon-drop" ${data.dropOnVictory!==false?'checked':''}/> soltar al morir</label>
+    <button onclick="this.closest('.weapon-row').remove();updatePreview();" style="background:none;border:none;color:var(--danger-bright);cursor:pointer;font-size:14px;padding:0 4px;">×</button>`;
+  container.appendChild(row);
+  row.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',updatePreview));
+}
+function readWeapons(){
+  return Array.from($('weaponRows').querySelectorAll('.weapon-row')).map(row=>({
+    itemId: row.querySelector('.weapon-id').value,
+    chance: Number(row.querySelector('.weapon-chance').value)/100||1,
+    dropOnVictory: !!row.querySelector('.weapon-drop').checked
+  })).filter(w=>w.itemId);
+}
+
 // ── FORM READ ──
 function getFormData(){
   return {
-    id: state.editingId||uid(),
+    id: ($('f-id').value.trim() || state.editingId || uid()),
+    name: $('f-label').value.trim(),
     label: $('f-label').value.trim(),
+    labelType: $('f-labelType').value || 'standard',
     icon: $('f-icon').value.trim()||'💀',
     description: $('f-description').value.trim(),
+    force: Number($('f-force').value)||3,
     attackDice: $('f-attackDice').value,
     defenseDice: $('f-defenseDice').value,
     injuryChanceBonus: Number($('f-injuryBonus').value)/100||0,
     fleeChance: Number($('f-flee').value)/100||0,
+    preAttackEventId: $('f-labelType').value==='npc' ? $('f-preAttackEventId').value.trim() : '',
     variants: readVariants(),
+    weapons: readWeapons(),
     lootOnVictory: readLootRows('lootVictoryRows'),
+    lootItemsOnVictory: readItemLootRows('itemLootVictoryRows'),
     lootOnFlee: readLootRows('lootFleeRows'),
+    lootItemsOnFlee: readItemLootRows('itemLootFleeRows'),
     lootOnDefeat: readLootRows('lootDefeatRows'),
+    lootItemsOnDefeat: readItemLootRows('itemLootDefeatRows'),
   };
 }
 
@@ -308,14 +475,18 @@ function saveHostile(){
 // ── RESET ──
 function resetForm(){
   state.editingId=null;
-  ['f-id','f-label','f-icon','f-description'].forEach(id=>$(id).value='');
+  ['f-id','f-label','f-icon','f-description','f-preAttackEventId'].forEach(id=>$(id).value='');
+  $('f-labelType').value='standard';
+  $('f-force').value='3';
   $('f-attackDice').value='1d6';
   $('f-defenseDice').value='1d6';
   $('f-injuryBonus').value='0';
   $('f-flee').value='0';
   $('variantRows').innerHTML='';
-  ['lootVictoryRows','lootFleeRows','lootDefeatRows'].forEach(id=>$(id).innerHTML='');
+  $('weaponRows').innerHTML='';
+  ['lootVictoryRows','lootFleeRows','lootDefeatRows','itemLootVictoryRows','itemLootFleeRows','itemLootDefeatRows'].forEach(id=>$(id).innerHTML='');
   $('formMode').textContent='NUEVO HOSTIL';
+  updateNpcUi();
   updatePreview();
 }
 
@@ -323,20 +494,29 @@ function resetForm(){
 function fillForm(h){
   state.editingId=h.id;
   $('f-id').value=h.id||'';
-  $('f-label').value=h.label||'';
+  $('f-label').value=h.name||h.label||'';
+  $('f-labelType').value=(String(h.labelType||h.label||'').toLowerCase()==='npc') ? 'npc' : 'standard';
   $('f-icon').value=h.icon||'';
   $('f-description').value=h.description||'';
+  $('f-force').value=Number(h.force||h.baseForce||3);
+  $('f-preAttackEventId').value=h.preAttackEventId||'';
   $('f-attackDice').value=h.attackDice||'1d6';
   $('f-defenseDice').value=h.defenseDice||'1d6';
   $('f-injuryBonus').value=Math.round((h.injuryChanceBonus||0)*100);
   $('f-flee').value=Math.round((h.fleeChance||0)*100);
   $('variantRows').innerHTML='';
-  (h.variants||[]).forEach(v=>addVariantRow(v));
-  ['lootVictoryRows','lootFleeRows','lootDefeatRows'].forEach(id=>$(id).innerHTML='');
+  $('weaponRows').innerHTML='';
+  (h.variants||[]).forEach(v=>addVariantRow({id:v.id,label:v.label||v.name,strengthMod:v.strengthMod??v.forceBonus??0}));
+  (h.weapons||[]).forEach(w=>addWeaponRow(w));
+  ['lootVictoryRows','lootFleeRows','lootDefeatRows','itemLootVictoryRows','itemLootFleeRows','itemLootDefeatRows'].forEach(id=>$(id).innerHTML='');
   (h.lootOnVictory||[]).forEach(l=>addLootRow('victory',l));
+  (h.lootItemsOnVictory||[]).forEach(l=>addItemLootRow('victory',l));
   (h.lootOnFlee||[]).forEach(l=>addLootRow('flee',l));
+  (h.lootItemsOnFlee||[]).forEach(l=>addItemLootRow('flee',l));
   (h.lootOnDefeat||[]).forEach(l=>addLootRow('defeat',l));
+  (h.lootItemsOnDefeat||[]).forEach(l=>addItemLootRow('defeat',l));
   $('formMode').textContent='EDITANDO';
+  updateNpcUi();
   updatePreview();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -350,11 +530,12 @@ function render(){
     <div class="hostile-card ${state.editingId===h.id?'selected':''}" onclick="fillForm(state.hostiles.find(x=>x.id==='${h.id}'))">
       <div class="hostile-icon">${h.icon||'💀'}</div>
       <div>
-        <div class="hostile-name">${escapeHtml(h.label)}</div>
+        <div class="hostile-name">${String(h.labelType||'').toLowerCase()==='npc'?'🎭 ':''}${escapeHtml(h.name||h.label)}</div>
         <div class="hostile-meta">
-          ⚔ ${h.attackDice||'1d6'} · 🛡 ${h.defenseDice||'1d6'}
+          💥 fuerza ${h.force||h.baseForce||3} · ⚔ ${h.attackDice||'1d6'} · 🛡 ${h.defenseDice||'1d6'}
           ${h.fleeChance>0?'· 🏃 '+Math.round(h.fleeChance*100)+'% huida':''}
           ${(h.variants||[]).length?'· '+h.variants.length+' variante'+(h.variants.length!==1?'s':''):''}
+          ${(h.weapons||[]).length?'· '+h.weapons.length+' arma'+(h.weapons.length!==1?'s':''):''}
         </div>
       </div>
       <button class="btn danger" onclick="event.stopPropagation();deleteHostile('${h.id}')" style="padding:4px 8px;font-size:12px;">✕</button>
@@ -401,17 +582,36 @@ async function autoLoad(){
     if(!res.ok) return;
     const data=await res.json();
     if(!Array.isArray(data)) return;
-    data.forEach(h=>{ if(!state.hostiles.find(x=>x.id===h.id)) state.hostiles.push(h); });
+    data.forEach(h=>{
+      const normalized = {
+        ...h,
+        name: h.name || h.label || h.id,
+        label: h.name || h.label || h.id,
+        labelType: String(h.labelType || h.label || '').toLowerCase()==='npc' ? 'npc' : 'standard',
+        force: Number(h.force || h.baseForce || 3),
+        variants: (h.variants||[]).map(v=>({
+          id: v.id || v.key || '',
+          label: v.label || v.name || '',
+          strengthMod: Number(v.strengthMod ?? v.forceBonus ?? v.variantForce ?? 0)
+        })).filter(v=>v.id && v.label),
+        weapons: h.weapons || []
+      };
+      if(!state.hostiles.find(x=>x.id===normalized.id)) state.hostiles.push(normalized);
+    });
     render(); showToast(`${data.length} hostiles cargados desde /data/ ✓`);
   } catch(e){}
 }
 
 $('saveBtn').addEventListener('click',saveHostile);
 $('newBtn').addEventListener('click',resetForm);
+$('f-labelType').addEventListener('change',()=>{ updateNpcUi(); updatePreview(); });
 document.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',updatePreview));
 
+renderIconPicker();
+updateNpcUi();
 updatePreview();
 autoLoad();
+autoLoadItems();
 </script>
 </body>
 </html>

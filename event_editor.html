@@ -930,10 +930,6 @@
                 </select>
               </div>
               <div class="field">
-                <label>Fuerza del grupo hostil</label>
-                <input type="number" id="f-attackStrength" value="3" min="1" max="15" placeholder="1-15" />
-              </div>
-              <div class="field">
                 <label>Días hasta el ataque</label>
                 <select id="f-attackArrival">
                   <option value="0">¡Inmediato!</option>
@@ -1052,6 +1048,7 @@ let events = [];
 let uploadedImageUrl = '';
 let hostileDefs = [];
 let buildingDefs = [];
+let itemDefs = [];
 const dataLoadWarnings = new Map();
 function renderDataWarnings(){
   const el = document.getElementById('dataWarningBanner');
@@ -1060,14 +1057,26 @@ function renderDataWarnings(){
   const items = [...dataLoadWarnings.entries()].map(([file,msg])=>`• <strong>${file}</strong>: ${msg}`).join('<br>');
   const hint = window.location.protocol==='file:'
     ? '<br><span style="color:#ffd8a8">Estás abriendo el editor con file://. Muchos navegadores bloquean la lectura de JSON locales en ese modo. Usa un servidor local o la versión web.</span>'
-    : '<br><span style="color:#ffd8a8">Comprueba que events.json, hostiles.json y buildings.json existen dentro de /data y que contienen arrays JSON válidos.</span>';
+    : '<br><span style="color:#ffd8a8">Comprueba que events.json, hostiles.json, buildings.json e items.json existen dentro de /data y que contienen arrays JSON válidos.</span>';
   el.innerHTML = `<strong>ERROR DE DATOS</strong> — No se han cargado los datos correctos.<br>${items}${hint}`;
   el.style.display='block';
 }
 function setDataWarning(file, msg){ dataLoadWarnings.set(file, msg); renderDataWarnings(); }
 function clearDataWarning(file){ dataLoadWarnings.delete(file); renderDataWarnings(); }
+
+async function loadItemsForEditor(){
+  try{
+    const res = await fetch('./data/items.json', {cache:'no-store'});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    itemDefs = await res.json();
+    clearDataWarning('items.json');
+  }catch(err){
+    setDataWarning('items.json', err?.message || 'No se pudo cargar');
+  }
+}
 const EMBEDDED_EVENTS = [];
 const EMBEDDED_HOSTILES = [];
+const EMBEDDED_ITEMS = [];
 
 // ── BUILDINGS & RESOURCES (matching the game) ──
 const RESOURCES = ['food','chickens','materials','fuel','meds','electricity'];
@@ -1145,11 +1154,12 @@ function populateHostileSelect(){
   const hostiles=(hostileDefs||[]).filter(h=>h&&h.id);
   hostiles.forEach(h=>{
     const icon=h.icon?`${h.icon} `:'';
-    const label=h.label||h.name||h.id;
+    const label=(String(h.label||'').toLowerCase()==='npc' ? `🎭 ${h.name||h.id}` : (h.name||h.id));
     opts.push(`<option value="${h.id}">${icon}${label}</option>`);
   });
   sel.innerHTML=opts.join('');
   sel.value=[...sel.options].some(o=>o.value===current)?current:'random';
+  updateAttackVariantOptions();
 }
 
 const EFFECT_TYPES = [
@@ -1166,6 +1176,9 @@ const EFFECT_TYPES = [
   { group: '👥 Supervivientes', value: 'injureSurvivor', label: '🩸 Herir superviviente (aleatorio o por ID)' },
   { group: '👥 Supervivientes', value: 'injureExplorer', label: '🧭 Herir al explorador' },
   { group: '👥 Supervivientes', value: 'injureActionSurvivor', label: '🎯 Herir a quien realizó la acción relacionada' },
+  { group: '🎒 Equipo', value: 'addItem', label: '🎒 Encontrar equipo' },
+  { group: '🎒 Equipo', value: 'damageItem', label: '🛠 Dañar equipo' },
+  { group: '🎒 Equipo', value: 'removeItem', label: '📦 Perder equipo' },
   { group: '⚔ Riesgo y restricciones', value: 'setAttackThreat', label: '⚔ Activar amenaza de ataque' },
   { group: '⚔ Riesgo y restricciones', value: 'limitAction', label: '🚫 Inhabilitar acción (X días)' },
   { group: '🎭 Narrativa', value: 'decide', label: '🎭 DECIDIR — el jugador elige entre opciones personalizadas' },
@@ -1217,6 +1230,69 @@ function updateConditionUI(){
       valueLabel.textContent=type==='day_min'?'Día mínimo':'Día máximo';
     }
   }
+}
+
+
+
+function getHostileVariantDefs(hostileType){
+  if(!hostileType || hostileType==='random') return [];
+  const def = (hostileDefs||[]).find(h => h.id === hostileType);
+  const variants = Array.isArray(def?.variants) ? def.variants : [];
+  return variants.filter(Boolean);
+}
+function updateAttackVariantOptions(){
+  const hostileSel = document.getElementById('f-attackHostile');
+  const variantSel = document.getElementById('f-attackVariant');
+  if(!hostileSel || !variantSel) return;
+  const hostileType = hostileSel.value || 'random';
+  variantSel.innerHTML = '';
+  const first = document.createElement('option');
+  first.value = 'random';
+  first.textContent = '🎲 Aleatorio';
+  variantSel.appendChild(first);
+  getHostileVariantDefs(hostileType).forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.id || v.key || v.name || 'variant';
+    const forceTxt = Number.isFinite(Number(v.force ?? v.strength))
+      ? ` · fuerza ${Number(v.force ?? v.strength)}`
+      : Number(v.forceBonus||v.variantForce||0)
+        ? ` · base ${Number(v.forceBonus||v.variantForce)>=0?'+':''}${Number(v.forceBonus||v.variantForce||0)}`
+        : '';
+    const labelType = String(v.label||v.labelType||'').toLowerCase()==='npc' ? '🎭 ' : '';
+    opt.textContent = `${labelType}${v.name || v.label || opt.value}${forceTxt}`;
+    variantSel.appendChild(opt);
+  });
+}
+
+function getItemDefs(){
+  const source = (itemDefs && itemDefs.length ? itemDefs : EMBEDDED_ITEMS).filter(Boolean);
+  const unique=[]; const seen=new Set();
+  source.forEach(it=>{ const id=it.id||it.itemId; if(!id||seen.has(id)) return; seen.add(id); unique.push({...it, id}); });
+  return unique;
+}
+function appendItemOptions(select){
+  select.innerHTML='';
+  const defs=getItemDefs();
+  if(!defs.length){
+    const o=document.createElement('option'); o.value='bandage'; o.textContent='bandage'; select.appendChild(o); return;
+  }
+  defs.forEach(it=>{
+    const o=document.createElement('option');
+    o.value=it.id;
+    const t=it.type||it.itemType||'item';
+    o.textContent=`${it.name||it.id} · ${t}`;
+    select.appendChild(o);
+  });
+}
+function appendItemTargetOptions(select){
+  select.innerHTML='';
+  [
+    ['base','Almacén de la base'],
+    ['explorer','Explorador / protagonista del evento'],
+    ['randomSurvivor','Superviviente aleatorio'],
+    ['survivorById','Superviviente por ID'],
+    ['actionSurvivor','Quien realizó la acción relacionada']
+  ].forEach(([value,label])=>{ const o=document.createElement('option'); o.value=value; o.textContent=label; select.appendChild(o); });
 }
 
 function readCondition(){
@@ -1529,6 +1605,15 @@ function updateEffectRowFields(row, type) {
   } else if (type === 'unlockBuilding') {
     p1.style.display = '';
     appendBuildingOptions(p1);
+  } else if (type === 'addItem' || type === 'damageItem' || type === 'removeItem') {
+    p1.style.display = '';
+    p2.style.display = '';
+    amt.style.display = '';
+    appendItemOptions(p1);
+    appendItemTargetOptions(p2);
+    amt.placeholder = type === 'damageItem' ? 'Daño / calidad' : 'Cantidad';
+    amt.value = 1;
+    amt.min = 1; amt.max = 99;
   } else if (type === 'moraleAll' || type === 'moraleSurvivor' || type === 'stabilityChange') {
     amt.style.display = '';
     amt.placeholder = type === 'stabilityChange' ? 'Cantidad (+/-)' : 'Moral +/- (ej: 1 o -1)';
@@ -1653,6 +1738,10 @@ function readEffectRows(containerId) {
     } else if (type === 'injureActionSurvivor') {
       if (p1.value && p1.value !== 'related') effect.action = p1.value;
       if (p2.value) effect.injuryLevel = p2.value;
+    } else if (type === 'addItem' || type === 'damageItem' || type === 'removeItem') {
+      effect.itemId = p1.value;
+      effect.target = p2.value || 'base';
+      effect.amount = Number(amt.value) || 1;
     } else if (type === 'decide') {
       effect.options = readDecideOptions(row);
     } else if (type === 'unlockBuilding') {
@@ -1696,11 +1785,14 @@ function effectToString(e) {
   if (e.type === 'injureSurvivor') return `Herir superviviente (${e.targetId||'aleatorio'})`;
   if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
   if (e.type === 'injureActionSurvivor') return `🩸 Herir por acción (${e.action||'relacionada'})${e.injuryLevel?` [${e.injuryLevel}]`:''}`;
+  if (e.type === 'addItem') return `🎒 Encontrar ${(getItemDefs().find(it=>it.id===e.itemId)?.name)||e.itemId} → ${e.target||'base'} x${e.amount||1}`;
+  if (e.type === 'damageItem') return `🛠 Dañar ${(getItemDefs().find(it=>it.id===e.itemId)?.name)||e.itemId||'equipo'} → ${e.target||'base'} (${e.amount||1})`;
+  if (e.type === 'removeItem') return `📦 Perder ${(getItemDefs().find(it=>it.id===e.itemId)?.name)||e.itemId||'equipo'} → ${e.target||'base'} x${e.amount||1}`;
   if (e.type === 'setAttackThreat') {
     const hostile = e.hostileType==='random'
       ? 'hostil aleatorio'
       : (hostileDefs.find(h=>h.id===e.hostileType)?.label || e.hostileType || 'raiders');
-    return `⚔ Amenaza (${hostile}) · Fuerza ${e.attackStrength||3} · Llega en ${e.arrivalDays||1}d`;
+    return `⚔ Amenaza (${hostile}${e.hostileVariant&&e.hostileVariant!=='random'?` · ${e.hostileVariant}`:''}) · Llega en ${e.arrivalDays||1}d`;
   }
   if (e.type === 'limitAction') return `🚫 Inhabilitar acción: ${e.action} (${e.days||1}d)`;
   if (e.type === 'moraleAll') return `${e.amount>0?'😊':'😞'} Moral todos ${e.amount>0?'+':''}${e.amount}`;
@@ -1755,6 +1847,7 @@ function buildEventObject() {
     const nodeId = ev.startNode;
     const nodeTitle = document.getElementById('f-personalNodeTitle')?.value?.trim() || '';
     const nodeText = document.getElementById('f-personalNodeText')?.value?.trim() || story || 'Conversación personal.';
+    if(!ev.text) ev.text = nodeText;
     const personalLabelA = document.getElementById('f-personalLabelA')?.value?.trim() || 'Opción A';
     const personalLabelB = document.getElementById('f-personalLabelB')?.value?.trim() || 'Opción B';
     const personalLabelC = document.getElementById('f-personalLabelC')?.value?.trim() || '';
@@ -1780,7 +1873,7 @@ function buildEventObject() {
     ev.effects = [{
       type: 'setAttackThreat',
       hostileType: document.getElementById('f-attackHostile')?.value || 'random',
-      attackStrength: Number(document.getElementById('f-attackStrength').value) || 3,
+      hostileVariant: document.getElementById('f-attackVariant')?.value || 'random',
       arrivalDays: Number(document.getElementById('f-attackArrival').value) || 1,
       combatPopupVictory: {
         title: document.getElementById('f-attackPopupVictoryTitle')?.value?.trim() || undefined,
@@ -2012,10 +2105,11 @@ if(attackStrengthInput) attackStrengthInput.addEventListener('input', updatePrev
 // ── ADD EVENT ──
 function addEvent() {
   let ev;
-  try{ ev = buildEventObject(); }catch(err){ showToast(err.message || 'Error al construir el evento', true); return; }
+  try{ ev = buildEventObject(); }catch(err){ console.error(err); showToast(err.message || 'Error al construir el evento', true); return; }
   if (!ev.id) { showToast('El ID es obligatorio', true); return; }
   if (!ev.name) { showToast('El nombre es obligatorio', true); return; }
-  if (!ev.text) { showToast('El texto narrativo es obligatorio', true); return; }
+  if (!ev.text && ev.type !== 'personal') { showToast('El texto narrativo es obligatorio', true); return; }
+  if (ev.type === 'personal' && !ev.personalSurvivorId) { showToast('En un evento personal debes indicar el ID del survivor protagonista', true); return; }
 
   if (events.find(e => e.id === ev.id)) {
     showToast(`Ya existe un evento con el ID "${ev.id}"`, true); return;
@@ -2069,7 +2163,7 @@ function renderEventList() {
     const effectCount = ev.choiceMode === 'direct'
       ? (ev.effects?.length || 0) + ' efecto(s)'
       : `A: ${ev.options?.A?.effects?.length||0} · B: ${ev.options?.B?.effects?.length||0} · C: ${ev.options?.C?.effects?.length||0}`;
-    const typeTag = ev.type==='weekly' ? `📅 Semanal (semana ${ev.week||'?'})` : ev.type==='explore'?'🗺 Exploración':'📋 Diario';
+    const typeTag = ev.type==='weekly' ? `📅 Semanal (semana ${ev.week||'?'})` : ev.type==='explore' ? '🧭 Exploración' : ev.type==='personal' ? '🗣 Personal' : '📋 Diario';
     const actionTag = ev.relatedAction ? `  ·  ⚡ ${ev.relatedAction}` : '';
     const repeatTag = ev.repeatable ? '  ·  ↺' : '';
     info.innerHTML = `<div class="event-list-name">${ev.name}</div><div class="event-list-meta">${ev.id}  ·  ${typeTag}  ·  ${modeTag}  ·  ${effectCount}  ·  ${ev.days}d${ev.type!=='weekly'?' · peso '+ev.weight:''}${actionTag}${repeatTag}</div>`;
@@ -2190,7 +2284,8 @@ function loadEventForEditing(idx) {
     const atk = ev.effects.find(e=>e.type==='setAttackThreat');
     if(atk) {
       if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = atk.hostileType || 'random';
-      document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
+      updateAttackVariantOptions();
+      if(document.getElementById('f-attackVariant')) document.getElementById('f-attackVariant').value = atk.hostileVariant || 'random';
       document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
       if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = atk.combatPopupVictory?.title || '';
       if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = atk.combatPopupVictory?.text || '';
@@ -2285,7 +2380,6 @@ function loadStoryEventForEditing(idx) {
     const atk = ev.effects.find(e=>e.type==='setAttackThreat');
     if(atk) {
       if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = atk.hostileType || 'random';
-      document.getElementById('f-attackStrength').value = atk.attackStrength || 3;
       document.getElementById('f-attackArrival').value = String(atk.arrivalDays ?? 1);
       if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = atk.combatPopupVictory?.title || '';
       if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = atk.combatPopupVictory?.text || '';
@@ -2369,6 +2463,10 @@ function loadEffectIntoRow(row, eff) {
   } else if (eff.type === 'injureActionSurvivor') {
     p1.value = eff.action || 'related';
     if (p2) p2.value = eff.injuryLevel || '';
+  } else if (eff.type === 'addItem' || eff.type === 'damageItem' || eff.type === 'removeItem') {
+    p1.value = eff.itemId || p1.value;
+    if (p2) p2.value = eff.target || 'base';
+    amt.value = eff.amount || 1;
   } else if (eff.type === 'limitAction') {
     p1.value = eff.action || 'forraje';
     amt.value = eff.days || 1;
@@ -2405,7 +2503,8 @@ function clearForm() {
   if(document.getElementById('f-priority')) document.getElementById('f-priority').checked=false;
   if(document.getElementById('f-skipWhenAttackActive')) document.getElementById('f-skipWhenAttackActive').checked=false;
   if(document.getElementById('f-attackHostile')) document.getElementById('f-attackHostile').value = 'random';
-  if(document.getElementById('f-attackStrength')) document.getElementById('f-attackStrength').value = 3;
+  updateAttackVariantOptions();
+  if(document.getElementById('f-attackVariant')) document.getElementById('f-attackVariant').value = 'random';
   if(document.getElementById('f-attackArrival')) document.getElementById('f-attackArrival').value = '1';
   if(document.getElementById('f-attackPopupVictoryTitle')) document.getElementById('f-attackPopupVictoryTitle').value = '';
   if(document.getElementById('f-attackPopupVictoryText')) document.getElementById('f-attackPopupVictoryText').value = '';
@@ -2509,6 +2608,7 @@ updateWeightHint(8);
 setRepeatable(false);
 populateBuildingSelects();
 populateHostileSelect();
+  loadItemsForEditor();
 updatePreview();
 
 // Auto-load JSONs from /data/ on startup (works on Netlify/server)
@@ -2545,6 +2645,7 @@ async function autoLoadFromServer() {
     if (Array.isArray(incomingHostiles)) {
       hostileDefs = incomingHostiles;
       clearDataWarning('hostiles.json');
+    try{ updateAttackVariantOptions(); }catch(e){};
       populateHostileSelect();
       updatePreview();
     } else {
