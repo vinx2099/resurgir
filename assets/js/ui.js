@@ -1219,10 +1219,18 @@ function openLoreModal(s){
   const detailBox=document.getElementById('detailBox');
   if(!b || !def || !detailBox) return false;
   state.currentDetail=id;
-  const daysLeft=Math.max(0, Number(b._constructionDaysLeft||0));
-  const recycling=!!b._abandonedRecycle && !!b._underConstruction;
-  const minYield=Math.max(0, Number(def.recycleYieldMin||5)||5);
-  const maxYield=Math.max(minYield, Number(def.recycleYieldMax||9)||9);
+ const daysLeft=Math.max(0, Number(b._constructionDaysLeft||0));
+ const recycling=!!b._abandonedRecycle && !!b._underConstruction;
+ const unlockedAdaptations=(typeof getUnlockedAbandonedAdaptations==='function') ? getUnlockedAbandonedAdaptations() : [];
+ const unlockedNames=unlockedAdaptations.map(opt=>String(opt?.name||opt?.id||'').trim()).filter(Boolean);
+ const adaptationStatus=unlockedNames.length ? unlockedNames.join(' · ') : 'Bloqueada';
+ const adaptButtonLabel=unlockedNames.length===1
+  ? `Adaptar a ${unlockedNames[0]}`
+  : (unlockedNames.length===2
+    ? `Adaptar a ${unlockedNames[0]} o ${unlockedNames[1]}`
+    : 'Adaptar');
+ const minYield=Math.max(0, Number(def.recycleYieldMin||5)||5);
+ const maxYield=Math.max(minYield, Number(def.recycleYieldMax||9)||9);
   const desc=(b.description||def.description||def.effect||'Edificio abandonado.').trim();
   const image=(b.image||def.image||'');
   const imageHtml=image
@@ -1243,10 +1251,10 @@ function openLoreModal(s){
     <div class="metric"><span>Reciclaje</span><b>+${minYield} a +${maxYield} materiales</b></div>
     <div class="metric"><span>Tiempo de trabajo</span><b>${Math.max(1, Number(def.recycleDays||4)||4)} días</b></div>
     <div class="metric"><span>Resultado</span><b>El edificio desaparece</b></div>
-    <div class="metric"><span>Adaptación</span><b>${(typeof getUnlockedAbandonedAdaptations==='function' && getUnlockedAbandonedAdaptations().length)?'Disponible':'Bloqueada'}</b></div>
+    <div class="metric"><span>Adaptación</span><b>${escapeHtml(adaptationStatus)}</b></div>
     <div class="metric" style="grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-     <button class="secondary" id="abandonedRecycleBtn" ${recycling?'disabled':''}>Derrumbar</button>
-     <button class="secondary" id="abandonedUpgradeBtn" ${(typeof getUnlockedAbandonedAdaptations==='function' && getUnlockedAbandonedAdaptations().length && !recycling)?'':'disabled'}>Adaptar</button>
+     <button class="secondary" id="abandonedRecycleBtn" ${recycling?'disabled':''}>Derruir</button>
+     <button class="secondary" id="abandonedUpgradeBtn" ${(unlockedAdaptations.length && !recycling)?'':'disabled'}>${escapeHtml(adaptButtonLabel)}</button>
     </div>
    </div>
   </div>`;
