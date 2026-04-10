@@ -1,0 +1,118 @@
+{
+  "locations": [
+    {
+      "id": "gasolinera_abandonada",
+      "name": "Gasolinera abandonada",
+      "unlockDay": 1,
+      "description": "Un punto de interés exterior con combustible y materiales.",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "image": "",
+          "map": {
+            "left": "35.9%",
+            "top": "25.3%",
+            "width": "14%",
+            "height": "14%"
+          }
+        },
+        {
+          "id": "slot_1",
+          "name": "Espacio 1",
+          "kind": "slot",
+          "discovered": false,
+          "image": "",
+          "map": {
+            "left": "19.1%",
+            "top": "43.9%",
+            "width": "13%",
+            "height": "18%"
+          }
+        },
+        {
+          "id": "slot_2",
+          "name": "Espacio 2",
+          "kind": "slot",
+          "discovered": false,
+          "image": "",
+          "map": {
+            "left": "34.9%",
+            "top": "62.4%",
+            "width": "13%",
+            "height": "18%"
+          }
+        }
+      ]
+    },
+    {
+      "id": "camion_volcado",
+      "name": "Camión volcado",
+      "unlockDay": 1,
+      "description": "Restos de un transporte útil para saqueo.",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "image": "",
+          "map": {
+            "left": "8%",
+            "top": "70%",
+            "width": "14%",
+            "height": "14%"
+          }
+        }
+      ]
+    },
+    {
+      "id": "caseta_tecnica",
+      "name": "Caseta técnica",
+      "unlockDay": 1,
+      "description": "Pequeña estructura técnica con chatarra y piezas.",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "image": "",
+          "map": {
+            "left": "8%",
+            "top": "70%",
+            "width": "14%",
+            "height": "14%"
+          }
+        }
+      ]
+    },
+    {
+      "id": "parking_destrozado",
+      "name": "Parking destrozado",
+      "unlockDay": 1,
+      "description": "Zona abierta con restos de coches y chatarra.",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "image": "",
+          "map": {
+            "left": "8%",
+            "top": "70%",
+            "width": "14%",
+            "height": "14%"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RESURGIR — Intro</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c09;--text:#c8d4b8;--muted:#6b7a5e;--dim:#3d4a33;
+  --ok:#4a8a35;--ok-bright:#72c44e;--ok-glow:rgba(74,138,53,0.25);
+  --amber:#b87c2a;--amber-bright:#e8a83e;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{
+  font-family:'Share Tech Mono',monospace;
+  background:var(--bg);color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+}
+/* scan lines sobre todo */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:100;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0.055) 0px,rgba(0,0,0,0.055) 1px,transparent 1px,transparent 3px);
+}
+/* vignette de fondo */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+}
+
+/* STAGE: ocupa toda la pantalla, centra el contenido */
+#stage{
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  z-index:1;
+}
+
+/* Cada slide es absoluta, centrada */
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;
+  transition:opacity 800ms ease;
+  padding:20px;
+  gap:0;
+}
+.slide.active{opacity:1;}
+
+/* Contenedor de imagen: respeta proporción natural, limitado al viewport */
+.slide-img-wrap{
+  position:relative;
+  max-width:min(92vw, 860px);
+  max-height:65vh;
+  line-height:0;
+  /* sutil borde post-apo */
+  box-shadow:0 0 0 1px rgba(114,196,78,0.12), 0 8px 48px rgba(0,0,0,0.65);
+}
+.slide-img-wrap img{
+  display:block;
+  max-width:100%;
+  max-height:65vh;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  /* leve ken burns solo en imagen */
+  transform:scale(1.03);
+  transition:transform 4800ms linear;
+}
+.slide.active .slide-img-wrap img{
+  transform:scale(1);
+}
+/* placeholder si no hay imagen */
+.slide-no-img{
+  width:min(92vw,860px);height:220px;
+  background:rgba(15,18,13,0.6);
+  border:1px dashed var(--dim);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;
+}
+
+/* texto bajo la imagen */
+.slide-text-wrap{
+  max-width:min(92vw,860px);
+  width:100%;
+  padding:16px 20px 0;
+  border-top:1px solid rgba(114,196,78,0.12);
+  margin-top:0;
+}
+.slide-label{
+  font-size:9px;color:var(--ok);letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;
+}
+.slide-text{
+  font-size:clamp(12px,1.6vw,16px);
+  color:var(--text);line-height:1.85;
+}
+
+/* progress bar */
+#progressBar{
+  position:fixed;top:0;left:0;height:2px;
+  background:var(--ok-bright);width:0%;transition:width linear;
+  z-index:200;box-shadow:0 0 8px var(--ok-glow);
+}
+/* skip btn */
+#skipBtn{
+  position:fixed;bottom:24px;right:24px;z-index:200;
+  border:1px solid rgba(74,138,53,0.35);color:var(--ok-bright);
+  background:rgba(10,12,9,0.75);backdrop-filter:blur(6px);
+  font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  padding:9px 14px;cursor:pointer;transition:all .18s;
+}
+#skipBtn:hover{background:rgba(74,138,53,0.15);border-color:var(--ok-bright);}
+/* dots */
+#dots{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;z-index:200;
+}
+.pdot{
+  width:6px;height:6px;border:1px solid var(--dim);
+  transition:all .25s;cursor:pointer;
+}
+.pdot.on{background:var(--ok-bright);border-color:var(--ok-bright);}
+</style>
+</head>
+<body>
+<div id="progressBar"></div>
+<div id="stage"></div>
+<div id="dots"></div>
+<button id="skipBtn">Saltar intro</button>
+
+<audio id="bgMusic" loop preload="auto">
+  <source src="./data/music/skies.mp3" type="audio/mpeg">
+</audio>
+<audio id="sfx" preload="auto"><source src="./data/sfx/slide.mp3" type="audio/mpeg"></audio>
+
+<script>
+const SLIDES = [{"img":"./pics/nada.jpg","text":"El mundo que conocíamos ya no existe.","duration":null,"align":"center"},{"img":"./pics/survivor_van.jpg","text":"Mirar atrás ya no sirve de nada... no recuperaremos lo que hemos perdido...","duration":null,"align":"center"},{"img":"./pics/fuego.jpg","text":"Lo que nosotros mismos nos esforzamos en destruir...","duration":null,"align":"center"},{"img":"./pics/suministros001.jpg","text":"Y ahora anhelamos como un paraíso perdido...","duration":null,"align":"center"},{"img":"./pics/trader002.jpg","text":"Tenemos que seguir el camino. No queda otra","duration":null,"align":"center"},{"img":"./pics/ambus002.jpg","text":"Pero no va a ser fácil la tarea...","duration":null,"align":"center"},{"img":"./pics/idea1.jfif","text":"Ha llegado el momento...","duration":null,"align":"center"},{"img":"./pics/logo.png","text":"","duration":6000,"align":"center"}];
+const DURATION = 4000;
+const TRANSITION = 800;
+const TARGET = 'resurgir.html';
+let cur = 0, timer = null, started = false;
+
+const stage = document.getElementById('stage');
+const dotsEl = document.getElementById('dots');
+const bar = document.getElementById('progressBar');
+const bgMusic = document.getElementById('bgMusic');
+const sfx = document.getElementById('sfx');
+
+function buildSlides(){
+  SLIDES.forEach((s,i)=>{
+    const el = document.createElement('div');
+    el.className = 'slide';
+    el.id = 'slide'+i;
+
+    const imgBlock = s.img
+      ? `<div class="slide-img-wrap"><img src="${s.img}" alt="" draggable="false"/></div>`
+      : `<div class="slide-no-img">// sin imagen</div>`;
+
+    el.innerHTML = `
+      ${imgBlock}
+      <div class="slide-text-wrap" style="text-align:${s.align||'left'}">
+        <div class="slide-label">// ${String(i+1).padStart(2,'0')} — ${String(SLIDES.length).padStart(2,'0')}</div>
+        <div class="slide-text">${s.text||''}</div>
+      </div>`;
+    stage.appendChild(el);
+
+    const d = document.createElement('div');
+    d.className='pdot'; d.onclick=()=>goTo(i);
+    dotsEl.appendChild(d);
+  });
+}
+
+function goTo(idx){
+  if(idx >= SLIDES.length){ end(); return; }
+  clearTimeout(timer);
+  document.querySelectorAll('.slide').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on',i===idx));
+  cur = idx;
+  const dur = SLIDES[idx].duration || DURATION;
+  bar.style.transition='none'; bar.style.width='0%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    bar.style.transition=`width ${dur}ms linear`;
+    bar.style.width='100%';
+  }));
+  if(sfx && started){ sfx.currentTime=0; sfx.play().catch(()=>{}); }
+  timer = setTimeout(()=>goTo(idx+1), dur + TRANSITION);
+}
+
+function end(){
+  clearTimeout(timer);
+  document.body.style.opacity='0';
+  document.body.style.transition='opacity 0.6s ease';
+  setTimeout(()=>{ window.location.href = TARGET; }, 600);
+}
+
+function start(){
+  started = true;
+  if(bgMusic && bgMusic.querySelector('source')){
+    bgMusic.volume = 0.22;
+    bgMusic.play().catch(()=>{});
+  }
+  goTo(0);
+}
+
+buildSlides();
+document.getElementById('skipBtn').onclick = end;
+document.addEventListener('click', ()=>{ if(!started) start(); }, { once:true });
+document.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ if(!started) start(); else goTo(cur+1); } if(e.key==='Escape') end(); });
+start();
+</script>
+</body>
+</html>

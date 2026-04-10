@@ -1,0 +1,18 @@
+{
+  "id": "torre_radio",
+  "name": "Torre de Radio",
+  "cost": 7,
+  "maxLevel": 1,
+  "constructible": false,
+  "initial": false,
+  "category": "Base",
+  "constructionDays": 3,
+  "electricityCost": 1,
+  "effect": "Permite llamar a un comerciante y localizar nuevas zonas exteriores.",
+  "map": {
+    "left": "82%",
+    "top": "36%",
+    "width": "12%",
+    "height": "12%"
+  }
+}

@@ -1,0 +1,2477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESURGIR · amenazas-creador</title>
+  <style>
+    :root {
+      --bg: #0a0f0a;
+      --bg-2: #101710;
+      --panel: rgba(12,18,12,.94);
+      --panel-2: rgba(15,23,15,.96);
+      --panel-3: rgba(20,29,20,.96);
+      --line: rgba(114,196,78,.24);
+      --line-2: rgba(216,148,43,.28);
+      --text: #ece7dd;
+      --muted: #9ea792;
+      --accent: #d8942b;
+      --accent-2: #e3b15a;
+      --good: #72c44e;
+      --warn: #d2b34d;
+      --danger: #bb4d4d;
+      --chip: rgba(216,148,43,.08);
+      --shadow: 0 10px 28px rgba(0,0,0,.28);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: 'Share Tech Mono', Consolas, 'Courier New', monospace;
+      background:
+        radial-gradient(circle at top left, rgba(216,148,43,.12), transparent 26%),
+        radial-gradient(circle at top right, rgba(114,196,78,.08), transparent 25%),
+        linear-gradient(180deg, #090d09 0%, #111811 100%);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(23,31,23,.95), rgba(14,21,14,.98));
+      border-radius: 11px;
+      padding: 10px 14px;
+      transition: .15s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+    }
+    button.primary {
+      background: linear-gradient(180deg, var(--accent-2), var(--accent));
+      color: #fff7eb;
+      border-color: rgba(169,73,40,.85);
+      font-weight: 700;
+    }
+    button.danger {
+      background: rgba(187,77,77,.10);
+      border-color: rgba(187,77,77,.45);
+      color: #f3caca;
+    }
+    button.small {
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+    button.ghost {
+      background: transparent;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(9,14,9,.95);
+      backdrop-filter: blur(8px);
+    }
+
+    .brand {
+      min-width: 210px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #d9a646;
+      text-shadow: 0 0 12px rgba(217,166,70,.18);
+    }
+    .brand small {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      letter-spacing: .16em;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .statusline {
+      margin-left: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0,1fr);
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .panel {
+      background: rgba(18,24,18,.96);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 106px);
+    }
+
+    .panel-header {
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(31,24,18,.45), rgba(15,20,15,.9));
+    }
+    .panel-header h2, .panel-header h3 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #d9a646;
+    }
+    .panel-header p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .sidebar-tools {
+      display: grid;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .search, .field input[type="text"], .field input[type="number"], .field input[type="url"], .field textarea, .field select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 11px;
+      border: 1px solid rgba(114,196,78,.24);
+      background: #0b110b;
+      color: var(--text);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(216,148,43,.85);
+      box-shadow: 0 0 0 2px rgba(216,148,43,.12);
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .grid.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    .field {
+      display: grid;
+      gap: 6px;
+      align-content: start;
+    }
+    .field label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .field textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+    .field.checkbox {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding-top: 22px;
+    }
+    .field.checkbox input {
+      width: auto;
+      margin: 0;
+    }
+    .inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid rgba(216,148,43,.35);
+      background: rgba(216,148,43,.08);
+    }
+    .badge.ok {
+      color: #d8f0d8;
+      border-color: rgba(114,196,78,.45);
+      background: rgba(114,196,78,.10);
+    }
+    .badge.warn {
+      color: #f5df97;
+      border-color: rgba(210,179,77,.38);
+      background: rgba(210,179,77,.10);
+    }
+    .badge.danger {
+      color: #f2c4c4;
+      border-color: rgba(187,77,77,.45);
+      background: rgba(187,77,77,.08);
+    }
+
+    .threat-list {
+      overflow: auto;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .threat-item {
+      border: 1px solid rgba(114,196,78,.18);
+      border-radius: 14px;
+      padding: 12px;
+      cursor: pointer;
+      display: grid;
+      gap: 8px;
+      background: linear-gradient(180deg, rgba(13,21,13,.95), rgba(9,14,9,.98));
+    }
+    .threat-item.active {
+      border-color: rgba(216,148,43,.55);
+      box-shadow: 0 0 0 1px rgba(216,148,43,.2), inset 0 0 0 1px rgba(216,148,43,.12);
+      background: linear-gradient(180deg, rgba(39,26,18,.62), rgba(10,15,10,.98));
+    }
+    .threat-item strong {
+      display: block;
+      color: #f2dfc7;
+    }
+
+    .content {
+      min-height: calc(100vh - 106px);
+      overflow: auto;
+      padding: 16px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 18px;
+      border: 1px solid var(--line-2);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(32,24,18,.55), rgba(11,17,11,.95));
+    }
+    .hero-title {
+      font-size: 28px;
+      line-height: 1.02;
+      color: #f2dfc7;
+      letter-spacing: .04em;
+    }
+    .hero-meta {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 10px;
+      width: 100%;
+      max-width: 520px;
+    }
+    .summary-card {
+      border: 1px solid rgba(114,196,78,.20);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(8,13,8,.65);
+    }
+    .summary-card strong {
+      display: block;
+      font-size: 20px;
+      color: #f4e6cf;
+    }
+    .summary-card span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tab {
+      border: 1px solid rgba(114,196,78,.2);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      padding: 9px 12px;
+      border-radius: 999px;
+    }
+    .tab.active {
+      color: #fff7eb;
+      border-color: rgba(216,148,43,.55);
+      background: rgba(216,148,43,.14);
+    }
+
+    .section {
+      border: 1px solid rgba(114,196,78,.22);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(9,16,10,.98), rgba(12,18,12,.98));
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(216,148,43,.22);
+      background: rgba(255,255,255,.02);
+    }
+    .section-head h3 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #d9a646;
+    }
+    .section-body {
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .subcard {
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 14px;
+      background: rgba(17,22,17,.96);
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+    .subhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .subhead h4 {
+      margin: 0;
+      font-size: 14px;
+      color: #f2dfc7;
+    }
+
+    .empty {
+      border: 1px dashed rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--muted);
+      background: rgba(255,255,255,.02);
+    }
+
+    .effect-card, .facilitator-card {
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px;
+      padding: 12px;
+      background: #151515;
+      display: grid;
+      gap: 10px;
+    }
+
+    .hint {
+      font-size: 11px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .callout {
+      padding: 10px 12px;
+      border-left: 3px solid rgba(216,148,43,.72);
+      background: rgba(216,148,43,.08);
+      color: #d2d7c9;
+      font-size: 12px;
+      line-height: 1.55;
+      border-radius: 0 10px 10px 0;
+    }
+
+    pre.json-preview {
+      margin: 0;
+      padding: 14px;
+      border-radius: 14px;
+      overflow: auto;
+      background: #0d110d;
+      border: 1px solid rgba(114,196,78,.20);
+      font-size: 12px;
+      line-height: 1.5;
+      color: #e8dcc9;
+    }
+
+    .validation-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .footer-note {
+      padding: 10px 16px 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar, .content { min-height: auto; }
+      .summary-grid { max-width: none; }
+    }
+
+    @media (max-width: 860px) {
+      .grid.two, .grid.three, .grid.four,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero {
+        flex-direction: column;
+      }
+      .statusline {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">RESURGIR<small>amenazas-creador.html · edición remozada</small></div>
+
+    <div class="toolbar">
+      <button class="primary" data-action="add-threat">+ Nueva amenaza</button>
+      <button data-action="duplicate-threat">Duplicar</button>
+      <button class="danger" data-action="delete-threat">Eliminar</button>
+    </div>
+
+    <div class="toolbar">
+      <button data-action="reload-linked">Recargar threats.json</button>
+      <button data-action="open-file">Abrir archivo…</button>
+      <button data-action="save-file">Guardar archivo</button>
+      <button data-action="export-json">Descargar JSON</button>
+    </div>
+
+    <div class="statusline" id="statusBar"></div>
+    <input type="file" id="importFile" accept=".json,application/json" hidden />
+  </div>
+
+  <div class="layout">
+    <aside class="panel sidebar">
+      <div class="panel-header">
+        <h2>Catálogo de amenazas</h2>
+        <p>Ahora prioriza <code>data/threats.json</code> si existe, y usa <code>skills.json</code>, <code>buildings.json</code> y <code>hostiles.json</code> como referencia para rellenar selectores y requisitos.</p>
+      </div>
+
+      <div class="sidebar-tools">
+        <input id="searchInput" class="search" type="text" placeholder="Buscar por nombre, id, tipo o tag" />
+        <div class="grid two">
+          <div class="field">
+            <label>Filtrar tipo</label>
+            <select id="typeFilter"></select>
+          </div>
+          <div class="field">
+            <label>Filtrar estado</label>
+            <select id="enabledFilter">
+              <option value="">Todos</option>
+              <option value="enabled">Solo activas</option>
+              <option value="disabled">Solo desactivadas</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Filtrar tag</label>
+          <select id="tagFilter"></select>
+        </div>
+        <div class="hint">Autosave local activo. “Guardar archivo” escribe sobre el JSON enlazado si el navegador permite acceso al sistema de archivos.</div>
+      </div>
+
+      <div id="threatList" class="threat-list"></div>
+      <div class="footer-note">Las amenazas siguen siendo plantillas. El estado vivo de partida debe quedarse fuera, en el runtime del juego.</div>
+    </aside>
+
+    <main id="editorRoot" class="panel content"></main>
+  </div>
+
+  <script>
+    const DEFAULT_DATA = {
+  "threats": [
+    {
+      "id": "raiders_stalking",
+      "name": "Saqueadores al acecho",
+      "image": "",
+      "type": "hostile",
+      "tags": [
+        "raid",
+        "hostile",
+        "persistent",
+        "defense"
+      ],
+      "description": "Varias siluetas observan el asentamiento desde lejos. Aún no atacan, pero están estudiando tus rutinas.",
+      "visible": true,
+      "enabled": true,
+      "spawn": {
+        "minDay": 4,
+        "maxDay": 999,
+        "weight": 8,
+        "maxActiveInstances": 1
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ],
+        "3": [
+          {
+            "type": "stability_delta",
+            "amount": -2
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "Los saqueadores se acercan más. El asentamiento empieza a inquietarse."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "Los saqueadores ya están preparados para atacar."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "trigger_attack",
+          "attackType": "raiders",
+          "strength": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "patrol_perimeter",
+          "label": "Patrullar perímetro",
+          "description": "Enviar vigilancia para forzarles a mantener las distancias.",
+          "requirements": {
+            "survivorAvailable": true,
+            "minDefense": 1
+          },
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 65,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La patrulla hace retroceder a los saqueadores."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "stability_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "La patrulla no consigue localizar bien a los hostiles."
+              }
+            ]
+          },
+          "facilitators": [
+            {
+              "type": "equipped_item_tag",
+              "itemTag": "weapon",
+              "itemId": "",
+              "bonus": 15,
+              "notes": "Cualquier arma equipada sirve para esta patrulla."
+            },
+            {
+              "type": "survivor_skill",
+              "skill": "vigilancia",
+              "bonus": 20,
+              "notes": "La habilidad correcta mejora mucho la detección."
+            },
+            {
+              "type": "building_level",
+              "building": "atalaya",
+              "minLevel": 2,
+              "mode": "bonus",
+              "bonus": 25,
+              "specialActionId": "",
+              "specialActionLabel": "",
+              "specialActionDescription": "",
+              "notes": "Una Atalaya mejorada da ventaja a la acción."
+            }
+          ]
+        },
+        {
+          "id": "reinforce_walls",
+          "label": "Reforzar muros",
+          "description": "Gastar materiales para hacer menos atractivo el ataque.",
+          "requirements": {
+            "resource": {
+              "materiales": 3
+            }
+          },
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -3
+            }
+          ],
+          "success": {
+            "chance": 100,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "El asentamiento parece más difícil de asaltar."
+              }
+            ]
+          },
+          "failure": {
+            "effects": []
+          },
+          "facilitators": []
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "morale_delta",
+          "amount": 1
+        },
+        {
+          "type": "log",
+          "text": "Los saqueadores abandonan la zona por ahora."
+        }
+      ]
+    },
+    {
+      "id": "shelter_infection",
+      "name": "Infección en el refugio",
+      "image": "",
+      "type": "health",
+      "tags": [
+        "medical",
+        "persistent",
+        "sickness"
+      ],
+      "description": "La suciedad y la mala ventilación están causando infecciones leves entre los supervivientes.",
+      "visible": true,
+      "enabled": true,
+      "spawn": {
+        "minDay": 3,
+        "maxDay": 999,
+        "weight": 7,
+        "maxActiveInstances": 1
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          },
+          {
+            "type": "random_injury",
+            "severity": "simple",
+            "chance": 25
+          }
+        ],
+        "3": [
+          {
+            "type": "stability_delta",
+            "amount": -2
+          },
+          {
+            "type": "random_injury",
+            "severity": "simple",
+            "chance": 40
+          },
+          {
+            "type": "fatigue_all_delta",
+            "amount": 1
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "La infección se extiende por el refugio."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "La situación sanitaria es grave."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "morale_delta",
+          "amount": -1
+        },
+        {
+          "type": "random_injury",
+          "severity": "seria",
+          "chance": 50
+        }
+      ],
+      "actions": [
+        {
+          "id": "clean_refuge",
+          "label": "Limpiar refugio",
+          "description": "Dedicar tiempo y materiales a mejorar la higiene.",
+          "requirements": {
+            "survivorAvailable": true,
+            "resource": {
+              "materiales": 2
+            }
+          },
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -2
+            },
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 70,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La limpieza contiene parcialmente la infección."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "stability_delta",
+                "amount": -1
+              }
+            ]
+          },
+          "facilitators": []
+        },
+        {
+          "id": "use_medicine",
+          "label": "Usar medicina",
+          "description": "Consumir medicina para frenar el brote.",
+          "requirements": {
+            "resource": {
+              "medicina": 1
+            }
+          },
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "medicina",
+              "amount": -1
+            }
+          ],
+          "success": {
+            "chance": 100,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 2
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La medicina estabiliza la situación."
+              }
+            ]
+          },
+          "failure": {
+            "effects": []
+          },
+          "facilitators": []
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "stability_delta",
+          "amount": 1
+        },
+        {
+          "type": "log",
+          "text": "La infección queda bajo control."
+        }
+      ]
+    },
+    {
+      "id": "garden_plague",
+      "name": "Plaga en el huerto",
+      "image": "",
+      "type": "production",
+      "tags": [
+        "farm",
+        "production",
+        "persistent",
+        "food"
+      ],
+      "description": "Una plaga está dañando el huerto y reduciendo la producción de comida.",
+      "visible": true,
+      "enabled": true,
+      "spawn": {
+        "minDay": 6,
+        "maxDay": 999,
+        "weight": 6,
+        "maxActiveInstances": 1,
+        "requiresBuilding": "huerto"
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "building_output_modifier",
+            "building": "huerto",
+            "resource": "comida",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "building_output_modifier",
+            "building": "huerto",
+            "resource": "comida",
+            "amount": -2
+          }
+        ],
+        "3": [
+          {
+            "type": "building_output_modifier",
+            "building": "huerto",
+            "resource": "comida",
+            "amount": -3
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "La plaga se extiende por más cultivos."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "El huerto está casi perdido."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "disable_building",
+          "building": "huerto",
+          "days": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "treat_plague",
+          "label": "Tratar plaga",
+          "description": "Aplicar tratamiento rudimentario y retirar plantas dañadas.",
+          "requirements": {
+            "survivorAvailable": true
+          },
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 60,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "Consigues salvar parte del huerto."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "building_output_modifier",
+                "building": "huerto",
+                "resource": "comida",
+                "amount": -1
+              }
+            ]
+          },
+          "facilitators": []
+        },
+        {
+          "id": "burn_infected_crop",
+          "label": "Quemar cultivo infectado",
+          "description": "Eliminar parte de la cosecha para frenar la expansión.",
+          "requirements": {
+            "survivorAvailable": true
+          },
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            },
+            {
+              "type": "resource_delta",
+              "resource": "comida",
+              "amount": -1
+            }
+          ],
+          "success": {
+            "chance": 100,
+            "effects": [
+              {
+                "type": "threat_remove"
+              },
+              {
+                "type": "log",
+                "text": "La plaga desaparece, aunque pierdes parte de la cosecha."
+              }
+            ]
+          },
+          "failure": {
+            "effects": []
+          },
+          "facilitators": []
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "log",
+          "text": "El huerto vuelve a funcionar con normalidad."
+        }
+      ]
+    }
+  ]
+};
+    const STORAGE_KEY = 'resurgir-threat-editor-state-v3';
+    const LINKED_PATHS = {
+      threats: ['data/threats.json','./data/threats.json','threats.json','./threats.json'],
+      skills: ['data/skills.json','./data/skills.json','skills.json','./skills.json'],
+      buildings: ['data/buildings.json','./data/buildings.json','buildings.json','./buildings.json'],
+      hostiles: ['data/hostiles.json','./data/hostiles.json','hostiles.json','./hostiles.json'],
+    };
+
+    const FALLBACK_RESOURCES = ['','comida','agua','materiales','medicina','municion','combustible','electricidad','gallinas','estabilidad'];
+    const THREAT_TYPES = ['hostile','health','production','social','fire','infrastructure','wildlife','other'];
+    const EFFECT_TYPES = ['resource_delta','morale_delta','stability_delta','fatigue_all_delta','fatigue_random_available','random_injury','disable_building','building_output_modifier','trigger_attack','threat_reduce_severity','threat_remove','reset_escalation_timer','log'];
+    const INJURY_SEVERITIES = ['simple','seria','grave'];
+    const SKILL_FALLBACK = ['', 'cazador', 'combatiente', 'explorador', 'medico', 'mecanica', 'vigilancia', 'liderazgo'];
+    const MORALE_STATE_OPTIONS = ['', 'baja', 'normal', 'alta'];
+    const MORALE_STATE_TO_VALUE = { baja: 1, normal: 5, alta: 8 };
+    const FACILITATOR_TYPES = ['equipped_item_tag','survivor_skill','building_level'];
+    const BUILDING_FACILITATOR_MODES = ['bonus','special_option'];
+
+    const EFFECT_HELP = {
+      resource_delta: 'Suma o resta recursos de la base.',
+      morale_delta: 'Ajusta la moral general del grupo.',
+      stability_delta: 'Ajusta la estabilidad del asentamiento.',
+      fatigue_all_delta: 'Modifica la fatiga de todos los supervivientes.',
+      fatigue_random_available: 'Modifica la fatiga de un superviviente aleatorio disponible.',
+      random_injury: 'Provoca una herida aleatoria con gravedad y probabilidad.',
+      disable_building: 'Desactiva temporalmente un edificio.',
+      building_output_modifier: 'Aumenta o reduce la producción de un edificio.',
+      trigger_attack: 'Lanza un ataque o una escalada hostil.',
+      threat_reduce_severity: 'Reduce la severidad actual de la amenaza.',
+      threat_remove: 'Elimina la amenaza.',
+      reset_escalation_timer: 'Reinicia el contador de escalada.',
+      log: 'Escribe una línea en el registro.'
+    };
+
+    const ui = {
+      selectedIndex: 0,
+      activeTab: 'datos',
+      search: '',
+      filterType: '',
+      filterTag: '',
+      filterEnabled: '',
+      linkedPath: null,
+      linkedHandle: null,
+      sourceLabel: 'ejemplos',
+      sourceMode: 'sample',
+    };
+
+    let state = { threats: [] };
+    let catalogs = {
+      skills: [...SKILL_FALLBACK],
+      buildings: [],
+      buildingMap: {},
+      resources: [...FALLBACK_RESOURCES],
+      hostiles: [],
+      tags: [],
+    };
+
+    function deepClone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function toNumber(value, fallback = 0) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function slugify(text) {
+      return String(text || 'amenaza')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'amenaza';
+    }
+
+    function isIndex(segment) {
+      return /^\d+$/.test(segment);
+    }
+
+    function getByPath(obj, path) {
+      if (!path) return obj;
+      return path.split('.').reduce((acc, segment) => acc == null ? undefined : acc[segment], obj);
+    }
+
+    function setByPath(obj, path, value) {
+      const parts = path.split('.');
+      let current = obj;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        const next = parts[i + 1];
+        if (current[part] == null) current[part] = isIndex(next) ? [] : {};
+        current = current[part];
+      }
+      current[parts[parts.length - 1]] = value;
+    }
+
+    function deleteByPath(obj, path) {
+      const parts = path.split('.');
+      const last = parts.pop();
+      const parent = getByPath(obj, parts.join('.'));
+      if (parent == null) return;
+      if (Array.isArray(parent)) parent.splice(Number(last), 1);
+      else delete parent[last];
+    }
+
+    function optionList(list, value) {
+      return list.map(item => `<option value="${escapeHtml(item)}"
+        ${item === value ? 'selected' : ''}>${escapeHtml(item || '—')}</option>`).join('');
+    }
+
+    function optionEntries(entries, value) {
+      return entries.map(entry => {
+        const item = typeof entry === 'string' ? { value: entry, label: entry || '—' } : entry;
+        return `<option value="${escapeHtml(item.value)}"
+          ${item.value === value ? 'selected' : ''}>${escapeHtml(item.label)}</option>`;
+      }).join('');
+    }
+
+    function fieldText(label, path, value, placeholder = '') {
+      return `
+        <div class="field">
+          <label>${escapeHtml(label)}</label>
+          <input type="text" data-path="${escapeHtml(path)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />
+        </div>
+      `;
+    }
+
+    function fieldUrl(label, path, value, placeholder = '') {
+      return `
+        <div class="field">
+          <label>${escapeHtml(label)}</label>
+          <input type="url" data-path="${escapeHtml(path)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />
+        </div>
+      `;
+    }
+
+    function fieldNumber(label, path, value, placeholder = '') {
+      return `
+        <div class="field">
+          <label>${escapeHtml(label)}</label>
+          <input type="number" data-path="${escapeHtml(path)}" value="${escapeHtml(value ?? '')}" placeholder="${escapeHtml(placeholder)}" />
+        </div>
+      `;
+    }
+
+    function fieldTextarea(label, path, value, placeholder = '') {
+      return `
+        <div class="field">
+          <label>${escapeHtml(label)}</label>
+          <textarea data-path="${escapeHtml(path)}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value || '')}</textarea>
+        </div>
+      `;
+    }
+
+    function fieldSelect(label, path, value, options) {
+      return `
+        <div class="field">
+          <label>${escapeHtml(label)}</label>
+          <select data-path="${escapeHtml(path)}">${optionList(options, value)}</select>
+        </div>
+      `;
+    }
+
+    function fieldSelectEntries(label, path, value, entries, extra = '') {
+      return `
+        <div class="field">
+          <label>${escapeHtml(label)}</label>
+          <select data-path="${escapeHtml(path)}" ${extra}>${optionEntries(entries, value)}</select>
+        </div>
+      `;
+    }
+
+    function fieldCheckbox(label, path, checked) {
+      return `
+        <div class="field checkbox">
+          <input id="${escapeHtml(path)}" type="checkbox" data-path="${escapeHtml(path)}" ${checked ? 'checked' : ''} />
+          <label for="${escapeHtml(path)}">${escapeHtml(label)}</label>
+        </div>
+      `;
+    }
+
+    function buildingEntries(includeBlank = true) {
+      const items = catalogs.buildings.map(b => ({ value: b.id, label: b.name }));
+      return includeBlank ? [{ value:'', label:'—' }, ...items] : items;
+    }
+
+    function getBuildingMaxLevel(buildingId) {
+      return catalogs.buildingMap[buildingId]?.maxLevel || 3;
+    }
+
+    function levelOptionsForBuilding(buildingId) {
+      const max = Math.max(1, getBuildingMaxLevel(buildingId));
+      return Array.from({ length: max }, (_, i) => String(i + 1));
+    }
+
+    function collectTags() {
+      const tags = new Set();
+      state.threats.forEach(t => (t.tags || []).forEach(tag => tags.add(tag)));
+      catalogs.tags = [''].concat(Array.from(tags).sort((a,b) => a.localeCompare(b, 'es')));
+    }
+
+    function extractThreatsShape(raw) {
+      if (Array.isArray(raw)) return { threats: raw };
+      if (raw && Array.isArray(raw.threats)) return raw;
+      return null;
+    }
+
+    function extractSkills(raw) {
+      const source = Array.isArray(raw) ? raw : (Array.isArray(raw?.skills) ? raw.skills : []);
+      const names = source.map(item => typeof item === 'string' ? item : (item?.id || item?.name || item?.label || '')).filter(Boolean);
+      return names.length ? [''].concat(Array.from(new Set(names))) : [...SKILL_FALLBACK];
+    }
+
+    function deriveBuildingMaxLevel(building) {
+      if (Array.isArray(building?.levels) && building.levels.length) return building.levels.length;
+      if (Array.isArray(building?.upgrades) && building.upgrades.length) return building.upgrades.length;
+      if (Number.isFinite(Number(building?.maxLevel))) return Math.max(1, Number(building.maxLevel));
+      if (Number.isFinite(Number(building?.levelCount))) return Math.max(1, Number(building.levelCount));
+      return 3;
+    }
+
+    function extractBuildings(raw) {
+      const arr = Array.isArray(raw) ? raw : (Array.isArray(raw?.buildings) ? raw.buildings : []);
+      const out = arr.map(item => {
+        const id = item?.id || item?.key || slugify(item?.name || item?.label || 'edificio');
+        const name = item?.name || item?.label || id;
+        return { id, name, maxLevel: deriveBuildingMaxLevel(item) };
+      }).filter(item => item.id);
+      if (!out.length) {
+        const fallback = ['almacen','huerto','taller','muros','atalaya','generador','pozo','gallinero','barracones','cementerio','barracon_medico','torre_radio'];
+        return fallback.map(id => ({ id, name: id.replace(/_/g,' '), maxLevel: 3 }));
+      }
+      return out;
+    }
+
+    function extractResourcesFromBuildings(raw) {
+      const set = new Set(FALLBACK_RESOURCES.filter(Boolean));
+      const buildings = Array.isArray(raw) ? raw : (Array.isArray(raw?.buildings) ? raw.buildings : []);
+      buildings.forEach(building => {
+        (building?.levels || []).forEach(level => {
+          const effects = []
+            .concat(level?.effects || [])
+            .concat(level?.production || [])
+            .concat(level?.output || []);
+          effects.forEach(effect => {
+            if (effect?.resource) set.add(effect.resource);
+            if (effect?.type === 'resource_delta' && effect?.resource) set.add(effect.resource);
+          });
+        });
+      });
+      return [''].concat(Array.from(set).sort((a,b) => a.localeCompare(b,'es')));
+    }
+
+    function extractHostiles(raw) {
+      const arr = Array.isArray(raw) ? raw : (Array.isArray(raw?.hostiles) ? raw.hostiles : []);
+      return arr.filter(Boolean);
+    }
+
+    async function tryLoadJson(paths) {
+      for (const path of paths) {
+        try {
+          const res = await fetch(path, { cache: 'no-store' });
+          if (!res.ok) continue;
+          const json = await res.json();
+          return { path, json };
+        } catch (error) {}
+      }
+      return null;
+    }
+
+    function makeDefaultEffect(type = 'log') {
+      switch (type) {
+        case 'resource_delta': return { type, resource: 'comida', amount: 0 };
+        case 'morale_delta': return { type, amount: 0 };
+        case 'stability_delta': return { type, amount: 0 };
+        case 'fatigue_all_delta': return { type, amount: 0 };
+        case 'fatigue_random_available': return { type, amount: 1 };
+        case 'random_injury': return { type, severity: 'simple', chance: 25 };
+        case 'disable_building': return { type, building: 'huerto', days: 1 };
+        case 'building_output_modifier': return { type, building: 'huerto', resource: 'comida', amount: -1 };
+        case 'trigger_attack': return { type, attackType: 'random', hostileType: 'random', hostileVariant: 'random', hostilePool: 'hostile', hostileNpcId: '', strength: 1, arrivalDays: 0 };
+        case 'threat_reduce_severity': return { type, amount: 1 };
+        case 'threat_remove': return { type };
+        case 'reset_escalation_timer': return { type };
+        case 'log':
+        default:
+          return { type: 'log', text: '' };
+      }
+    }
+
+    function normalizeEffect(effect) {
+      const type = effect?.type || 'log';
+      return { ...makeDefaultEffect(type), ...effect, type };
+    }
+
+    function makeDefaultFacilitator(type = 'equipped_item_tag') {
+      switch (type) {
+        case 'survivor_skill':
+          return { type, skill: '', bonus: 15, notes: '' };
+        case 'building_level':
+          return {
+            type,
+            building: '',
+            minLevel: 1,
+            mode: 'bonus',
+            bonus: 15,
+            specialActionId: '',
+            specialActionLabel: '',
+            specialActionDescription: '',
+            notes: ''
+          };
+        case 'equipped_item_tag':
+        default:
+          return { type: 'equipped_item_tag', itemTag: 'weapon', itemId: '', bonus: 15, notes: '' };
+      }
+    }
+
+    function normalizeFacilitator(facilitator) {
+      const type = facilitator?.type || 'equipped_item_tag';
+      const merged = { ...makeDefaultFacilitator(type), ...facilitator, type };
+      if (merged.type === 'building_level') {
+        merged.minLevel = toNumber(merged.minLevel, 1);
+        merged.bonus = toNumber(merged.bonus, 0);
+      }
+      if (merged.type !== 'building_level') {
+        delete merged.mode;
+        delete merged.specialActionId;
+        delete merged.specialActionLabel;
+        delete merged.specialActionDescription;
+      }
+      return merged;
+    }
+
+    function normalizeRequirements(req) {
+      const out = {};
+      if (req?.survivorAvailable) out.survivorAvailable = true;
+      if (req?.minDefense !== undefined && req.minDefense !== '') out.minDefense = toNumber(req.minDefense, 0);
+      if (req?.minMorale !== undefined && req.minMorale !== '') out.minMorale = toNumber(req.minMorale, 0);
+      if (req?.minMoraleState) {
+        out.minMoraleState = String(req.minMoraleState).toLowerCase();
+        if (!(req?.minMorale !== undefined && req.minMorale !== '')) out.minMorale = MORALE_STATE_TO_VALUE[out.minMoraleState] || 0;
+      }
+      if (req?.minStability !== undefined && req.minStability !== '') out.minStability = toNumber(req.minStability, 0);
+      const requiredSkill = String(req?.requiredSkill || req?.survivorSkill || '').trim();
+      if (requiredSkill) out.requiredSkill = requiredSkill;
+      const survivorMinMorale = req?.survivorMinMorale ?? req?.minSurvivorMorale;
+      if (survivorMinMorale !== undefined && survivorMinMorale !== '') out.survivorMinMorale = toNumber(survivorMinMorale, 0);
+      if (req?.survivorMinMoraleState) {
+        out.survivorMinMoraleState = String(req.survivorMinMoraleState).toLowerCase();
+        if (!(survivorMinMorale !== undefined && survivorMinMorale !== '')) out.survivorMinMorale = MORALE_STATE_TO_VALUE[out.survivorMinMoraleState] || 0;
+      }
+      if (req?.requiredBuilding) out.requiredBuilding = req.requiredBuilding;
+      if (req?.resource && typeof req.resource === 'object') {
+        const entry = Object.entries(req.resource)[0];
+        if (entry && entry[0]) out.resource = { [entry[0]]: toNumber(entry[1], 1) };
+      }
+      return out;
+    }
+
+    function makeDefaultAction() {
+      return {
+        id: 'accion_nueva',
+        label: 'Nueva acción',
+        description: '',
+        requirements: {},
+        facilitators: [],
+        costs: [],
+        success: { chance: 100, effects: [] },
+        failure: { effects: [] }
+      };
+    }
+
+    function normalizeAction(action) {
+      return {
+        ...makeDefaultAction(),
+        ...action,
+        requirements: normalizeRequirements(action?.requirements || {}),
+        facilitators: Array.isArray(action?.facilitators) ? action.facilitators.map(normalizeFacilitator) : [],
+        costs: Array.isArray(action?.costs) ? action.costs.map(normalizeEffect) : [],
+        success: {
+          chance: toNumber(action?.success?.chance, 100),
+          effects: Array.isArray(action?.success?.effects) ? action.success.effects.map(normalizeEffect) : []
+        },
+        failure: {
+          effects: Array.isArray(action?.failure?.effects) ? action.failure.effects.map(normalizeEffect) : []
+        }
+      };
+    }
+
+    function makeDefaultThreat() {
+      return {
+        id: 'nueva_amenaza',
+        name: 'Nueva amenaza',
+        image: '',
+        type: 'hostile',
+        tags: [],
+        description: '',
+        visible: true,
+        enabled: true,
+        force: false,
+        spawn: { minDay: 1, maxDay: 999, weight: 1, maxActiveInstances: 1, cooldownOnResolveMinDays: 7, cooldownOnResolveMaxDays: 10 },
+        instance: { initialSeverity: 1, maxSeverity: 3, daysToEscalate: 2 },
+        passiveEffectsBySeverity: { '1': [], '2': [], '3': [] },
+        onEscalateBySeverity: { '2': [], '3': [] },
+        onMaxSeverity: [],
+        actions: [],
+        onResolve: []
+      };
+    }
+
+    function normalizeThreat(threat) {
+      const result = {
+        ...makeDefaultThreat(),
+        ...threat,
+        id: threat?.id || slugify(threat?.name || 'nueva_amenaza'),
+        tags: Array.isArray(threat?.tags) ? threat.tags : [],
+        visible: threat?.visible !== false,
+        enabled: threat?.enabled !== false,
+        force: threat?.force === true,
+        spawn: {
+          minDay: toNumber(threat?.spawn?.minDay, 1),
+          maxDay: toNumber(threat?.spawn?.maxDay, 999),
+          weight: toNumber(threat?.spawn?.weight, 1),
+          maxActiveInstances: toNumber(threat?.spawn?.maxActiveInstances, 1),
+          cooldownOnResolveMinDays: toNumber(threat?.spawn?.cooldownOnResolveMinDays, 7),
+          cooldownOnResolveMaxDays: toNumber(threat?.spawn?.cooldownOnResolveMaxDays, 10),
+        },
+        instance: {
+          initialSeverity: toNumber(threat?.instance?.initialSeverity, 1),
+          maxSeverity: toNumber(threat?.instance?.maxSeverity, 3),
+          daysToEscalate: toNumber(threat?.instance?.daysToEscalate, 2)
+        },
+        passiveEffectsBySeverity: {
+          '1': Array.isArray(threat?.passiveEffectsBySeverity?.['1']) ? threat.passiveEffectsBySeverity['1'].map(normalizeEffect) : [],
+          '2': Array.isArray(threat?.passiveEffectsBySeverity?.['2']) ? threat.passiveEffectsBySeverity['2'].map(normalizeEffect) : [],
+          '3': Array.isArray(threat?.passiveEffectsBySeverity?.['3']) ? threat.passiveEffectsBySeverity['3'].map(normalizeEffect) : []
+        },
+        onEscalateBySeverity: {
+          '2': Array.isArray(threat?.onEscalateBySeverity?.['2']) ? threat.onEscalateBySeverity['2'].map(normalizeEffect) : [],
+          '3': Array.isArray(threat?.onEscalateBySeverity?.['3']) ? threat.onEscalateBySeverity['3'].map(normalizeEffect) : []
+        },
+        onMaxSeverity: Array.isArray(threat?.onMaxSeverity) ? threat.onMaxSeverity.map(normalizeEffect) : [],
+        actions: Array.isArray(threat?.actions) ? threat.actions.map(normalizeAction) : [],
+        onResolve: Array.isArray(threat?.onResolve) ? threat.onResolve.map(normalizeEffect) : []
+      };
+      if (result.spawn.cooldownOnResolveMinDays > result.spawn.cooldownOnResolveMaxDays) {
+        const swap = result.spawn.cooldownOnResolveMinDays;
+        result.spawn.cooldownOnResolveMinDays = result.spawn.cooldownOnResolveMaxDays;
+        result.spawn.cooldownOnResolveMaxDays = swap;
+      }
+      if (threat?.spawn?.requiresBuilding) result.spawn.requiresBuilding = threat.spawn.requiresBuilding;
+      return result;
+    }
+
+    function sanitizeData(data) {
+      const shaped = extractThreatsShape(data) || DEFAULT_DATA;
+      return { threats: (Array.isArray(shaped.threats) ? shaped.threats : []).map(normalizeThreat) };
+    }
+
+    function saveAutosave() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeData(state)));
+    }
+
+    function currentThreat() {
+      return state.threats[ui.selectedIndex];
+    }
+
+    function getMoraleStateFromValue(value) {
+      const n = Number(value || 0);
+      if (n >= MORALE_STATE_TO_VALUE.alta) return 'alta';
+      if (n >= MORALE_STATE_TO_VALUE.normal) return 'normal';
+      if (n > 0) return 'baja';
+      return '';
+    }
+
+    function getRequirementResource(req) {
+      const entry = Object.entries(req?.resource || {})[0];
+      return { name: entry?.[0] || '', amount: entry?.[1] ?? '' };
+    }
+
+    function setRequirementResource(path, field, value) {
+      const threat = currentThreat();
+      if (!threat) return;
+      const current = getRequirementResource({ resource: getByPath(threat, path) });
+      const next = { ...current, [field]: value };
+      const name = next.name || '';
+      const amount = Number(next.amount);
+      if (!name || !Number.isFinite(amount) || amount <= 0) {
+        deleteByPath(threat, path);
+      } else {
+        setByPath(threat, path, { [name]: amount });
+      }
+      persistAndRender();
+    }
+
+    function getNpcCandidates() {
+      const out = [];
+      catalogs.hostiles.forEach(typeDef => {
+        const typeId = typeDef?.id || '';
+        const typeName = typeDef?.label || typeDef?.name || typeId;
+        const typeLabelType = String(typeDef?.labelType || '').toLowerCase();
+        if (typeLabelType === 'npc' && typeId) {
+          out.push({ value: `${typeId}`, label: `${typeName}` });
+        }
+        const variants = Array.isArray(typeDef?.variants) ? typeDef.variants : [];
+        variants.forEach(variant => {
+          const variantId = variant?.id || variant?.key || '';
+          const variantName = variant?.label || variant?.name || variantId;
+          const variantLabelType = String(variant?.labelType || typeDef?.labelType || '').toLowerCase();
+          if (variantLabelType === 'npc' && typeId && variantId) {
+            out.push({ value: `${typeId}::${variantId}`, label: `${variantName} · ${typeName}` });
+          }
+        });
+      });
+      return out;
+    }
+
+    function getHostileTypeOptions() {
+      const ids = catalogs.hostiles.map(h => h?.id).filter(Boolean);
+      return ids.length ? [''].concat(Array.from(new Set(['random', ...ids]))) : ['','random','raiders','hostiles','animals','infected','custom'];
+    }
+
+    function getHostileVariantOptions(typeId) {
+      if (!typeId || typeId === 'random') return ['random'];
+      const def = catalogs.hostiles.find(h => h?.id === typeId);
+      const ids = (Array.isArray(def?.variants) ? def.variants : []).map(v => v?.id || v?.key).filter(Boolean);
+      return ['random'].concat(Array.from(new Set(ids)));
+    }
+
+    function getTriggerAttackMode(effect) {
+      if (effect?.hostilePool === 'npc') return effect?.hostileNpcId ? 'npc_specific' : 'npc_random';
+      return 'hostile';
+    }
+
+    function describeFacilitator(fac) {
+      if (fac.type === 'equipped_item_tag') {
+        const base = fac.itemId ? `item ${fac.itemId}` : `tag ${fac.itemTag || 'weapon'}`;
+        return `${base} · +${fac.bonus || 0}%`;
+      }
+      if (fac.type === 'survivor_skill') {
+        return `${fac.skill || 'habilidad'} · +${fac.bonus || 0}%`;
+      }
+      const building = catalogs.buildingMap[fac.building]?.name || fac.building || 'edificio';
+      if (fac.mode === 'special_option') {
+        return `${building} niv. ${fac.minLevel || 1} · opción especial`;
+      }
+      return `${building} niv. ${fac.minLevel || 1} · +${fac.bonus || 0}%`;
+    }
+
+    function renderStatus() {
+      const linked = ui.linkedPath || 'sin enlazar';
+      document.getElementById('statusBar').innerHTML = `
+        <span class="badge ok">${state.threats.length} amenazas</span>
+        <span class="badge">${state.threats.filter(t => t.enabled).length} activas</span>
+        <span class="badge warn">${escapeHtml(ui.sourceLabel)}</span>
+        <span class="badge">${escapeHtml(linked)}</span>
+      `;
+    }
+
+    function renderSidebarFilters() {
+      document.getElementById('typeFilter').innerHTML = optionEntries(
+        [{ value:'', label:'Todos' }, ...THREAT_TYPES.map(type => ({ value:type, label:type }))],
+        ui.filterType
+      );
+      document.getElementById('tagFilter').innerHTML = optionEntries(
+        [{ value:'', label:'Todos' }, ...catalogs.tags.filter(Boolean).map(tag => ({ value:tag, label:tag }))],
+        ui.filterTag
+      );
+    }
+
+    function filteredThreats() {
+      const term = ui.search.trim().toLowerCase();
+      return state.threats
+        .map((threat, index) => ({ threat, index }))
+        .filter(({ threat }) => {
+          if (term) {
+            const haystack = [threat.name, threat.id, threat.type, ...(threat.tags || [])].join(' ').toLowerCase();
+            if (!haystack.includes(term)) return false;
+          }
+          if (ui.filterType && threat.type !== ui.filterType) return false;
+          if (ui.filterTag && !(threat.tags || []).includes(ui.filterTag)) return false;
+          if (ui.filterEnabled === 'enabled' && !threat.enabled) return false;
+          if (ui.filterEnabled === 'disabled' && threat.enabled) return false;
+          return true;
+        });
+    }
+
+    function renderThreatList() {
+      const list = document.getElementById('threatList');
+      const items = filteredThreats();
+      if (!items.length) {
+        list.innerHTML = '<div class="empty">No hay amenazas para ese filtro.</div>';
+        return;
+      }
+      list.innerHTML = items.map(({ threat, index }) => `
+        <div class="threat-item ${index === ui.selectedIndex ? 'active' : ''}" data-action="select-threat" data-index="${index}">
+          <div>
+            <strong>${escapeHtml(threat.name || 'Sin nombre')}</strong>
+            <div class="hint">${escapeHtml(threat.id)}</div>
+          </div>
+          <div class="inline">
+            <span class="badge">${escapeHtml(threat.type)}</span>
+            <span class="badge">peso ${escapeHtml(threat.spawn.weight)}</span>
+            <span class="badge">sev ${escapeHtml(threat.instance.initialSeverity)}-${escapeHtml(threat.instance.maxSeverity)}</span>
+          </div>
+          <div class="inline">
+            <span class="badge ${threat.enabled ? 'ok' : 'danger'}">${threat.enabled ? 'activa' : 'desactivada'}</span>
+            <span class="badge ${threat.visible ? '' : 'warn'}">${threat.visible ? 'visible' : 'oculta'}</span>
+          </div>
+          ${(threat.tags || []).length ? `<div class="inline">${(threat.tags || []).slice(0,4).map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function getValidationIssues(threat) {
+      const issues = [];
+      const duplicateIdCount = state.threats.filter(item => item.id === threat.id).length;
+      if (!threat.id) issues.push('La amenaza no tiene ID.');
+      if (duplicateIdCount > 1) issues.push('Hay IDs duplicados en el catálogo.');
+      if (!threat.name) issues.push('La amenaza no tiene nombre.');
+      if ((threat.actions || []).some(action => !action.id)) issues.push('Hay acciones sin ID.');
+      if ((threat.actions || []).some(action => action.success?.chance < 0 || action.success?.chance > 100)) issues.push('Hay probabilidades de éxito fuera de 0-100.');
+      if ((threat.spawn?.cooldownOnResolveMinDays ?? 0) < 0 || (threat.spawn?.cooldownOnResolveMaxDays ?? 0) < 0) issues.push('El enfriamiento tras resolver no puede ser negativo.');
+      if ((threat.spawn?.cooldownOnResolveMaxDays ?? 0) < (threat.spawn?.cooldownOnResolveMinDays ?? 0)) issues.push('El enfriamiento máximo no puede ser menor que el mínimo.');
+      return issues;
+    }
+
+    function renderEffectFields(effect, path) {
+      switch (effect.type) {
+        case 'resource_delta':
+          return `<div class="grid two">${fieldSelect('Recurso', `${path}.resource`, effect.resource, catalogs.resources)}${fieldNumber('Cantidad', `${path}.amount`, effect.amount)}</div>`;
+        case 'morale_delta':
+        case 'stability_delta':
+        case 'fatigue_all_delta':
+        case 'fatigue_random_available':
+        case 'threat_reduce_severity':
+          return `<div class="grid two">${fieldNumber('Cantidad', `${path}.amount`, effect.amount)}<div class="hint">Usa valores positivos o negativos según convenga.</div></div>`;
+        case 'random_injury':
+          return `<div class="grid two">${fieldSelect('Gravedad', `${path}.severity`, effect.severity, INJURY_SEVERITIES)}${fieldNumber('Probabilidad %', `${path}.chance`, effect.chance)}</div>`;
+        case 'disable_building':
+          return `<div class="grid two">${fieldSelectEntries('Edificio', `${path}.building`, effect.building, buildingEntries())}${fieldNumber('Días', `${path}.days`, effect.days)}</div>`;
+        case 'building_output_modifier':
+          return `<div class="grid three">${fieldSelectEntries('Edificio', `${path}.building`, effect.building, buildingEntries())}${fieldSelect('Recurso', `${path}.resource`, effect.resource, catalogs.resources)}${fieldNumber('Cantidad', `${path}.amount`, effect.amount)}</div>`;
+        case 'trigger_attack': {
+          const mode = getTriggerAttackMode(effect);
+          const npcCandidates = getNpcCandidates();
+          const modeField = `<div class="field"><label>Origen del ataque</label><select data-special="trigger-attack-mode" data-path="${escapeHtml(path)}">${optionEntries([
+            { value:'hostile', label:'Hostil normal' },
+            { value:'npc_random', label:'NPC aleatorio' },
+            { value:'npc_specific', label:'NPC concreto' }
+          ], mode)}</select></div>`;
+          if (mode === 'hostile') {
+            return `
+              <div class="grid three">
+                ${modeField}
+                ${fieldSelect('Tipo hostil', `${path}.hostileType`, effect.hostileType || effect.attackType || 'random', getHostileTypeOptions())}
+                ${fieldSelect('Variante', `${path}.hostileVariant`, effect.hostileVariant || 'random', getHostileVariantOptions(effect.hostileType || effect.attackType || 'random'))}
+              </div>
+              <div class="grid two">
+                ${fieldNumber('Fuerza', `${path}.strength`, effect.strength)}
+                ${fieldNumber('Llegada en días', `${path}.arrivalDays`, effect.arrivalDays ?? 0)}
+              </div>
+            `;
+          }
+          return `
+            <div class="grid three">
+              ${modeField}
+              ${mode === 'npc_specific'
+                ? fieldSelectEntries('NPC', `${path}.hostileNpcId`, effect.hostileNpcId || '', [{ value:'', label: npcCandidates.length ? '— Selecciona NPC —' : 'Sin NPC cargados' }, ...npcCandidates])
+                : '<div class="field"><label>NPC</label><input type="text" value="aleatorio" disabled /></div>'}
+              ${fieldNumber('Fuerza', `${path}.strength`, effect.strength)}
+            </div>
+            <div class="grid two">
+              ${fieldNumber('Llegada en días', `${path}.arrivalDays`, effect.arrivalDays ?? 0)}
+              <div class="hint">Solo se listan entradas de <code>hostiles.json</code> con <code>labelType: "npc"</code>.</div>
+            </div>
+          `;
+        }
+        case 'log':
+          return fieldTextarea('Texto de log', `${path}.text`, effect.text || '', 'Texto que aparecerá en el registro.');
+        case 'threat_remove':
+        case 'reset_escalation_timer':
+          return '<div class="hint">Este efecto no necesita campos extra.</div>';
+        default:
+          return '<div class="hint">Tipo no reconocido.</div>';
+      }
+    }
+
+    function renderEffectCard(effect, path, title) {
+      return `
+        <div class="effect-card">
+          <div class="subhead">
+            <h4>${escapeHtml(title)}</h4>
+            <button class="small danger" data-action="remove-item" data-path="${escapeHtml(path)}">Eliminar</button>
+          </div>
+          <div class="grid two">
+            ${fieldSelect('Tipo de efecto', `${path}.type`, effect.type, EFFECT_TYPES)}
+            <div class="callout">${escapeHtml(EFFECT_HELP[effect.type] || 'Configura el comportamiento de este efecto.') }</div>
+          </div>
+          ${renderEffectFields(effect, path)}
+        </div>
+      `;
+    }
+
+    function renderEffectsBlock(title, path, effects) {
+      return `
+        <div class="subcard">
+          <div class="subhead">
+            <h4>${escapeHtml(title)}</h4>
+            <button class="small" data-action="add-effect" data-path="${escapeHtml(path)}">+ Añadir efecto</button>
+          </div>
+          ${effects.length ? effects.map((effect, i) => renderEffectCard(effect, `${path}.${i}`, `Efecto ${i + 1}`)).join('') : '<div class="empty">Sin efectos.</div>'}
+        </div>
+      `;
+    }
+
+    function renderFacilitatorFields(facilitator, path) {
+      if (facilitator.type === 'equipped_item_tag') {
+        return `
+          <div class="grid three">
+            ${fieldText('Tag de item', `${path}.itemTag`, facilitator.itemTag || 'weapon', 'weapon')}
+            ${fieldText('ID concreto de item (opcional)', `${path}.itemId`, facilitator.itemId || '', 'rifle_caza')}
+            ${fieldNumber('Bonus de éxito %', `${path}.bonus`, facilitator.bonus)}
+          </div>
+          ${fieldTextarea('Notas', `${path}.notes`, facilitator.notes || '', 'Comentario interno opcional.')}
+        `;
+      }
+      if (facilitator.type === 'survivor_skill') {
+        return `
+          <div class="grid two">
+            ${fieldSelect('Habilidad', `${path}.skill`, facilitator.skill || '', catalogs.skills)}
+            ${fieldNumber('Bonus de éxito %', `${path}.bonus`, facilitator.bonus)}
+          </div>
+          ${fieldTextarea('Notas', `${path}.notes`, facilitator.notes || '', 'Comentario interno opcional.')}
+        `;
+      }
+      const levelOptions = levelOptionsForBuilding(facilitator.building);
+      return `
+        <div class="grid four">
+          ${fieldSelectEntries('Edificio', `${path}.building`, facilitator.building || '', buildingEntries())}
+          ${fieldSelect('Nivel mínimo', `${path}.minLevel`, String(facilitator.minLevel || 1), levelOptions)}
+          ${fieldSelect('Modo', `${path}.mode`, facilitator.mode || 'bonus', BUILDING_FACILITATOR_MODES)}
+          ${fieldNumber('Bonus de éxito %', `${path}.bonus`, facilitator.bonus)}
+        </div>
+        ${facilitator.mode === 'special_option' ? `
+          <div class="grid three">
+            ${fieldText('ID opción especial', `${path}.specialActionId`, facilitator.specialActionId || '', 'usar_atalaya')}
+            ${fieldText('Texto del botón', `${path}.specialActionLabel`, facilitator.specialActionLabel || '', 'Usar Atalaya')}
+            ${fieldText('Descripción corta', `${path}.specialActionDescription`, facilitator.specialActionDescription || '', 'Abre una vía especial')}
+          </div>` : ''}
+        ${fieldTextarea('Notas', `${path}.notes`, facilitator.notes || '', 'Comentario interno opcional.')}
+        <div class="callout">Este facilitador permite dos usos: sumar % de éxito o declarar una opción especial desbloqueada por edificio + nivel.</div>
+      `;
+    }
+
+    function renderFacilitatorCard(facilitator, path, index) {
+      return `
+        <div class="facilitator-card">
+          <div class="subhead">
+            <h4>Facilitador ${index + 1}</h4>
+            <button class="small danger" data-action="remove-item" data-path="${escapeHtml(path)}">Eliminar</button>
+          </div>
+          <div class="grid two">
+            ${fieldSelect('Tipo', `${path}.type`, facilitator.type, FACILITATOR_TYPES)}
+            <div class="callout">Define qué mejora esta acción: arma equipada, habilidad del superviviente o edificio construido a cierto nivel.</div>
+          </div>
+          ${renderFacilitatorFields(facilitator, path)}
+        </div>
+      `;
+    }
+
+    function renderFacilitatorsBlock(path, facilitators) {
+      return `
+        <div class="subcard">
+          <div class="subhead">
+            <h4>Facilitadores</h4>
+            <button class="small" data-action="add-facilitator" data-path="${escapeHtml(path)}">+ Añadir facilitador</button>
+          </div>
+          <div class="callout">Estos bloques no sustituyen los requisitos. Sirven para dar ventajas a la resolución de la amenaza cuando el superviviente o la base cumplen ciertas condiciones.</div>
+          ${facilitators.length ? facilitators.map((facilitator, i) => renderFacilitatorCard(facilitator, `${path}.${i}`, i)).join('') : '<div class="empty">Sin facilitadores todavía.</div>'}
+        </div>
+      `;
+    }
+
+    function renderRequirements(action, path) {
+      const req = action.requirements || {};
+      const resourceReq = getRequirementResource(req);
+      return `
+        <div class="subcard">
+          <div class="subhead"><h4>Requisitos base</h4></div>
+          <div class="grid four">
+            ${fieldCheckbox('Necesita superviviente', `${path}.requirements.survivorAvailable`, !!req.survivorAvailable)}
+            ${fieldNumber('Defensa mínima', `${path}.requirements.minDefense`, req.minDefense ?? '')}
+            <div class="field">
+              <label>Moral media mínima</label>
+              <select data-special="morale-state" data-path="${escapeHtml(path)}.requirements.minMoraleState" data-numeric-path="${escapeHtml(path)}.requirements.minMorale">
+                ${optionEntries(MORALE_STATE_OPTIONS.map(v => ({ value:v, label: v ? v[0].toUpperCase() + v.slice(1) : '—' })), req.minMoraleState || getMoraleStateFromValue(req.minMorale))}
+              </select>
+            </div>
+            ${fieldNumber('Estabilidad mínima', `${path}.requirements.minStability`, req.minStability ?? '')}
+          </div>
+          <div class="grid two">
+            ${fieldSelect('Habilidad obligatoria', `${path}.requirements.requiredSkill`, req.requiredSkill || '', catalogs.skills)}
+            <div class="field">
+              <label>Moral mínima del superviviente</label>
+              <select data-special="morale-state" data-path="${escapeHtml(path)}.requirements.survivorMinMoraleState" data-numeric-path="${escapeHtml(path)}.requirements.survivorMinMorale">
+                ${optionEntries(MORALE_STATE_OPTIONS.map(v => ({ value:v, label: v ? v[0].toUpperCase() + v.slice(1) : '—' })), req.survivorMinMoraleState || getMoraleStateFromValue(req.survivorMinMorale))}
+              </select>
+            </div>
+          </div>
+          <div class="grid two">
+            ${fieldSelectEntries('Edificio obligatorio', `${path}.requirements.requiredBuilding`, req.requiredBuilding || '', buildingEntries())}
+            <div class="field">
+              <label>Recurso requerido</label>
+              <div class="inline">
+                <select data-special="req-resource-name" data-path="${escapeHtml(path)}.requirements.resource">${optionList(catalogs.resources, resourceReq.name)}</select>
+                <input type="number" data-special="req-resource-amount" data-path="${escapeHtml(path)}.requirements.resource" value="${escapeHtml(resourceReq.amount)}" placeholder="Cantidad" />
+              </div>
+              <div class="hint">Si dejas vacío el recurso o la cantidad, se elimina este requisito.</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderActionCard(action, path, index) {
+      return `
+        <div class="subcard">
+          <div class="subhead">
+            <h4>Acción ${index + 1}</h4>
+            <div class="inline">
+              ${(action.facilitators || []).map(f => `<span class="badge">${escapeHtml(describeFacilitator(f))}</span>`).join('')}
+              <button class="small danger" data-action="remove-item" data-path="${escapeHtml(path)}">Eliminar acción</button>
+            </div>
+          </div>
+          <div class="grid three">
+            ${fieldText('ID', `${path}.id`, action.id, 'patrullar')}
+            ${fieldText('Texto del botón', `${path}.label`, action.label, 'Patrullar perímetro')}
+            ${fieldNumber('Probabilidad base %', `${path}.success.chance`, action.success?.chance ?? 100)}
+          </div>
+          ${fieldTextarea('Descripción', `${path}.description`, action.description || '', 'Descripción breve de la acción.')}
+          ${renderRequirements(action, path)}
+          ${renderFacilitatorsBlock(`${path}.facilitators`, action.facilitators || [])}
+          ${renderEffectsBlock('Costes', `${path}.costs`, action.costs || [])}
+          ${renderEffectsBlock('Efectos al éxito', `${path}.success.effects`, action.success?.effects || [])}
+          ${renderEffectsBlock('Efectos al fracaso', `${path}.failure.effects`, action.failure?.effects || [])}
+        </div>
+      `;
+    }
+
+    function renderOverview(threat) {
+      const issues = getValidationIssues(threat);
+      return `
+        <section class="section">
+          <div class="section-head"><h3>Resumen</h3></div>
+          <div class="section-body">
+            <div class="grid two">
+              <div class="subcard">
+                <div class="subhead"><h4>Lectura rápida</h4></div>
+                <div class="grid two">
+                  <div><span class="badge">${escapeHtml(threat.type)}</span></div>
+                  <div><span class="badge">${threat.enabled ? 'Activa' : 'Desactivada'}</span></div>
+                </div>
+                <div class="hint">Aparece entre el día <strong>${escapeHtml(threat.spawn.minDay)}</strong> y <strong>${escapeHtml(threat.spawn.maxDay)}</strong>, con peso <strong>${escapeHtml(threat.spawn.weight)}</strong>.</div>
+                <div class="hint">Escala cada <strong>${escapeHtml(threat.instance.daysToEscalate)}</strong> día(s) hasta severidad máxima <strong>${escapeHtml(threat.instance.maxSeverity)}</strong>.</div>
+                <div class="inline">
+                  ${(threat.tags || []).length ? threat.tags.map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join('') : '<span class="hint">Sin tags.</span>'}
+                </div>
+              </div>
+              <div class="subcard">
+                <div class="subhead"><h4>Chequeo</h4></div>
+                ${issues.length ? `<div class="validation-list">${issues.map(issue => `<span class="badge danger">${escapeHtml(issue)}</span>`).join('')}</div>` : '<span class="badge ok">Sin problemas básicos detectados</span>'}
+                <div class="callout">Este panel solo comprueba lo evidente en editor. No valida todavía la lógica del runtime del juego.</div>
+              </div>
+            </div>
+            <div class="subcard">
+              <div class="subhead"><h4>Descripción</h4></div>
+              <div>${escapeHtml(threat.description || 'Sin descripción.')}</div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderDatosTab(threat) {
+      const tagsCsv = (threat.tags || []).join(', ');
+      return `
+        <section class="section">
+          <div class="section-head"><h3>Datos básicos</h3></div>
+          <div class="section-body">
+            <div class="grid three">
+              ${fieldText('ID', 'id', threat.id, 'raiders_stalking')}
+              ${fieldText('Nombre', 'name', threat.name, 'Saqueadores al acecho')}
+              ${fieldSelect('Tipo', 'type', threat.type, THREAT_TYPES)}
+            </div>
+            <div class="grid two">
+              ${fieldUrl('Imagen', 'image', threat.image || '', 'URL opcional')}
+              <div class="field">
+                <label>Tags</label>
+                <input type="text" data-special="tags" data-path="tags" value="${escapeHtml(tagsCsv)}" placeholder="raid, hostile, defense" />
+              </div>
+            </div>
+            ${fieldTextarea('Descripción', 'description', threat.description || '', 'Texto descriptivo de la amenaza.')}
+            <div class="grid three">
+              ${fieldCheckbox('Visible para el jugador', 'visible', !!threat.visible)}
+              ${fieldCheckbox('Amenaza habilitada', 'enabled', !!threat.enabled)}
+              ${fieldCheckbox('Forzada por evento', 'force', !!threat.force)}
+            </div>
+            <div class="callout">La casilla <code>force</code> sirve para amenazas que no deben salir por generación normal, pero sí desde eventos o scripts.</div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderAparicionTab(threat) {
+      return `
+        <section class="section">
+          <div class="section-head"><h3>Aparición y progresión</h3></div>
+          <div class="section-body">
+            <div class="grid four">
+              ${fieldNumber('Día mínimo', 'spawn.minDay', threat.spawn.minDay)}
+              ${fieldNumber('Día máximo', 'spawn.maxDay', threat.spawn.maxDay)}
+              ${fieldNumber('Peso', 'spawn.weight', threat.spawn.weight)}
+              ${fieldNumber('Máx. activas', 'spawn.maxActiveInstances', threat.spawn.maxActiveInstances)}
+            </div>
+            <div class="grid four">
+              ${fieldSelectEntries('Requiere edificio', 'spawn.requiresBuilding', threat.spawn.requiresBuilding || '', buildingEntries())}
+              ${fieldNumber('Cooldown al resolver · mín.', 'spawn.cooldownOnResolveMinDays', threat.spawn.cooldownOnResolveMinDays)}
+              ${fieldNumber('Cooldown al resolver · máx.', 'spawn.cooldownOnResolveMaxDays', threat.spawn.cooldownOnResolveMaxDays)}
+              ${fieldNumber('Severidad inicial', 'instance.initialSeverity', threat.instance.initialSeverity)}
+            </div>
+            <div class="grid two">
+              ${fieldNumber('Días para escalar', 'instance.daysToEscalate', threat.instance.daysToEscalate)}
+              ${fieldNumber('Severidad máxima', 'instance.maxSeverity', threat.instance.maxSeverity)}
+            </div>
+            <div class="callout">Cuando una amenaza se resuelva, dejará de ser elegible durante un número aleatorio de días entre este mínimo y este máximo. Por defecto el rango es 7–10. El editor sigue mostrando tres bloques de severidad para mantener compatibilidad con tu estructura actual.</div>
+          </div>
+        </section>
+        <section class="section">
+          <div class="section-head"><h3>Efectos por progresión</h3></div>
+          <div class="section-body">
+            ${renderEffectsBlock('Efectos pasivos · severidad 1', 'passiveEffectsBySeverity.1', threat.passiveEffectsBySeverity['1'])}
+            ${renderEffectsBlock('Efectos pasivos · severidad 2', 'passiveEffectsBySeverity.2', threat.passiveEffectsBySeverity['2'])}
+            ${renderEffectsBlock('Efectos pasivos · severidad 3', 'passiveEffectsBySeverity.3', threat.passiveEffectsBySeverity['3'])}
+            ${renderEffectsBlock('Al llegar a severidad 2', 'onEscalateBySeverity.2', threat.onEscalateBySeverity['2'])}
+            ${renderEffectsBlock('Al llegar a severidad 3', 'onEscalateBySeverity.3', threat.onEscalateBySeverity['3'])}
+            ${renderEffectsBlock('Al llegar al máximo', 'onMaxSeverity', threat.onMaxSeverity)}
+            ${renderEffectsBlock('Al resolver', 'onResolve', threat.onResolve)}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderAccionesTab(threat) {
+      return `
+        <section class="section">
+          <div class="section-head">
+            <h3>Acciones del jugador</h3>
+            <button class="small" data-action="add-action" data-path="actions">+ Añadir acción</button>
+          </div>
+          <div class="section-body">
+            <div class="callout">Las acciones ahora tienen una capa propia de facilitadores para modelar ventajas por equipo, habilidad o edificios con nivel.</div>
+            ${threat.actions.length ? threat.actions.map((action, index) => renderActionCard(action, `actions.${index}`, index)).join('') : '<div class="empty">Esta amenaza aún no tiene acciones.</div>'}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderJsonTab(threat) {
+      return `
+        <section class="section">
+          <div class="section-head"><h3>JSON de la amenaza</h3></div>
+          <div class="section-body">
+            <pre class="json-preview">${escapeHtml(JSON.stringify(threat, null, 2))}</pre>
+          </div>
+        </section>
+        <section class="section">
+          <div class="section-head"><h3>JSON completo</h3></div>
+          <div class="section-body">
+            <pre class="json-preview">${escapeHtml(JSON.stringify(sanitizeData(state), null, 2))}</pre>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderTabs() {
+      const tabs = [
+        { id:'datos', label:'Datos' },
+        { id:'aparicion', label:'Aparición' },
+        { id:'acciones', label:'Acciones' },
+        { id:'json', label:'JSON' },
+      ];
+      return `<div class="tabs">${tabs.map(tab => `<button class="tab ${ui.activeTab === tab.id ? 'active' : ''}" data-action="switch-tab" data-tab="${tab.id}">${tab.label}</button>`).join('')}</div>`;
+    }
+
+    function renderEditor() {
+      const root = document.getElementById('editorRoot');
+      const threat = currentThreat();
+      if (!threat) {
+        root.innerHTML = '<div class="empty">No hay amenazas cargadas.</div>';
+        return;
+      }
+
+      const totalEffects =
+        Object.values(threat.passiveEffectsBySeverity || {}).flat().length +
+        Object.values(threat.onEscalateBySeverity || {}).flat().length +
+        (threat.onMaxSeverity || []).length +
+        (threat.onResolve || []).length;
+
+      let tabHtml = '';
+      if (ui.activeTab === 'datos') tabHtml = renderDatosTab(threat);
+      if (ui.activeTab === 'aparicion') tabHtml = renderAparicionTab(threat);
+      if (ui.activeTab === 'acciones') tabHtml = renderAccionesTab(threat);
+      if (ui.activeTab === 'json') tabHtml = renderJsonTab(threat);
+
+      root.innerHTML = `
+        <div class="hero">
+          <div>
+            <div class="hero-title">${escapeHtml(threat.name || 'Nueva amenaza')}</div>
+            <div class="hero-meta">
+              <div><strong>${escapeHtml(threat.id)}</strong> · ${escapeHtml(threat.type)} · ${threat.enabled ? 'Activa' : 'Desactivada'}</div>
+              <div>Reentrada tras resolver: ${threat.spawn.cooldownOnResolveMinDays}-${threat.spawn.cooldownOnResolveMaxDays} días · Fuente actual: ${escapeHtml(ui.sourceLabel)}</div>
+            </div>
+          </div>
+          <div class="summary-grid">
+            <div class="summary-card"><strong>${threat.actions.length}</strong><span>acciones</span></div>
+            <div class="summary-card"><strong>${totalEffects}</strong><span>efectos</span></div>
+            <div class="summary-card"><strong>${(threat.actions || []).reduce((acc, a) => acc + (a.facilitators || []).length, 0)}</strong><span>facilitadores</span></div>
+            <div class="summary-card"><strong>${threat.instance.maxSeverity}</strong><span>sev. máxima</span></div>
+          </div>
+        </div>
+
+        ${renderOverview(threat)}
+        ${renderTabs()}
+        ${tabHtml}
+      `;
+    }
+
+    function persistAndRender() {
+      saveAutosave();
+      collectTags();
+      renderStatus();
+      renderSidebarFilters();
+      renderThreatList();
+      renderEditor();
+    }
+
+    function selectThreat(index) {
+      ui.selectedIndex = Math.max(0, Math.min(index, state.threats.length - 1));
+      renderThreatList();
+      renderEditor();
+    }
+
+    function addThreat() {
+      const threat = makeDefaultThreat();
+      threat.id = slugify(`amenaza_${state.threats.length + 1}`);
+      threat.name = `Nueva amenaza ${state.threats.length + 1}`;
+      state.threats.push(threat);
+      ui.selectedIndex = state.threats.length - 1;
+      persistAndRender();
+    }
+
+    function duplicateThreat() {
+      const threat = currentThreat();
+      if (!threat) return;
+      const copy = deepClone(threat);
+      copy.id = `${copy.id}_copia`;
+      copy.name = `${copy.name} (copia)`;
+      state.threats.splice(ui.selectedIndex + 1, 0, copy);
+      ui.selectedIndex += 1;
+      persistAndRender();
+    }
+
+    function deleteThreat() {
+      if (!state.threats.length) return;
+      state.threats.splice(ui.selectedIndex, 1);
+      ui.selectedIndex = Math.max(0, Math.min(ui.selectedIndex, state.threats.length - 1));
+      persistAndRender();
+    }
+
+    function addEffect(path) {
+      const threat = currentThreat();
+      const arr = getByPath(threat, path);
+      if (!Array.isArray(arr)) return;
+      arr.push(makeDefaultEffect('log'));
+      persistAndRender();
+    }
+
+    function addAction() {
+      const threat = currentThreat();
+      threat.actions.push(makeDefaultAction());
+      ui.activeTab = 'acciones';
+      persistAndRender();
+    }
+
+    function addFacilitator(path) {
+      const threat = currentThreat();
+      const arr = getByPath(threat, path);
+      if (!Array.isArray(arr)) return;
+      arr.push(makeDefaultFacilitator('equipped_item_tag'));
+      ui.activeTab = 'acciones';
+      persistAndRender();
+    }
+
+    function currentPayloadString() {
+      return JSON.stringify(sanitizeData(state), null, 2);
+    }
+
+    async function exportJson() {
+      const blob = new Blob([currentPayloadString()], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'threats.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function saveFile() {
+      const payload = currentPayloadString();
+      if (ui.linkedHandle && window.showSaveFilePicker) {
+        const writable = await ui.linkedHandle.createWritable();
+        await writable.write(payload);
+        await writable.close();
+        ui.sourceLabel = 'archivo guardado';
+        renderStatus();
+        return;
+      }
+
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: 'threats.json',
+            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(payload);
+          await writable.close();
+          ui.linkedHandle = handle;
+          ui.sourceLabel = 'archivo guardado';
+          renderStatus();
+          return;
+        } catch (error) {
+          if (error?.name !== 'AbortError') console.error(error);
+        }
+      }
+
+      exportJson();
+    }
+
+    async function openFilePicker() {
+      if (window.showOpenFilePicker) {
+        try {
+          const [handle] = await window.showOpenFilePicker({
+            multiple: false,
+            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+          });
+          const file = await handle.getFile();
+          const text = await file.text();
+          state = sanitizeData(JSON.parse(text));
+          ui.linkedHandle = handle;
+          ui.linkedPath = file.name;
+          ui.sourceLabel = 'archivo abierto';
+          ui.selectedIndex = 0;
+          persistAndRender();
+          return;
+        } catch (error) {
+          if (error?.name !== 'AbortError') console.error(error);
+        }
+      }
+      document.getElementById('importFile').click();
+    }
+
+    async function loadAllCatalogs() {
+      const [skillsResult, buildingsResult, hostilesResult] = await Promise.all([
+        tryLoadJson(LINKED_PATHS.skills),
+        tryLoadJson(LINKED_PATHS.buildings),
+        tryLoadJson(LINKED_PATHS.hostiles)
+      ]);
+
+      catalogs.skills = skillsResult ? extractSkills(skillsResult.json) : [...SKILL_FALLBACK];
+
+      const buildingRaw = buildingsResult?.json || null;
+      catalogs.buildings = extractBuildings(buildingRaw);
+      catalogs.buildingMap = Object.fromEntries(catalogs.buildings.map(item => [item.id, item]));
+      catalogs.resources = buildingRaw ? extractResourcesFromBuildings(buildingRaw) : [...FALLBACK_RESOURCES];
+      catalogs.hostiles = hostilesResult ? extractHostiles(hostilesResult.json) : [];
+    }
+
+    async function loadState() {
+      await loadAllCatalogs();
+
+      const linkedThreats = await tryLoadJson(LINKED_PATHS.threats);
+      if (linkedThreats) {
+        state = sanitizeData(linkedThreats.json);
+        ui.linkedPath = linkedThreats.path;
+        ui.sourceLabel = linkedThreats.path;
+        ui.sourceMode = 'linked';
+      } else {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            state = sanitizeData(JSON.parse(raw));
+            ui.sourceLabel = 'autosave local';
+            ui.sourceMode = 'autosave';
+          } else {
+            state = sanitizeData(DEFAULT_DATA);
+            ui.sourceLabel = 'ejemplos';
+            ui.sourceMode = 'sample';
+          }
+        } catch (error) {
+          console.warn('No se pudo cargar el autosave', error);
+          state = sanitizeData(DEFAULT_DATA);
+          ui.sourceLabel = 'ejemplos';
+          ui.sourceMode = 'sample';
+        }
+      }
+      collectTags();
+    }
+
+    async function reloadLinkedThreats() {
+      const linkedThreats = await tryLoadJson(LINKED_PATHS.threats);
+      if (!linkedThreats) {
+        alert('No se encontró threats.json en las rutas probadas.');
+        return;
+      }
+      state = sanitizeData(linkedThreats.json);
+      ui.linkedPath = linkedThreats.path;
+      ui.sourceLabel = linkedThreats.path;
+      ui.selectedIndex = 0;
+      persistAndRender();
+    }
+
+    document.addEventListener('keydown', (event) => {
+      const tag = event.target?.tagName;
+      const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || event.target?.isContentEditable;
+      if (!isEditable) return;
+      if (event.key === ' ') event.stopPropagation();
+    }, true);
+
+    document.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      const action = button.dataset.action;
+      const path = button.dataset.path;
+      const index = Number(button.dataset.index);
+
+      if (action === 'select-threat') return selectThreat(index);
+      if (action === 'switch-tab') {
+        ui.activeTab = button.dataset.tab || 'datos';
+        return renderEditor();
+      }
+      if (action === 'add-threat') return addThreat();
+      if (action === 'duplicate-threat') return duplicateThreat();
+      if (action === 'delete-threat') return deleteThreat();
+      if (action === 'add-effect') return addEffect(path);
+      if (action === 'add-action') return addAction();
+      if (action === 'add-facilitator') return addFacilitator(path);
+      if (action === 'remove-item') {
+        deleteByPath(currentThreat(), path);
+        return persistAndRender();
+      }
+      if (action === 'export-json') return exportJson();
+      if (action === 'open-file') return openFilePicker();
+      if (action === 'save-file') return saveFile();
+      if (action === 'reload-linked') return reloadLinkedThreats();
+    });
+
+    document.addEventListener('input', (event) => {
+      const target = event.target;
+      const threat = currentThreat();
+      if (!threat) return;
+
+      if (target.id === 'searchInput') {
+        ui.search = target.value;
+        return renderThreatList();
+      }
+
+      if (target.id === 'typeFilter') {
+        ui.filterType = target.value;
+        return renderThreatList();
+      }
+      if (target.id === 'tagFilter') {
+        ui.filterTag = target.value;
+        return renderThreatList();
+      }
+      if (target.id === 'enabledFilter') {
+        ui.filterEnabled = target.value;
+        return renderThreatList();
+      }
+
+      if (target.dataset.special === 'tags') {
+        threat.tags = target.value.split(',').map(v => v.trim()).filter(Boolean);
+        return persistAndRender();
+      }
+
+      if (target.dataset.special === 'morale-state') {
+        const statePath = target.dataset.path;
+        const numericPath = target.dataset.numericPath;
+        setByPath(threat, statePath, target.value);
+        if (!target.value) deleteByPath(threat, numericPath);
+        else setByPath(threat, numericPath, MORALE_STATE_TO_VALUE[target.value] || 0);
+        return persistAndRender();
+      }
+
+      if (target.dataset.special === 'trigger-attack-mode') {
+        const base = target.dataset.path;
+        if (target.value === 'hostile') {
+          setByPath(threat, `${base}.hostilePool`, 'hostile');
+          deleteByPath(threat, `${base}.hostileNpcId`);
+        } else if (target.value === 'npc_random') {
+          setByPath(threat, `${base}.hostilePool`, 'npc');
+          deleteByPath(threat, `${base}.hostileNpcId`);
+          setByPath(threat, `${base}.hostileType`, 'random');
+          setByPath(threat, `${base}.hostileVariant`, 'random');
+          setByPath(threat, `${base}.attackType`, 'random');
+        } else if (target.value === 'npc_specific') {
+          setByPath(threat, `${base}.hostilePool`, 'npc');
+          if (!getByPath(threat, `${base}.hostileNpcId`)) setByPath(threat, `${base}.hostileNpcId`, '');
+        }
+        return persistAndRender();
+      }
+
+      if (target.dataset.special === 'req-resource-name') {
+        return setRequirementResource(target.dataset.path, 'name', target.value);
+      }
+
+      if (target.dataset.special === 'req-resource-amount') {
+        return setRequirementResource(target.dataset.path, 'amount', target.value);
+      }
+
+      const path = target.dataset.path;
+      if (!path) return;
+
+      let value;
+      if (target.type === 'checkbox') value = target.checked;
+      else if (target.type === 'number') value = target.value === '' ? '' : Number(target.value);
+      else value = target.value;
+
+      setByPath(threat, path, value);
+
+      if (path.endsWith('.hostileNpcId')) {
+        const parts = String(value || '').split('::');
+        if (parts[0]) setByPath(threat, path.replace(/hostileNpcId$/, 'hostileType'), parts[0]);
+        setByPath(threat, path.replace(/hostileNpcId$/, 'hostileVariant'), parts[1] || 'random');
+        setByPath(threat, path.replace(/hostileNpcId$/, 'attackType'), parts[0] || 'random');
+      }
+
+      if (path.endsWith('.hostileType')) {
+        setByPath(threat, path.replace(/hostileType$/, 'attackType'), value || 'random');
+        const variantPath = path.replace(/hostileType$/, 'hostileVariant');
+        const allowed = getHostileVariantOptions(value || 'random');
+        const currentVariant = getByPath(threat, variantPath);
+        if (!allowed.includes(currentVariant)) setByPath(threat, variantPath, 'random');
+      }
+
+      if (path.endsWith('.building') && path.includes('.facilitators.')) {
+        const levelPath = path.replace(/building$/, 'minLevel');
+        const currentLevel = Number(getByPath(threat, levelPath) || 1);
+        const max = getBuildingMaxLevel(value);
+        if (currentLevel > max) setByPath(threat, levelPath, max);
+      }
+
+      if (path === 'name' && (!threat.id || threat.id.startsWith('nueva_amenaza') || threat.id.startsWith('amenaza_'))) {
+        threat.id = slugify(value);
+      }
+
+      if (path === 'spawn.requiresBuilding' && !value) delete threat.spawn.requiresBuilding;
+
+      persistAndRender();
+    });
+
+    document.getElementById('importFile').addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        state = sanitizeData(JSON.parse(text));
+        ui.linkedPath = file.name;
+        ui.sourceLabel = 'archivo importado';
+        ui.selectedIndex = 0;
+        persistAndRender();
+      } catch (error) {
+        alert('No se pudo leer el JSON.');
+        console.error(error);
+      }
+      event.target.value = '';
+    });
+
+    loadState().then(() => {
+      renderStatus();
+      renderSidebarFilters();
+      renderThreatList();
+      renderEditor();
+      document.getElementById('searchInput').value = ui.search;
+    });
+  </script>
+</body>
+</html>

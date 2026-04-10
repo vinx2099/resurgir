@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESURGIR — item_editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0a0c09; --panel:#0f120d; --panel2:#141a11; --panel3:#1a2116;
+      --line:#2a3525; --line2:#3a4a30; --text:#c8d4b8; --muted:#6b7a5e; --dim:#3d4a33;
+      --ok:#4a8a35; --ok-bright:#72c44e; --ok-glow:rgba(74,138,53,.18);
+      --danger:#8a3535; --danger-bright:#c44e4e; --danger-glow:rgba(138,53,53,.20);
+      --warn:#8a6a2a; --warn-bright:#c4993e; --amber:#b87c2a; --amber-bright:#e8a83e;
+      --accent:#4a7a6a; --accent-bright:#6ab89e; --font-mono:'Share Tech Mono', monospace;
+      --font-display:'Oswald', sans-serif; --font-worn:'Special Elite', cursive;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-mono);min-height:100vh;
+      background-image:linear-gradient(rgba(0,20,0,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(0,20,0,.08) 1px, transparent 1px);
+      background-size:100% 3px,40px 40px;}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line2);background:#060807;position:sticky;top:0;z-index:20;box-shadow:0 2px 20px rgba(0,0,0,.7)}
+    .brand{display:flex;flex-direction:column;gap:2px}
+    .brand strong{font-family:var(--font-display);font-size:26px;letter-spacing:.22em;color:var(--ok-bright);text-shadow:0 0 12px var(--ok-glow)}
+    .brand span{font-size:10px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    button,.btn,input,select,textarea{font:inherit}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);cursor:pointer;font-size:12px;letter-spacing:.07em;text-transform:uppercase;clip-path:polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);transition:.15s ease;text-decoration:none}
+    .btn:hover{border-color:var(--ok);color:var(--ok-bright);background:var(--panel3)}
+    .btn.primary{background:var(--ok);border-color:var(--ok-bright);color:#fff}
+    .btn.primary:hover{background:var(--ok-bright)}
+    .btn.danger{border-color:var(--danger);color:var(--danger-bright);background:var(--danger-glow)}
+    .btn.danger:hover{background:var(--danger);color:#fff}
+    .btn.amber{border-color:var(--amber);color:var(--amber-bright);background:rgba(184,124,42,.12)}
+    .btn.amber:hover{background:var(--amber);color:#fff}
+    .layout{display:grid;grid-template-columns:310px minmax(0,1fr) 440px;gap:12px;padding:12px 14px;min-height:calc(100vh - 70px)}
+    .panel{background:var(--panel);border:1px solid var(--line);position:relative;overflow:hidden}
+    .panel:after{content:'';position:absolute;right:0;bottom:0;width:14px;height:14px;background:var(--bg);clip-path:polygon(100% 0, 100% 100%, 0 100%)}
+    .panel-header{padding:10px 14px;background:var(--panel2);border-bottom:1px solid var(--line2);font-family:var(--font-display);font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ok-bright)}
+    .panel-body{padding:10px}
+    .stack{display:grid;gap:10px}
+    .list-actions,.editor-actions{display:flex;flex-wrap:wrap;gap:8px}
+    .search{width:100%;padding:10px 12px;background:var(--panel2);border:1px solid var(--line2);color:var(--text)}
+    .item-list{display:grid;gap:8px;max-height:calc(100vh - 220px);overflow:auto;padding-right:2px}
+    .item-row{border:1px solid var(--line);border-left:3px solid var(--line2);background:rgba(255,255,255,.02);padding:9px 10px;cursor:pointer;transition:.15s ease}
+    .item-row:hover{border-left-color:var(--ok);background:rgba(74,138,53,.08)}
+    .item-row.active{border-color:var(--ok);border-left-color:var(--ok-bright);background:rgba(74,138,53,.13);box-shadow:0 0 10px var(--ok-glow) inset}
+    .item-row-top{display:flex;justify-content:space-between;gap:8px;align-items:start}
+    .item-name{font-family:var(--font-display);font-size:16px;color:var(--amber-bright);line-height:1.1}
+    .tag{font-size:10px;color:var(--muted);border:1px solid var(--line2);padding:2px 6px;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+    .item-meta{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.6}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .field{display:grid;gap:5px}
+    .field.full{grid-column:1/-1}
+    .field label{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+    .field input,.field select,.field textarea{width:100%;padding:9px 10px;background:var(--panel2);border:1px solid var(--line2);color:var(--text)}
+    .field textarea{min-height:86px;resize:vertical}
+    .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--ok)}
+    .checkline{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 10px;border:1px solid var(--line2);background:var(--panel2)}
+    .checkline input{width:16px;height:16px}
+    .section-title{font-family:var(--font-display);font-size:12px;color:var(--amber-bright);letter-spacing:.12em;text-transform:uppercase;margin-top:4px}
+    .effects{display:grid;gap:8px}
+    .effect-card{border:1px solid var(--line2);background:rgba(255,255,255,.02);padding:10px;display:grid;gap:8px}
+    .effect-grid{display:grid;grid-template-columns:1.2fr .7fr auto;gap:8px;align-items:end}
+    .mini-help{font-size:11px;color:var(--muted);line-height:1.6}
+    .jsonbox{width:100%;min-height:calc(100vh - 220px);padding:12px;background:#0b0e0a;color:#d9e7c7;border:1px solid var(--line2);font-family:var(--font-mono);font-size:12px;line-height:1.5;resize:none}
+    .status{font-size:11px;color:var(--muted);min-height:18px}
+    .pillline{display:flex;gap:6px;flex-wrap:wrap}
+    .pill{padding:3px 7px;border:1px solid var(--line2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+    .tier-t1,.tier-t2,.tier-t3,.tier-t4{font-weight:700}
+    .tier-t1{color:#8dbd75} .tier-t2{color:#7ab9b0} .tier-t3{color:#e8a83e} .tier-t4{color:#d67bff}
+    .warn{color:var(--warn-bright)} .ok{color:var(--ok-bright)} .danger{color:var(--danger-bright)}
+    .footer-note,.effect-legend{font-size:11px;color:var(--muted);line-height:1.7;border-top:1px solid var(--line);padding-top:8px}
+    .effect-help{border:1px solid var(--line2);background:rgba(74,138,53,.08);padding:8px 10px;font-size:11px;line-height:1.65}
+    .legend-card{border:1px solid var(--line2);padding:8px 10px;background:rgba(255,255,255,.02)}
+    .legend-card strong{display:block;color:var(--amber-bright);font-family:var(--font-display);letter-spacing:.06em;margin-bottom:4px}
+    @media (max-width: 1300px){ .layout{grid-template-columns:290px minmax(0,1fr)} .preview-panel{grid-column:1/-1} }
+    @media (max-width: 860px){ .layout{grid-template-columns:1fr} .effect-grid,.form-grid{grid-template-columns:1fr} .jsonbox,.item-list{max-height:none;min-height:260px} }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <strong>RESURGIR</strong>
+      <span>editor de objetos · items.json</span>
+    </div>
+    <div class="toolbar">
+      <label class="btn" for="fileInput">Importar JSON</label>
+      <input id="fileInput" type="file" accept="application/json,.json" hidden>
+      <button class="btn" id="reloadBtn">Recargar /data/items.json</button>
+      <button class="btn" id="newItemBtn">Nuevo objeto</button>
+      <button class="btn amber" id="cloneItemBtn">Duplicar</button>
+      <button class="btn danger" id="deleteItemBtn">Borrar</button>
+      <button class="btn primary" id="downloadBtn">Descargar items.json</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <div class="panel-header">Listado</div>
+      <div class="panel-body stack">
+        <input id="searchInput" class="search" placeholder="Buscar por nombre o ID">
+        <div class="pillline">
+          <span class="pill" id="countPill">0 objetos</span>
+          <span class="pill" id="dirtyPill">sin cambios</span>
+        </div>
+        <div id="itemList" class="item-list"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">Editor</div>
+      <div class="panel-body stack">
+        <div class="status" id="statusText"></div>
+
+        <div class="section-title">Datos básicos</div>
+        <div class="form-grid">
+          <div class="field"><label for="itemId">ID</label><input id="itemId"></div>
+          <div class="field"><label for="itemName">Nombre</label><input id="itemName"></div>
+          <div class="field"><label for="itemType">Tipo</label>
+            <select id="itemType">
+              <option value="weapon">weapon</option>
+              <option value="equipment">equipment</option>
+              <option value="tool">tool</option>
+              <option value="consumable">consumable</option>
+            </select>
+          </div>
+          <div class="field"><label for="itemTier">Tier</label>
+            <select id="itemTier">
+              <option value="T1">T1 · común</option>
+              <option value="T2">T2 · poco común</option>
+              <option value="T3">T3 · raro</option>
+              <option value="T4">T4 · muy raro</option>
+            </select>
+          </div>
+          <div class="field"><label for="itemSubtype">Subtype</label><input id="itemSubtype" placeholder="opcional"></div>
+          <div class="field full"><label for="itemDescription">Descripción</label><textarea id="itemDescription"></textarea></div>
+        </div>
+
+        <div class="section-title">Propiedades</div>
+        <div class="form-grid">
+          <div class="field"><label for="itemSlot">Slot</label><input id="itemSlot" placeholder="opcional"></div>
+          <div class="field"><label for="itemCombatBonus">Combat bonus</label><input id="itemCombatBonus" type="number" step="1" value="0"></div>
+          <div class="field"><label for="itemRequiredSkill">Required skill</label><input id="itemRequiredSkill" placeholder="opcional"></div>
+          <div class="field"><label for="itemRepairSkill">Repair skill</label><input id="itemRepairSkill" placeholder="opcional"></div>
+          <label class="checkline"><input id="itemStackable" type="checkbox"> Apilable</label>
+          <label class="checkline"><input id="itemRepairable" type="checkbox" checked> Reparable</label>
+          <div class="field"><label for="itemUse">Use</label>
+            <select id="itemUse">
+              <option value="">—</option>
+              <option value="consume">consume</option>
+              <option value="equip">equip</option>
+            </select>
+          </div>
+          <div class="field"><label for="itemQty">Qty por defecto</label><input id="itemQty" type="number" step="1" min="1" value="1"></div>
+        </div>
+
+        <div class="section-title">Durabilidad</div>
+        <div class="form-grid">
+          <div class="field"><label for="itemDurability">Durability</label><input id="itemDurability" type="number" step="1" min="0" value="0"></div>
+          <div class="field"><label for="itemMaxDurability">Max durability</label><input id="itemMaxDurability" type="number" step="1" min="0" value="0"></div>
+        </div>
+
+        <div class="section-title">Usable en</div>
+        <div class="pillline">
+          <label class="checkline"><input id="usableBase" type="checkbox"> base</label>
+          <label class="checkline"><input id="usableEvent" type="checkbox"> event</label>
+          <label class="checkline"><input id="usableExplore" type="checkbox"> explore</label>
+          <label class="checkline"><input id="usableExterior" type="checkbox"> exterior</label>
+        </div>
+
+        <div class="section-title">Efectos</div>
+        <div class="mini-help">Cada efecto lleva su explicación dentro de la propia ficha. El campo <b>amount</b> cambia de significado según el tipo: bonus plano, tamaño del dado, niveles curados, días reducidos, etc.</div>
+        <div id="effectsList" class="effects"></div>
+        <div class="editor-actions">
+          <button class="btn" id="addEffectBtn">Añadir efecto</button>
+        </div>
+
+        <div class="effect-legend" id="effectLegend"></div>
+
+        <div class="footer-note">
+          <div>Este editor añade <b>tier</b> a los objetos sin romper el esquema actual. Si el juego no lo usa todavía, se conserva igualmente en JSON para rareza, loot y tablas futuras.</div>
+          <div style="margin-top:6px">El HTML principal ya trabaja con <b>gameData.items</b> y carga el inventario inicial desde JSON, incluyendo <b>worker_toolkit</b>; por eso tiene sentido centralizar aquí los datos del objeto.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel preview-panel">
+      <div class="panel-header">Vista previa JSON</div>
+      <div class="panel-body stack">
+        <textarea id="jsonPreview" class="jsonbox" spellcheck="false" readonly></textarea>
+        <div class="editor-actions">
+          <button class="btn" id="copyJsonBtn">Copiar JSON</button>
+          <button class="btn" id="sortBtn">Ordenar por nombre</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+(() => {
+  const state = { items: [], selectedIndex: -1, dirty: false, search: '' };
+  const EFFECT_INFO = {"melee": {"label": "Cuerpo a cuerpo", "help": "Suma directamente al valor de combate cuerpo a cuerpo del objeto. Cuanto mayor sea amount, más pega.", "example": "+1 a +3 combate cuerpo a cuerpo."}, "ranged": {"label": "A distancia", "help": "Interpreta amount como el dado extra del arma a distancia. 3 = 1d3, 4 = 1d4, 6 = 1d6...", "example": "Arco 1d3, pistola 1d4, rifle 1d6."}, "armor": {"label": "Protección", "help": "Reduce la probabilidad o la gravedad de las heridas. Un valor mayor debería proteger mejor.", "example": "Chaqueta 1, chaleco 2, kevlar 3."}, "worker": {"label": "Construcción", "help": "Acelera obras y reduce días de construcción. Está pensado para herramientas y útiles de trabajo.", "example": "1 reduce 1 día; 2 reduce 2 días."}, "heal": {"label": "Curación", "help": "Recupera niveles de herida al consumir el objeto.", "example": "Vendas 1 nivel, maletín quirúrgico 2 niveles."}, "food": {"label": "Comida", "help": "Añade comida a las reservas o resuelve una necesidad de alimento al usarlo.", "example": "Ración 1, lata 2."}, "fun": {"label": "Moral", "help": "Sube la moral del grupo o del superviviente al usar el objeto.", "example": "Cómic 1, armónica 2."}};
+  const EFFECT_OPTIONS = Object.keys(EFFECT_INFO);
+
+  const $ = (id) => document.getElementById(id);
+  const refs = {
+    itemList: $('itemList'), searchInput: $('searchInput'), countPill: $('countPill'), dirtyPill: $('dirtyPill'),
+    statusText: $('statusText'), jsonPreview: $('jsonPreview'), fileInput: $('fileInput'),
+    itemId: $('itemId'), itemName: $('itemName'), itemType: $('itemType'), itemTier: $('itemTier'), itemSubtype: $('itemSubtype'),
+    itemDescription: $('itemDescription'), itemSlot: $('itemSlot'), itemCombatBonus: $('itemCombatBonus'),
+    itemRequiredSkill: $('itemRequiredSkill'), itemRepairSkill: $('itemRepairSkill'), itemStackable: $('itemStackable'),
+    itemRepairable: $('itemRepairable'), itemUse: $('itemUse'), itemQty: $('itemQty'),
+    itemDurability: $('itemDurability'), itemMaxDurability: $('itemMaxDurability'),
+    usableBase: $('usableBase'), usableEvent: $('usableEvent'), usableExplore: $('usableExplore'), usableExterior: $('usableExterior'),
+    effectsList: $('effectsList'), effectLegend: $('effectLegend')
+  };
+
+  function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
+  function slugify(text){
+    return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+      .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'objeto_nuevo';
+  }
+  function setStatus(text, cls=''){ refs.statusText.className = 'status ' + cls; refs.statusText.textContent = text || ''; }
+  function setDirty(value){ state.dirty = !!value; refs.dirtyPill.textContent = state.dirty ? 'cambios sin guardar' : 'sin cambios'; refs.dirtyPill.style.color = state.dirty ? 'var(--amber-bright)' : 'var(--muted)'; renderPreview(); }
+  function escapeHtml(str){ return String(str ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function escapeAttr(str){ return escapeHtml(str); }
+
+  function normalizeEffect(effect={}){
+    const kind = String(effect.kind ?? effect.type ?? effect.effect ?? '').trim() || 'melee';
+    return { kind: EFFECT_INFO[kind] ? kind : 'melee', amount: Number(effect.amount ?? effect.value ?? 1) || 1 };
+  }
+
+  function cleanItem(item){
+    const out = {
+      id: String(item.id || '').trim(),
+      name: String(item.name || '').trim(),
+      tier: String(item.tier || 'T1').trim(),
+      type: String(item.type || 'consumable').trim(),
+      description: String(item.description || '').trim()
+    };
+    const subtype = String(item.subtype || '').trim();
+    const slot = String(item.slot || '').trim();
+    const requiredSkill = String(item.requiredSkill || '').trim();
+    const repairSkill = String(item.repairSkill || '').trim();
+    const use = String(item.use || '').trim();
+    const usableIn = Array.isArray(item.usableIn) ? item.usableIn.map(v => String(v).trim()).filter(Boolean) : [];
+    const effects = Array.isArray(item.effects) ? item.effects.map(normalizeEffect).slice(0,2) : [];
+    if(subtype) out.subtype = subtype;
+    if(slot) out.slot = slot;
+    if(requiredSkill) out.requiredSkill = requiredSkill;
+    if(repairSkill) out.repairSkill = repairSkill;
+    if(Number(item.combatBonus || 0)) out.combatBonus = Number(item.combatBonus || 0);
+    if(item.type === 'consumable' || item.stackable === true) out.stackable = !!item.stackable;
+    if(use) out.use = use;
+    if(usableIn.length) out.usableIn = usableIn;
+    if(effects.length) out.effects = effects.map(effect => ({ kind: effect.kind, amount: Number(effect.amount || 1) }));
+    if(item.type !== 'consumable') {
+      out.durability = Math.max(0, Number(item.durability ?? item.maxDurability ?? 0) || 0);
+      out.maxDurability = Math.max(0, Number(item.maxDurability ?? item.durability ?? 0) || 0);
+      out.repairable = item.repairable !== false;
+    } else if(item.repairable === true) {
+      out.repairable = true;
+    }
+    if(Number(item.qty || 1) !== 1) out.qty = Math.max(1, Number(item.qty || 1) || 1);
+    return out;
+  }
+
+  function newBlankItem(){
+    return {
+      id:'objeto_nuevo', name:'Objeto nuevo', tier:'T1', type:'consumable', subtype:'', slot:'', description:'',
+      stackable:false, repairable:true, durability:0, maxDurability:0, qty:1, use:'consume', usableIn:['base','event'],
+      combatBonus:0, requiredSkill:'', repairSkill:'', effects:[{kind:'heal', amount:1}]
+    };
+  }
+
+  function currentItem(){ return state.items[state.selectedIndex] || null; }
+  function ensureSelection(){ if(!state.items.length){ state.selectedIndex = -1; return; } if(state.selectedIndex < 0 || state.selectedIndex >= state.items.length) state.selectedIndex = 0; }
+  function sortItems(){ const currentId = currentItem()?.id; state.items.sort((a,b) => String(a.name || a.id).localeCompare(String(b.name || b.id), 'es', { sensitivity:'base' })); state.selectedIndex = Math.max(0, state.items.findIndex(it => it.id === currentId)); }
+
+  function renderList(){
+    ensureSelection();
+    const search = state.search.trim().toLowerCase();
+    const filtered = state.items.map((item, index) => ({ item, index }))
+      .filter(({ item }) => !search || item.name.toLowerCase().includes(search) || item.id.toLowerCase().includes(search) || String(item.tier||'').toLowerCase().includes(search));
+    refs.countPill.textContent = `${state.items.length} objeto${state.items.length === 1 ? '' : 's'}`;
+    refs.itemList.innerHTML = filtered.map(({ item, index }) => {
+      const effects = (item.effects || []).map(effect => `${effect.kind}:${effect.amount}`).join(' · ') || 'sin efectos';
+      const extra = item.type === 'consumable' ? `use ${item.use || '—'} · ${item.stackable ? 'stackable' : 'single'}`
+        : `dur ${Number(item.durability||0)}/${Number(item.maxDurability||0)}`;
+      const tierClass = 'tier-' + String(item.tier || 'T1').toLowerCase();
+      return `
+        <div class="item-row ${index === state.selectedIndex ? 'active' : ''}" data-index="${index}">
+          <div class="item-row-top">
+            <div class="item-name">${escapeHtml(item.name || item.id)}</div>
+            <span class="tag ${tierClass}">${escapeHtml(item.tier || 'T1')}</span>
+          </div>
+          <div class="item-meta">ID: ${escapeHtml(item.id)}<br>${escapeHtml(item.type)} · ${escapeHtml(extra)}<br>${escapeHtml(effects)}</div>
+        </div>`;
+    }).join('') || `<div class="item-meta">No hay objetos que coincidan con la búsqueda.</div>`;
+    refs.itemList.querySelectorAll('.item-row').forEach(el => el.addEventListener('click', () => { state.selectedIndex = Number(el.dataset.index); renderAll(); }));
+  }
+
+  function renderEditor(){
+    const item = currentItem();
+    if(!item) return;
+    refs.itemId.value = item.id || '';
+    refs.itemName.value = item.name || '';
+    refs.itemType.value = item.type || 'consumable';
+    refs.itemTier.value = item.tier || 'T1';
+    refs.itemSubtype.value = item.subtype || '';
+    refs.itemDescription.value = item.description || '';
+    refs.itemSlot.value = item.slot || '';
+    refs.itemCombatBonus.value = Number(item.combatBonus || 0);
+    refs.itemRequiredSkill.value = item.requiredSkill || '';
+    refs.itemRepairSkill.value = item.repairSkill || '';
+    refs.itemStackable.checked = !!item.stackable;
+    refs.itemRepairable.checked = item.repairable !== false;
+    refs.itemUse.value = item.use || '';
+    refs.itemQty.value = Number(item.qty || 1);
+    refs.itemDurability.value = Number(item.durability || 0);
+    refs.itemMaxDurability.value = Number(item.maxDurability || 0);
+    const contexts = new Set(Array.isArray(item.usableIn) ? item.usableIn : []);
+    refs.usableBase.checked = contexts.has('base');
+    refs.usableEvent.checked = contexts.has('event');
+    refs.usableExplore.checked = contexts.has('explore');
+    refs.usableExterior.checked = contexts.has('exterior');
+    refs.effectsList.innerHTML = (item.effects || []).map((effect, index) => renderEffectCard(effect, index)).join('');
+    bindEffectEvents();
+    syncFieldVisibility();
+  }
+
+  function effectInfo(kind){
+    return EFFECT_INFO[kind] || EFFECT_INFO.melee;
+  }
+
+  function renderEffectCard(effect, index){
+    const normalized = normalizeEffect(effect);
+    const info = effectInfo(normalized.kind);
+    const options = EFFECT_OPTIONS.map(kind => `<option value="${escapeAttr(kind)}" ${kind === normalized.kind ? 'selected' : ''}>${escapeHtml(kind)} · ${escapeHtml(effectInfo(kind).label)}</option>`).join('');
+    return `
+      <div class="effect-card" data-effect-index="${index}">
+        <div class="effect-grid">
+          <div class="field">
+            <label>Kind</label>
+            <select data-effect-field="kind">${options}</select>
+          </div>
+          <div class="field">
+            <label>Amount</label>
+            <input type="number" step="1" value="${escapeAttr(String(normalized.amount))}" data-effect-field="amount">
+          </div>
+          <button class="btn danger" type="button" data-remove-effect="${index}">Quitar</button>
+        </div>
+        <div class="effect-help"><strong>${escapeHtml(info.label)}.</strong> ${escapeHtml(info.help)}<br><span class="warn">Ejemplo:</span> ${escapeHtml(info.example)}</div>
+      </div>`;
+  }
+
+  function renderLegend(){
+    refs.effectLegend.innerHTML = '<div class="section-title">Guía de efectos</div>' + Object.entries(EFFECT_INFO).map(([kind, info]) => `
+      <div class="legend-card">
+        <strong>${escapeHtml(kind)} · ${escapeHtml(info.label)}</strong>
+        <div>${escapeHtml(info.help)}</div>
+        <div><span class="warn">Ejemplo:</span> ${escapeHtml(info.example)}</div>
+      </div>
+    `).join('');
+  }
+
+  function bindEffectEvents(){
+    refs.effectsList.querySelectorAll('[data-effect-field]').forEach(el => {
+      el.addEventListener('input', onEffectChange);
+      el.addEventListener('change', onEffectChange);
+    });
+    refs.effectsList.querySelectorAll('[data-remove-effect]').forEach(el => {
+      el.addEventListener('click', () => {
+        const item = currentItem();
+        if(!item) return;
+        item.effects.splice(Number(el.dataset.removeEffect), 1);
+        markDirty('Efecto eliminado.');
+        renderAll();
+      });
+    });
+  }
+
+  function onEffectChange(ev){
+    const card = ev.target.closest('[data-effect-index]');
+    const item = currentItem();
+    if(!card || !item) return;
+    const index = Number(card.dataset.effectIndex);
+    const effect = item.effects[index];
+    const field = ev.target.dataset.effectField;
+    if(!effect || !field) return;
+    if(field === 'amount') effect[field] = Number(ev.target.value || 0);
+    else effect[field] = ev.target.value;
+    markDirty('Efectos actualizados.');
+    renderEditor();
+    renderPreview();
+    renderList();
+  }
+
+  function renderPreview(){ refs.jsonPreview.value = JSON.stringify(state.items.map(cleanItem), null, 2); }
+  function renderAll(){ renderList(); renderEditor(); renderPreview(); renderLegend(); }
+  function markDirty(message='Cambios pendientes.'){ setDirty(true); setStatus(message, 'warn'); }
+  function syncFieldVisibility(){ const item = currentItem(); if(!item) return; const isConsumable = item.type === 'consumable'; refs.itemDurability.closest('.field').style.display = isConsumable ? 'none' : ''; refs.itemMaxDurability.closest('.field').style.display = isConsumable ? 'none' : ''; }
+
+  function readEditorIntoItem(){
+    const item = currentItem();
+    if(!item) return;
+    item.id = refs.itemId.value.trim();
+    item.name = refs.itemName.value.trim();
+    item.type = refs.itemType.value;
+    item.tier = refs.itemTier.value;
+    item.subtype = refs.itemSubtype.value.trim();
+    item.description = refs.itemDescription.value;
+    item.slot = refs.itemSlot.value.trim();
+    item.combatBonus = Number(refs.itemCombatBonus.value || 0);
+    item.requiredSkill = refs.itemRequiredSkill.value.trim();
+    item.repairSkill = refs.itemRepairSkill.value.trim();
+    item.stackable = refs.itemStackable.checked;
+    item.repairable = refs.itemRepairable.checked;
+    item.use = refs.itemUse.value;
+    item.qty = Math.max(1, Number(refs.itemQty.value || 1));
+    item.durability = Math.max(0, Number(refs.itemDurability.value || 0));
+    item.maxDurability = Math.max(0, Number(refs.itemMaxDurability.value || 0));
+    item.usableIn = [refs.usableBase.checked ? 'base' : null, refs.usableEvent.checked ? 'event' : null, refs.usableExplore.checked ? 'explore' : null, refs.usableExterior.checked ? 'exterior' : null].filter(Boolean);
+    if(!Array.isArray(item.effects)) item.effects = [];
+    if(!item.id && item.name) item.id = slugify(item.name);
+    if(item.type === 'consumable'){ item.durability = 0; item.maxDurability = 0; }
+  }
+
+  function bindCoreInputs(){
+    [refs.itemId, refs.itemName, refs.itemType, refs.itemTier, refs.itemSubtype, refs.itemDescription, refs.itemSlot,
+      refs.itemCombatBonus, refs.itemRequiredSkill, refs.itemRepairSkill, refs.itemStackable, refs.itemRepairable,
+      refs.itemUse, refs.itemQty, refs.itemDurability, refs.itemMaxDurability,
+      refs.usableBase, refs.usableEvent, refs.usableExplore, refs.usableExterior
+    ].forEach(input => {
+      const eventName = input.type === 'checkbox' || input.tagName === 'SELECT' ? 'change' : 'input';
+      input.addEventListener(eventName, () => {
+        readEditorIntoItem();
+        markDirty('Objeto actualizado.');
+        renderList();
+        renderPreview();
+        syncFieldVisibility();
+      });
+    });
+  }
+
+  function addItem(){ const item = newBlankItem(); state.items.push(item); state.selectedIndex = state.items.length - 1; markDirty('Nuevo objeto creado.'); renderAll(); }
+  function cloneItem(){ const item = currentItem(); if(!item) return; const copy = deepClone(item); copy.id = `${item.id || 'objeto'}_copy`; copy.name = `${item.name || 'Objeto'} copia`; state.items.splice(state.selectedIndex + 1, 0, copy); state.selectedIndex += 1; markDirty('Objeto duplicado.'); renderAll(); }
+  function deleteItem(){ if(state.selectedIndex < 0) return; const removed = currentItem(); state.items.splice(state.selectedIndex, 1); if(state.selectedIndex >= state.items.length) state.selectedIndex = state.items.length - 1; markDirty(`Objeto borrado: ${removed?.name || removed?.id || ''}`); renderAll(); }
+  function addEffect(){ const item = currentItem(); if(!item) return; item.effects = Array.isArray(item.effects) ? item.effects : []; if(item.effects.length >= 2){ setStatus('El juego actual solo usa los 2 primeros efectos.', 'warn'); return; } item.effects.push({ kind:'melee', amount:1 }); markDirty('Efecto añadido.'); renderAll(); }
+  function downloadJson(){ const blob = new Blob([refs.jsonPreview.value], { type:'application/json;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'items.json'; a.click(); URL.revokeObjectURL(url); setDirty(false); setStatus('items.json descargado.', 'ok'); }
+  async function copyJson(){ try{ await navigator.clipboard.writeText(refs.jsonPreview.value); setStatus('JSON copiado al portapapeles.', 'ok'); }catch(err){ setStatus('No se pudo copiar automáticamente.', 'danger'); } }
+
+  function loadData(data){
+    if(!Array.isArray(data)) throw new Error('items.json debe contener un array');
+    state.items = data.map(item => {
+      const merged = { ...newBlankItem(), ...deepClone(item) };
+      merged.effects = Array.isArray(item.effects) ? item.effects.map(normalizeEffect).slice(0,2) : [];
+      merged.usableIn = Array.isArray(item.usableIn) ? item.usableIn.slice() : (merged.type === 'consumable' ? ['base','event'] : []);
+      merged.tier = item.tier || 'T1';
+      return merged;
+    });
+    if(!state.items.length) state.items = [newBlankItem()];
+    state.selectedIndex = 0;
+    setDirty(false);
+    setStatus(`Cargados ${state.items.length} objeto(s).`, 'ok');
+    renderAll();
+  }
+
+  async function loadFromFetch(){
+    try {
+      const res = await fetch('./data/items.json', { cache:'no-store' });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      loadData(data);
+    } catch(err) {
+      state.items = [{"id": "melee_knife", "name": "Cuchillo", "tier": "T1", "type": "weapon", "description": "+1 combate cuerpo a cuerpo.", "effects": [{"kind": "melee", "amount": 1}], "durability": 4, "maxDurability": 4, "repairable": true}, {"id": "melee_hatchet", "name": "Hachuela", "tier": "T2", "type": "weapon", "description": "+2 combate cuerpo a cuerpo.", "effects": [{"kind": "melee", "amount": 2}], "durability": 5, "maxDurability": 5, "repairable": true}, {"id": "melee_machete", "name": "Machete", "tier": "T3", "type": "weapon", "description": "+3 combate cuerpo a cuerpo.", "effects": [{"kind": "melee", "amount": 3}], "durability": 6, "maxDurability": 6, "repairable": true}, {"id": "ranged_bow", "name": "Arco", "tier": "T1", "type": "weapon", "description": "Añade 1d3 en combate a distancia.", "effects": [{"kind": "ranged", "amount": 3}], "durability": 4, "maxDurability": 4, "repairable": true}, {"id": "ranged_pistol", "name": "Pistola", "tier": "T2", "type": "weapon", "description": "Añade 1d4 en combate a distancia.", "effects": [{"kind": "ranged", "amount": 4}], "durability": 4, "maxDurability": 4, "repairable": true}, {"id": "ranged_hunting_rifle", "name": "Rifle de caza", "tier": "T3", "type": "weapon", "description": "Añade 1d6 en combate a distancia.", "effects": [{"kind": "ranged", "amount": 6}], "durability": 5, "maxDurability": 5, "repairable": true}, {"id": "ranged_sniper_rifle", "name": "Rifle de francotirador", "tier": "T4", "type": "weapon", "description": "Añade 1d8 en combate a distancia.", "effects": [{"kind": "ranged", "amount": 8}], "durability": 6, "maxDurability": 6, "repairable": true}, {"id": "armor_jacket", "name": "Chaqueta reforzada", "tier": "T2", "type": "equipment", "description": "Reduce la posibilidad y gravedad de herida.", "effects": [{"kind": "armor", "amount": 1}], "durability": 4, "maxDurability": 4, "repairable": true}, {"id": "armor_biker_vest", "name": "Chaleco de motorista", "tier": "T3", "type": "equipment", "description": "Protección sólida contra heridas.", "effects": [{"kind": "armor", "amount": 2}], "durability": 5, "maxDurability": 5, "repairable": true}, {"id": "armor_kevlar_vest", "name": "Chaleco kevlar", "tier": "T4", "type": "equipment", "description": "Protección avanzada frente a heridas.", "effects": [{"kind": "armor", "amount": 3}], "durability": 6, "maxDurability": 6, "repairable": true}, {"id": "worker_prybar", "name": "Palanca", "tier": "T1", "type": "tool", "description": "Ayuda a desmontar y preparar estructuras. Reduce 1 día de construcción.", "effects": [{"kind": "worker", "amount": 1}], "durability": 4, "maxDurability": 4, "repairable": true}, {"id": "worker_toolkit", "name": "Herramientas de obra", "tier": "T2", "type": "tool", "description": "Reduce 1 día de construcción.", "effects": [{"kind": "worker", "amount": 1}], "durability": 5, "maxDurability": 5, "repairable": true}, {"id": "worker_power_tools", "name": "Herramientas eléctricas", "tier": "T3", "type": "tool", "description": "Reduce 2 días de construcción.", "effects": [{"kind": "worker", "amount": 2}], "durability": 5, "maxDurability": 5, "repairable": true}, {"id": "heal_bandages", "name": "Vendas limpias", "tier": "T1", "type": "consumable", "description": "Cura un nivel de herida.", "stackable": true, "effects": [{"kind": "heal", "amount": 1}], "use": "consume", "usableIn": ["base", "event"]}, {"id": "medkit", "name": "Botiquín", "tier": "T2", "type": "consumable", "description": "Cura un nivel de herida.", "stackable": false, "effects": [{"kind": "heal", "amount": 1}], "use": "consume", "usableIn": ["base", "event"]}, {"id": "heal_surgical_case", "name": "Maletín quirúrgico", "tier": "T4", "type": "consumable", "description": "Cura dos niveles de herida.", "stackable": false, "effects": [{"kind": "heal", "amount": 2}], "use": "consume", "usableIn": ["base", "event"]}, {"id": "food_snack_pack", "name": "Ración energética", "tier": "T1", "type": "consumable", "description": "+1 comida.", "stackable": true, "effects": [{"kind": "food", "amount": 1}], "use": "consume", "usableIn": ["base", "event"]}, {"id": "food_canned_meal", "name": "Comida enlatada", "tier": "T2", "type": "consumable", "description": "+2 comida.", "stackable": true, "effects": [{"kind": "food", "amount": 2}], "use": "consume", "usableIn": ["base", "event"]}, {"id": "fun_comic_book", "name": "Cómic viejo", "tier": "T1", "type": "consumable", "description": "+1 moral.", "stackable": true, "effects": [{"kind": "fun", "amount": 1}], "use": "consume", "usableIn": ["base", "event"]}, {"id": "fun_card_deck", "name": "Baraja gastada", "tier": "T2", "type": "consumable", "description": "+1 moral.", "stackable": true, "effects": [{"kind": "fun", "amount": 1}], "use": "consume", "usableIn": ["base", "event"]}, {"id": "fun_harmonica", "name": "Armónica", "tier": "T3", "type": "consumable", "description": "+2 moral.", "stackable": false, "effects": [{"kind": "fun", "amount": 2}], "use": "consume", "usableIn": ["base", "event"]}];
+      state.selectedIndex = 0;
+      renderAll();
+      setStatus('No se pudo cargar ./data/items.json. Se ha abierto una plantilla completa local.', 'warn');
+    }
+  }
+
+  function handleFileImport(file){
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{ loadData(JSON.parse(String(reader.result || '[]'))); }
+      catch(err){ setStatus('JSON no válido: ' + err.message, 'danger'); }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  bindCoreInputs();
+  $('newItemBtn').addEventListener('click', addItem);
+  $('cloneItemBtn').addEventListener('click', cloneItem);
+  $('deleteItemBtn').addEventListener('click', deleteItem);
+  $('addEffectBtn').addEventListener('click', addEffect);
+  $('downloadBtn').addEventListener('click', downloadJson);
+  $('copyJsonBtn').addEventListener('click', copyJson);
+  $('reloadBtn').addEventListener('click', loadFromFetch);
+  $('sortBtn').addEventListener('click', () => { sortItems(); markDirty('Objetos ordenados por nombre.'); renderAll(); });
+  refs.searchInput.addEventListener('input', () => { state.search = refs.searchInput.value; renderList(); });
+  refs.fileInput.addEventListener('change', (ev) => { const file = ev.target.files && ev.target.files[0]; if(file) handleFileImport(file); ev.target.value = ''; });
+  window.addEventListener('beforeunload', (ev) => { if(!state.dirty) return; ev.preventDefault(); ev.returnValue = ''; });
+  loadFromFetch();
+})();
+</script>
+</body>
+</html>

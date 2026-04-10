@@ -1,0 +1,65 @@
+[
+  {
+    "id": "dog_mestizo_bronco",
+    "name": "Bronco",
+    "rarity": 4,
+    "type": "base",
+    "description": "Perro mestizo resistente, ideal para acompañar expediciones y detectar comida oculta.",
+    "traits": ["fiel", "olfato"],
+    "skills": ["explorador"]
+  },
+  {
+    "id": "dog_luna",
+    "name": "Luna",
+    "rarity": 4,
+    "type": "base",
+    "description": "Hembra tranquila que se mantiene pegada a su dueño y se mueve sin hacer ruido.",
+    "traits": ["fiel", "alerta"],
+    "skills": ["olfato"]
+  },
+  {
+    "id": "dog_tiza",
+    "name": "Tiza",
+    "rarity": 3,
+    "type": "explorador",
+    "description": "Perro ligero y nervioso. Tiende a adelantarse unos metros y volver cuando detecta algo.",
+    "traits": ["explorador", "alerta"],
+    "skills": ["olfato"]
+  },
+  {
+    "id": "dog_torno",
+    "name": "Torno",
+    "rarity": 3,
+    "type": "carroñero",
+    "description": "Se obsesiona con remover chatarra, escombros y montones de basura hasta encontrar algo útil.",
+    "traits": ["carroñero", "fiel"],
+    "skills": ["alerta"]
+  },
+  {
+    "id": "dog_fiera",
+    "name": "Fiera",
+    "rarity": 2,
+    "type": "presa",
+    "description": "Animal grande y agresivo. Todavía no da bonus directo de combate, pero intimida y abre ventanas seguras.",
+    "traits": ["presa", "alerta"],
+    "skills": ["fiel"]
+  },
+  {
+    "id": "dog_sombra",
+    "name": "Sombra",
+    "rarity": 2,
+    "type": "explorador",
+    "description": "Perro oscuro y silencioso que parece aparecer y desaparecer entre ruinas y maleza.",
+    "traits": ["explorador", "olfato"],
+    "skills": ["alerta"]
+  },
+  {
+    "id": "dog_duna",
+    "name": "Duna",
+    "rarity": 1,
+    "type": "presa",
+    "description": "Perra veterana de presa, rara de encontrar y muy valiosa para expediciones arriesgadas.",
+    "traits": ["presa", "fiel", "alerta"],
+    "skills": ["explorador", "olfato"]
+  }
+]

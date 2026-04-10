@@ -1,13 +1,17 @@
 [
   {
     "id": "raiders",
+    "name": "Raiders",
     "label": "Raiders",
+    "labelType": "standard",
     "icon": "💀",
     "description": "Grupos organizados de saqueadores. Peligrosos y bien armados.",
+    "force": 3,
     "attackDice": "1d6",
     "defenseDice": "1d6",
     "injuryChanceBonus": 0,
     "fleeChance": 0,
+    "preAttackEventId": "",
     "variants": [
       {
         "id": "raiders_light",
@@ -23,6 +27,23 @@
         "id": "raiders_boss",
         "label": "Banda de élite",
         "strengthMod": 4
+      }
+    ],
+    "weapons": [
+      {
+        "itemId": "melee_knife",
+        "chance": 1,
+        "dropOnVictory": false
+      },
+      {
+        "itemId": "ranged_pistol",
+        "chance": 0.3,
+        "dropOnVictory": false
+      },
+      {
+        "itemId": "ranged_hunting_rifle",
+        "chance": 0.25,
+        "dropOnVictory": false
       }
     ],
     "lootOnVictory": [
@@ -43,6 +64,16 @@
         ]
       }
     ],
+    "lootItemsOnVictory": [
+      {
+        "itemId": "worker_prybar",
+        "chance": 0.25,
+        "amount": [
+          1,
+          1
+        ]
+      }
+    ],
     "lootOnFlee": [
       {
         "resource": "materials",
@@ -53,6 +84,7 @@
         ]
       }
     ],
+    "lootItemsOnFlee": [],
     "lootOnDefeat": [
       {
         "resource": "food",
@@ -70,17 +102,22 @@
           3
         ]
       }
-    ]
+    ],
+    "lootItemsOnDefeat": []
   },
   {
     "id": "sectarians",
+    "name": "Sectarios",
     "label": "Sectarios",
+    "labelType": "standard",
     "icon": "🕯",
     "description": "Fanáticos organizados bajo una ideología retorcida. No negocian.",
+    "force": 3,
     "attackDice": "1d6",
     "defenseDice": "1d4",
     "injuryChanceBonus": 0.1,
     "fleeChance": 0,
+    "preAttackEventId": "",
     "variants": [
       {
         "id": "sectarians_acolytes",
@@ -96,6 +133,23 @@
         "id": "sectarians_purgers",
         "label": "Purificadores",
         "strengthMod": 3
+      }
+    ],
+    "weapons": [
+      {
+        "itemId": "melee_knife",
+        "chance": 1,
+        "dropOnVictory": false
+      },
+      {
+        "itemId": "melee_hatchet",
+        "chance": 0.75,
+        "dropOnVictory": false
+      },
+      {
+        "itemId": "melee_machete",
+        "chance": 0.5,
+        "dropOnVictory": false
       }
     ],
     "lootOnVictory": [
@@ -116,7 +170,9 @@
         ]
       }
     ],
+    "lootItemsOnVictory": [],
     "lootOnFlee": [],
+    "lootItemsOnFlee": [],
     "lootOnDefeat": [
       {
         "resource": "food",
@@ -134,7 +190,8 @@
           2
         ]
       }
-    ]
+    ],
+    "lootItemsOnDefeat": []
   },
   {
     "id": "wolves",
@@ -173,7 +230,11 @@
       }
     ],
     "lootOnFlee": [],
-    "lootOnDefeat": []
+    "lootOnDefeat": [],
+    "name": "Lobos salvajes",
+    "labelType": "standard",
+    "force": 3,
+    "weapons": []
   },
   {
     "id": "dogs",
@@ -207,7 +268,11 @@
       }
     ],
     "lootOnFlee": [],
-    "lootOnDefeat": []
+    "lootOnDefeat": [],
+    "name": "Perros salvajes",
+    "labelType": "standard",
+    "force": 3,
+    "weapons": []
   },
   {
     "id": "npc_joe",
@@ -221,20 +286,20 @@
     "defenseDice": "1d6",
     "injuryChanceBonus": 0,
     "fleeChance": 0,
-    "preAttackEventId": "npc_joe_intro",
+    "preAttackEventId": "",
     "variants": [],
     "weapons": [
       {
-        "itemId": "old_pistol",
+        "itemId": "ranged_hunting_rifle",
         "chance": 1,
-        "dropOnVictory": true
+        "dropOnVictory": false
       }
     ],
     "lootOnVictory": [],
     "lootItemsOnVictory": [
       {
-        "itemId": "old_pistol",
-        "chance": 0.5,
+        "itemId": "ranged_hunting_rifle",
+        "chance": 0.2,
         "amount": [
           1,
           1
@@ -246,10 +311,72 @@
     "lootOnDefeat": [
       {
         "resource": "food",
-        "chance": 0.5,
+        "chance": 0.75,
         "amount": [
           2,
           4
+        ]
+      }
+    ],
+    "lootItemsOnDefeat": []
+  },
+  {
+    "id": "forces",
+    "name": "Mercenarios",
+    "label": "Mercenarios",
+    "labelType": "standard",
+    "icon": "💀",
+    "description": "Mercenarios y cazadores de recompensas",
+    "force": 3,
+    "attackDice": "1d8",
+    "defenseDice": "1d6",
+    "injuryChanceBonus": 0,
+    "fleeChance": 0,
+    "preAttackEventId": "",
+    "variants": [
+      {
+        "id": "forces_single",
+        "label": "Explorador",
+        "strengthMod": 2
+      },
+      {
+        "id": "forces_pack",
+        "label": "Grupo veterano",
+        "strengthMod": 4
+      }
+    ],
+    "weapons": [
+      {
+        "itemId": "ranged_pistol",
+        "chance": 1,
+        "dropOnVictory": true
+      },
+      {
+        "itemId": "melee_machete",
+        "chance": 1,
+        "dropOnVictory": true
+      }
+    ],
+    "lootOnVictory": [
+      {
+        "resource": "food",
+        "chance": 0.5,
+        "amount": [
+          1,
+          3
+        ]
+      }
+    ],
+    "lootItemsOnVictory": [],
+    "lootOnFlee": [],
+    "lootItemsOnFlee": [],
+    "lootOnDefeat": [
+      {
+        "resource": "food",
+        "chance": 0.5,
+        "amount": [
+          1,
+          2
         ]
       }
     ],

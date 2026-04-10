@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESURGIR — Editor de Supervivientes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0c09;
+      --panel: #0f120d;
+      --panel2: #141a11;
+      --panel3: #1a2116;
+      --line: #2a3525;
+      --line2: #3a4a30;
+      --text: #c8d4b8;
+      --muted: #6b7a5e;
+      --dim: #3d4a33;
+      --ok: #4a8a35;
+      --ok-bright: #72c44e;
+      --ok-glow: rgba(74,138,53,0.25);
+      --danger: #8a3535;
+      --danger-bright: #c44e4e;
+      --danger-glow: rgba(138,53,53,0.3);
+      --warn: #8a6a2a;
+      --warn-bright: #c4993e;
+      --amber: #b87c2a;
+      --amber-bright: #e8a83e;
+      --accent: #4a7a6a;
+      --accent-bright: #6ab89e;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-display: 'Oswald', sans-serif;
+      --font-worn: 'Special Elite', cursive;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-mono);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,20,0,0.06) 0px, rgba(0,20,0,0.06) 1px, transparent 1px, transparent 3px);
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── HEADER ── */
+    .site-header {
+      background: #060807;
+      border-bottom: 1px solid var(--line2);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      color: var(--ok-bright);
+      text-shadow: 0 0 14px var(--ok-glow);
+    }
+
+    .subtitle {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 0.14em;
+      margin-top: 2px;
+    }
+
+    #headerCount {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── LAYOUT ── */
+    .app {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      min-height: calc(100vh - 54px);
+    }
+
+    .sidebar {
+      background: #060807;
+      border-right: 1px solid var(--line2);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: sticky;
+      top: 54px;
+      height: calc(100vh - 54px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line2) transparent;
+    }
+
+    .main {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── PANEL ── */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      position: relative;
+    }
+
+    .panel::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 10px; height: 10px;
+      background: var(--bg);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+      pointer-events: none;
+    }
+
+    .panel-header {
+      padding: 9px 14px;
+      background: var(--panel2);
+      border-bottom: 1px solid var(--line2);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ok-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-header::before { content: '▶'; font-size: 7px; color: var(--ok); }
+
+    .panel-header .badge-tag {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .panel-body { padding: 12px; }
+
+    /* ── FORM ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field.full { grid-column: span 2; }
+
+    label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    label .req { color: var(--danger-bright); margin-left: 2px; }
+
+    input, textarea, select {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--panel2);
+      border: 1px solid var(--line2);
+      color: var(--text);
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+
+    input:focus, textarea:focus, select:focus { border-color: var(--ok); }
+    input::placeholder, textarea::placeholder { color: var(--dim); }
+    input[type="file"] { padding: 6px 8px; cursor: pointer; }
+    textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+    select option { background: var(--panel2); }
+
+    /* ── IMAGE PREVIEW ── */
+    .img-preview-wrap {
+      width: 100%;
+      aspect-ratio: 3/2;
+      border: 1px dashed var(--line2);
+      background: var(--panel2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .img-preview-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      filter: grayscale(15%) contrast(1.1);
+    }
+
+    .img-preview-wrap .no-img {
+      color: var(--dim);
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ── RARITY STARS ── */
+    .rarity-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .rarity-opt {
+      flex: 1;
+      padding: 6px 4px;
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-align: center;
+      letter-spacing: 0.04em;
+      transition: all 0.15s;
+      clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+    }
+
+    .rarity-opt:hover { border-color: var(--amber); color: var(--amber-bright); }
+    .rarity-opt.selected { border-color: var(--amber-bright); color: var(--amber-bright); background: rgba(184,124,42,0.12); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 9px 14px;
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { border-color: var(--ok); color: var(--ok-bright); background: var(--ok-glow); }
+    .btn.primary { background: var(--ok); border-color: var(--ok-bright); color: #fff; }
+    .btn.primary:hover { background: var(--ok-bright); }
+    .btn.danger { border-color: var(--danger); color: var(--danger-bright); background: var(--danger-glow); }
+    .btn.danger:hover { background: var(--danger); color: #fff; }
+    .btn.amber { border-color: var(--amber); color: var(--amber-bright); background: rgba(184,124,42,0.1); }
+    .btn.amber:hover { background: var(--amber); color: #fff; }
+    .btn.accent { border-color: var(--accent-bright); color: var(--accent-bright); background: rgba(106,184,158,0.1); }
+    .btn.accent:hover { background: var(--accent); color: #fff; }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ── STATUS ── */
+    .status-bar {
+      font-size: 11px;
+      min-height: 20px;
+      padding: 4px 0;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    .status-bar.ok { color: var(--ok-bright); }
+    .status-bar.err { color: var(--danger-bright); }
+
+    /* ── SURVIVOR CARDS ── */
+    .survivor-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .survivor-card {
+      display: grid;
+      grid-template-columns: 90px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--ok);
+      padding: 12px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .survivor-card:hover { background: rgba(255,255,255,0.02); border-left-color: var(--ok-bright); }
+
+    .card-img {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      display: block;
+      filter: grayscale(20%) contrast(1.1);
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    }
+
+    .card-info {}
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .card-name {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+
+    .rarity-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border: 1px solid var(--amber);
+      color: var(--amber-bright);
+      background: rgba(184,124,42,0.1);
+      letter-spacing: 0.08em;
+    }
+
+    .card-meta {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .card-meta span { color: var(--text); }
+
+    .story-btn {
+      padding: 4px 8px;
+      background: none;
+      border: 1px solid var(--line2);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s;
+      clip-path: none;
+    }
+
+    .story-btn:hover { border-color: var(--amber); color: var(--amber-bright); }
+
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* ── SKILL TAG ── */
+    .skill-tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 8px;
+      border: 1px solid var(--accent);
+      color: var(--accent-bright);
+      background: rgba(74,122,106,0.1);
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+    }
+
+    /* ── JSON PREVIEW ── */
+    .json-box {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ok-bright);
+      background: rgba(0,0,0,0.3);
+      padding: 12px;
+      overflow: auto;
+      max-height: 260px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-all;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line2) transparent;
+    }
+
+    /* ── SKILL MANAGER ── */
+    .skill-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .skill-chip {
+      font-size: 10px;
+      padding: 3px 10px;
+      border: 1px solid var(--line2);
+      color: var(--muted);
+      background: var(--panel2);
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .skill-chip:hover { border-color: var(--danger); color: var(--danger-bright); }
+    .skill-chip .chip-del { opacity: 0.5; font-size: 11px; }
+    .skill-catalog {
+      margin-top: 10px;
+      border: 1px solid var(--line2);
+      background: var(--panel2);
+      max-height: 220px;
+      overflow: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .skill-catalog-item {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+      padding: 6px 8px;
+      font-size: 10px;
+      line-height: 1.55;
+    }
+    .skill-catalog-item b { color: var(--ok-bright); }
+    .skill-catalog-item.neg b { color: var(--danger-bright); }
+    .skill-catalog-title {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    /* ── MODAL ── */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 200;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      width: min(560px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line2);
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    }
+
+    .modal-header {
+      padding: 10px 14px;
+      background: var(--panel2);
+      border-bottom: 1px solid var(--line2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--amber-bright);
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      min-height: 200px;
+    }
+
+    .modal-img-col {
+      background: var(--panel2);
+      border-right: 1px solid var(--line2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .modal-img-col img {
+      width: 100%;
+      height: auto;
+      max-height: 280px;
+      object-fit: contain;
+      filter: grayscale(15%) contrast(1.1);
+      display: none;
+    }
+
+    .modal-img-col .no-img-modal {
+      color: var(--dim);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .modal-text-col {
+      padding: 18px;
+    }
+
+    .modal-story-text {
+      font-family: var(--font-worn);
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--dim);
+      font-size: 12px;
+      border: 1px dashed var(--line);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: var(--panel); }
+    ::-webkit-scrollbar-thumb { background: var(--line2); }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--panel2);
+      border: 1px solid var(--ok);
+      color: var(--ok-bright);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 10px 16px;
+      z-index: 9000;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.2s;
+      pointer-events: none;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.err { border-color: var(--danger); color: var(--danger-bright); }
+
+    .data-warning {
+      display:none;
+      background: rgba(90,16,16,0.92);
+      border-bottom: 1px solid rgba(196,78,78,0.45);
+      color: #f0c1c1;
+      padding: 10px 20px;
+      font-size: 11px;
+      line-height: 1.7;
+      letter-spacing: 0.04em;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="site-header">
+  <div>
+    <div class="logo">RESURGIR</div>
+    <div class="subtitle">// EDITOR DE SUPERVIVIENTES · v0.1 BETA · Vinx Rockatansky</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;"><a href="index.html" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#3d4a33;text-decoration:none;border:1px solid #2a3525;padding:3px 10px;letter-spacing:0.08em;" onmouseover="this.style.color='#72c44e';this.style.borderColor='#72c44e'" onmouseout="this.style.color='#3d4a33';this.style.borderColor='#2a3525'">← INICIO</a><span id="headerCount">0 supervivientes en sesión</span></div>
+</div>
+<div id="dataWarningBanner" class="data-warning"></div>
+
+<div class="app">
+
+  <!-- ── SIDEBAR: FORM ── -->
+  <aside class="sidebar">
+
+    <!-- FORM PANEL -->
+    <div class="panel">
+      <div class="panel-header">Ficha del superviviente <span class="badge-tag" id="formMode">NUEVO</span></div>
+      <div class="panel-body">
+
+        <!-- Image preview -->
+        <div class="img-preview-wrap" id="imgPreviewWrap">
+          <span class="no-img">Sin imagen<br>Sube una o pega una URL</span>
+          <img id="imgPreview" src="" alt="" />
+        </div>
+
+        <div class="form-grid">
+          <div class="field full">
+            <label>ID del superviviente <span style="color:var(--muted);font-size:9px;">(opcional, autogenerado si se deja vacío)</span></label>
+            <input id="f-id" type="text" placeholder="ej: survivor_kirk_001" />
+          </div>
+          <div class="field full">
+            <label>Nombre <span class="req">*</span></label>
+            <input id="f-name" type="text" placeholder="Nombre del superviviente" />
+          </div>
+
+          <div class="field">
+            <label>Fatiga actual</label>
+            <input id="f-fatigueCurrent" type="number" min="0" step="1" value="3" />
+          </div>
+          <div class="field">
+            <label>Fatiga máxima</label>
+            <input id="f-fatigueMax" type="number" min="1" step="1" value="3" />
+          </div>
+          <div class="field">
+            <label>Tabla de moral</label>
+            <select id="f-moraleTable">
+              <option value="A">Tabla A · Baja 1-5 · Normal 6-8 · Alta 9-10</option>
+              <option value="B">Tabla B · Baja 1-7 · Normal 8-9 · Alta 10</option>
+              <option value="C">Tabla C · Baja 1-4 · Normal 5-7 · Alta 8-10</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Moral inicial al reclutar <span style="color:var(--muted);font-size:9px;">(1 a 10)</span></label>
+            <input type="number" id="f-moraleCurrent" value="7" min="1" max="10" step="1" />
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">Se guarda como valor oculto. En juego se verá como Alta / Normal / Baja según su tabla.</div>
+          </div>
+
+          <div class="field full">
+            <label>Historia / Ambientación</label>
+            <textarea id="f-story" placeholder="Historia del personaje…"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Habilidad 1 <span style="color:var(--ok-bright);font-size:9px;">positiva</span></label>
+            <select id="f-skill"></select>
+          </div>
+          <div class="field" id="skill2Field">
+            <label>Habilidad 2 <span style="color:var(--ok-bright);font-size:9px;">positiva · solo R1/R2/R3</span></label>
+            <select id="f-skill2"></select>
+          </div>
+          <div class="field full">
+            <label>Rasgo negativo <span style="color:var(--danger-bright);font-size:9px;">opcional</span></label>
+            <select id="f-negskill"></select>
+          </div>
+        </div>
+
+        <!-- Rarity -->
+        <div style="margin:8px 0 10px;">
+          <label style="display:block;margin-bottom:6px;">Rareza interna <span style="color:var(--muted);font-size:9px;">(no visible al jugador)</span></label>
+          <div class="rarity-row" id="rarityRow">
+            <button class="rarity-opt" data-rarity="1">R1<br><span style="font-size:9px;">Legendario</span></button>
+            <button class="rarity-opt" data-rarity="2">R2<br><span style="font-size:9px;">Raro</span></button>
+            <button class="rarity-opt" data-rarity="3">R3<br><span style="font-size:9px;">Poco común</span></button>
+            <button class="rarity-opt selected" data-rarity="4">R4<br><span style="font-size:9px;">Común</span></button>
+          </div>
+        </div>
+
+        <!-- Image upload — Normal -->
+        <div style="border:1px solid var(--line2);background:var(--panel2);padding:10px;margin-bottom:6px;">
+          <div style="font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Imagen normal</div>
+          <div class="field" style="margin-bottom:8px;">
+            <label>Archivo de imagen</label>
+            <input id="f-imgFile" type="file" accept="image/*" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;">
+            <div class="field" style="margin:0;">
+              <label>URL resultante (o pega directamente)</label>
+              <input id="f-imgUrl" type="url" placeholder="https://i.ibb.co/..." />
+            </div>
+            <div style="display:flex;align-items:flex-end;">
+              <button class="btn amber" id="uploadBtn">⬆ Subir</button>
+            </div>
+          </div>
+          <div class="status-bar" id="uploadStatus"></div>
+        </div>
+
+        <!-- Image upload — Injured (obligatoria) -->
+        <div style="border:1px solid var(--warn);background:rgba(138,106,42,0.06);padding:10px;margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--warn-bright);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">🩸 Imagen herido <span style="color:var(--danger-bright);">· OBLIGATORIA</span></div>
+          <div class="field" style="margin-bottom:8px;">
+            <label>Archivo de imagen</label>
+            <input id="f-imgInjuredFile" type="file" accept="image/*" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;">
+            <div class="field" style="margin:0;">
+              <label>URL resultante (o pega directamente)</label>
+              <input id="f-imgInjuredUrl" type="url" placeholder="https://i.ibb.co/..." />
+            </div>
+            <div style="display:flex;align-items:flex-end;">
+              <button class="btn amber" id="uploadInjuredBtn">⬆ Subir</button>
+            </div>
+          </div>
+          <div class="status-bar" id="uploadInjuredStatus"></div>
+        </div>
+
+        <div class="btn-row" style="margin-bottom:8px;">
+          <button class="btn primary" id="saveBtn">✓ Guardar</button>
+          <button class="btn" id="newBtn">↺ Nuevo</button>
+        </div>
+
+        <div class="status-bar" id="formStatus"></div>
+      </div>
+    </div>
+
+    <!-- SKILLS PANEL -->
+    <div class="panel">
+      <div class="panel-header">Habilidades disponibles</div>
+      <div class="panel-body">
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;margin-bottom:8px;">
+          <select id="f-newSkillType">
+            <option value="positive">Positiva</option>
+            <option value="negative">Negativa</option>
+          </select>
+          <input id="f-newSkill" type="text" placeholder="Nueva habilidad…" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
+          <input id="f-newSkillDesc" type="text" placeholder="Qué hace esta habilidad…" />
+          <button class="btn accent" id="addSkillBtn">+ Añadir</button>
+        </div>
+        <div class="skill-chips" id="skillChips"></div>
+        <div class="skill-catalog" id="skillCatalog"></div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN: LIST + EXPORT ── -->
+  <main class="main">
+
+    <!-- Top actions -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div style="font-family:var(--font-display);font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ok-bright);">
+        ▶ Personal del asentamiento
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="importJsonBtn">⬆ Importar JSON</button>
+        <input type="file" id="importJsonFile" accept=".json" style="display:none">
+        <button class="btn primary" id="downloadBtn">⬇ Descargar survivors.json</button>
+        <button class="btn" id="importBtn">⬆ Importar JSON</button>
+        <input id="importFile" type="file" accept="application/json" class="hidden" />
+      </div>
+    </div>
+
+    <!-- Survivor list -->
+    <div class="survivor-list" id="survivorList">
+      <div class="empty-state">// Sin supervivientes. Crea el primero usando el formulario.</div>
+    </div>
+
+    <!-- JSON preview -->
+    <div class="panel">
+      <div class="panel-header">Salida JSON <span class="badge-tag">survivors.json</span></div>
+      <pre id="jsonPreview" class="json-box">// Aún no hay datos.</pre>
+    </div>
+
+  </main>
+</div>
+
+<!-- Story modal -->
+<div id="storyModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <span id="storyModalTitle">Historia</span>
+      <button class="btn" id="closeStoryBtn" style="padding:4px 10px;font-size:11px;">✕ Cerrar</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-img-col">
+        <span class="no-img-modal">Sin imagen</span>
+        <img id="storyModalImg" src="" alt="" />
+      </div>
+      <div class="modal-text-col">
+        <p id="storyModalText" class="modal-story-text"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const IMGBB_API_KEY = '41a6c250c03f02564f8f2a0916e56498';
+
+const defaultSkills = [
+  'ninguna',
+  'ingeniero',    // edificios cuestan -1 recurso
+  'explorador',   // +10% probabilidad evento positivo
+  'precavido',    // -10% probabilidad evento negativo
+  'rastreador',   // más probabilidad de encontrar supervivientes
+  'recolector',   // +1 recurso al explorar
+  'cazador',      // +1 comida al explorar
+  'chatarrero',   // +1 material al reciclar
+  'combatiente',  // +1 en ataque preventivo
+];
+const defaultSkillDescriptions = {
+  ninguna: 'Sin bonificación especial.',
+  ingeniero: 'Edificios cuestan -1 recurso.',
+  explorador: '+10% probabilidad de evento positivo.',
+  precavido: '-10% probabilidad de evento negativo.',
+  rastreador: 'Mayor probabilidad de encontrar supervivientes.',
+  recolector: '+1 recurso al explorar.',
+  cazador: '+1 comida al explorar.',
+  chatarrero: '+1 material al reciclar.',
+  combatiente: '+1 en ataque preventivo.',
+};
+
+const defaultNegativeSkills = [
+  'ninguna',
+  'miedoso',      // no puede explorar
+  'torpe',        // +10% probabilidad de heridas en exteriores
+  'desconfiado',  // -1 moral al unirse nuevo superviviente
+  'glotón',       // consume 2 comida en lugar de 1
+  'cobarde',      // no puede defender
+];
+const defaultNegativeSkillDescriptions = {
+  ninguna: 'Sin penalización especial.',
+  miedoso: 'No puede explorar.',
+  torpe: '+10% probabilidad de heridas en exteriores.',
+  desconfiado: '-1 moral al unirse nuevo superviviente.',
+  glotón: 'Consume 2 comida en lugar de 1.',
+  cobarde: 'No puede defender.',
+};
+
+const dataLoadWarnings = new Map();
+
+function renderDataWarnings(){
+  const el = document.getElementById('dataWarningBanner');
+  if(!el) return;
+  if(!dataLoadWarnings.size){ el.style.display='none'; el.innerHTML=''; return; }
+  const items = [...dataLoadWarnings.entries()].map(([file,msg])=>`• <strong>${file}</strong>: ${msg}`).join('<br>');
+  const hint = window.location.protocol==='file:'
+    ? '<br><span style="color:#ffd8a8">Estás abriendo el editor con file://. Muchos navegadores bloquean la lectura de JSON locales en ese modo. Usa un servidor local o la versión web.</span>'
+    : '<br><span style="color:#ffd8a8">Comprueba que survivors.json existe dentro de /data y que contiene un array JSON válido.</span>';
+  el.innerHTML = `<strong>ERROR DE DATOS</strong> — No se han cargado los datos correctos.<br>${items}${hint}`;
+  el.style.display='block';
+}
+function setDataWarning(file, msg){ dataLoadWarnings.set(file, msg); renderDataWarnings(); }
+function clearDataWarning(file){ dataLoadWarnings.delete(file); renderDataWarnings(); }
+
+const EMBEDDED_SURVIVORS = [];
+
+const state = {
+  survivors: [],
+  skills: [...defaultSkills],
+  negativeSkills: [...defaultNegativeSkills],
+  skillDescriptions: {...defaultSkillDescriptions},
+  negativeSkillDescriptions: {...defaultNegativeSkillDescriptions},
+  editingId: null,
+  selectedRarity: 4
+};
+
+const MORALE_TABLES = Object.freeze({
+  A:{low:[1,5],normal:[6,8],high:[9,10]},
+  B:{low:[1,7],normal:[8,9],high:[10,10]},
+  C:{low:[1,4],normal:[5,7],high:[8,10]}
+});
+function normalizeMoraleTableKey(value){
+  const key=String(value||'A').trim().toUpperCase();
+  return MORALE_TABLES[key]?key:'A';
+}
+function clampMoraleValue(value,max=10){
+  const num=Math.round(Number(value));
+  if(!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.min(max, num));
+}
+function mapLegacyMoraleValue(value){
+  const num=Math.max(0, Math.min(2, Math.round(Number(value)||0)));
+  if(num<=0) return 3;
+  if(num===1) return 7;
+  return 9;
+}
+function getMoraleStateInfo(table, value){
+  const key=normalizeMoraleTableKey(table);
+  const v=clampMoraleValue(value, 10);
+  const t=MORALE_TABLES[key];
+  if(v>=t.high[0]) return {key:'high',label:'Alta',color:'var(--ok-bright)',emoji:'😊'};
+  if(v>=t.normal[0]) return {key:'normal',label:'Normal',color:'var(--warn-bright)',emoji:'😐'};
+  return {key:'low',label:'Baja',color:'var(--danger-bright)',emoji:'😞'};
+}
+function normalizeSurvivorMorale(item={}){
+  const table=normalizeMoraleTableKey(item.moraleTable ?? item.moralTable ?? 'A');
+  const legacyLike = !('moraleTable' in item) && !('moralTable' in item) && Number(item.moralMax ?? 10) <= 2 && Number(item.moralCurrent ?? item.morale ?? 2) <= 2;
+  const current = legacyLike
+    ? mapLegacyMoraleValue(item.moralCurrent ?? item.morale ?? 2)
+    : clampMoraleValue(item.moralCurrent ?? item.moraleStart ?? item.moralStart ?? item.morale ?? 7, 10);
+  return {
+    moraleTable: table,
+    moralCurrent: current || 7,
+    moraleStart: clampMoraleValue(item.moraleStart ?? item.moralStart ?? current ?? 7, 10) || (current || 7),
+    maxMorale: 10
+  };
+}
+function normalizeSurvivorRecord(item={}){
+  const morale = normalizeSurvivorMorale(item);
+  return {
+    id: item.id || uid(),
+    name: item.name || '',
+    fatigueCurrent: Number(item.fatigueCurrent ?? item.fatigue ?? 3),
+    fatigueMax: Number(item.fatigueMax ?? item.maxFatigue ?? 3),
+    story: item.story || '',
+    image: { url: item.image?.url || '', deleteUrl: '' },
+    imageInjured: { url: item.imageInjured?.url || item.imageUrlInjured || '', deleteUrl: '' },
+    skill: item.skill || 'ninguna',
+    skill2: item.skill2 || 'ninguna',
+    negativeSkill: item.negativeSkill || 'ninguna',
+    rarity: Number(item.rarity ?? 4),
+    ...morale
+  };
+}
+
+// ── ELEMENTS ──
+const $ = id => document.getElementById(id);
+
+// ── UTILS ──
+function uid() { return 'survivor_' + Math.random().toString(36).slice(2,10); }
+function escapeHtml(s) { return String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
+function escapeAttr(s) { return escapeHtml(s); }
+function escapeJs(s) { return String(s).replaceAll('\\','\\\\').replaceAll("'","\\'"); }
+
+function showToast(msg, isErr=false) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isErr?' err':'');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>{ t.className=''; }, 2800);
+}
+
+function setFormStatus(msg, type='') {
+  const el = $('formStatus');
+  el.textContent = msg;
+  el.className = 'status-bar' + (type?' '+type:'');
+}
+
+function setUploadStatus(msg, type='') {
+  const el = $('uploadStatus');
+  el.textContent = msg;
+  el.className = 'status-bar' + (type?' '+type:'');
+}
+
+// ── RARITY ──
+function setRarity(r) {
+  state.selectedRarity = Number(r);
+  document.querySelectorAll('.rarity-opt').forEach(btn => {
+    btn.classList.toggle('selected', Number(btn.dataset.rarity) === state.selectedRarity);
+  });
+  updateSkill2Visibility();
+}
+
+function updateSkill2Visibility() {
+  const field = $('skill2Field');
+  const select = $('f-skill2');
+  if (!field || !select) return;
+  const allowSecondSkill = Number(state.selectedRarity) <= 3;
+  field.style.display = allowSecondSkill ? '' : 'none';
+  if (!allowSecondSkill) select.value = 'ninguna';
+}
+
+document.querySelectorAll('.rarity-opt').forEach(btn => {
+  btn.addEventListener('click', () => setRarity(btn.dataset.rarity));
+});
+
+// ── IMAGE PREVIEW ──
+function updateImgPreview(url) {
+  const img = $('imgPreview');
+  const wrap = $('imgPreviewWrap');
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+    wrap.querySelector('.no-img').style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    wrap.querySelector('.no-img').style.display = '';
+  }
+}
+
+$('f-imgUrl').addEventListener('input', e => updateImgPreview(e.target.value.trim()));
+
+$('uploadInjuredBtn').addEventListener('click', async () => {
+  const file = $('f-imgInjuredFile').files?.[0];
+  const status = $('uploadInjuredStatus');
+  if (!file) { status.textContent = 'Selecciona un archivo primero.'; return; }
+  status.textContent = 'Subiendo...';
+  try {
+    const b64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const fd = new FormData();
+    fd.append('key', IMGBB_API_KEY);
+    fd.append('image', b64);
+    const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (data.success) {
+      $('f-imgInjuredUrl').value = data.data.url;
+      status.textContent = '✓ Subida correcta.';
+      status.style.color = 'var(--ok-bright)';
+    } else {
+      status.textContent = 'Error al subir.';
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+  }
+});
+
+// ── IMGBB UPLOAD ──
+$('uploadBtn').addEventListener('click', async () => {
+  const file = $('f-imgFile').files?.[0];
+  if (!file) { setUploadStatus('Selecciona una imagen primero.', 'err'); return; }
+  setUploadStatus('⬆ Subiendo imagen…');
+  try {
+    const fd = new FormData();
+    fd.append('image', file);
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method:'POST', body:fd });
+    const data = await res.json();
+    if (!data?.success) throw new Error(data?.error?.message || 'Error desconocido');
+    $('f-imgUrl').value = data.data.url;
+    updateImgPreview(data.data.url);
+    setUploadStatus('✓ Imagen subida correctamente.', 'ok');
+    showToast('Imagen subida ✓');
+  } catch(err) {
+    setUploadStatus('✗ ' + (err.message||'Error al subir'), 'err');
+    showToast(err.message||'Error al subir imagen', true);
+  }
+});
+
+// ── SKILLS ──
+function renderSkills() {
+  // Select
+  const current = $('f-skill').value;
+  const current2 = $('f-skill2')?.value;
+  const currentNeg = $('f-negskill')?.value;
+  $('f-skill').innerHTML = state.skills.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  if (state.skills.includes(current)) $('f-skill').value = current;
+  if($('f-skill2')){
+    $('f-skill2').innerHTML = state.skills.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (state.skills.includes(current2)) $('f-skill2').value = current2;
+  }
+  if($('f-negskill')){
+    $('f-negskill').innerHTML = state.negativeSkills.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (state.negativeSkills.includes(currentNeg)) $('f-negskill').value = currentNeg;
+  }
+  // Show/hide skill2 based on rarity
+  updateSkill2Visibility();
+
+  // Chips
+  $('skillChips').innerHTML = state.skills
+    .filter(s => s !== 'ninguna')
+    .map(s => `<div class="skill-chip" onclick="removeSkill('${escapeJs(s)}')" title="Eliminar '${escapeAttr(s)}'"><span>${escapeHtml(s)}</span><span class="chip-del">✕</span></div>`)
+    .join('');
+
+  const positive=state.skills.filter(s=>s!=='ninguna').map(s=>
+    `<div class="skill-catalog-item"><b>${escapeHtml(s)}</b><br>${escapeHtml(state.skillDescriptions[s]||'Sin descripción')}</div>`
+  ).join('')||'<div style="color:var(--dim);font-size:10px;">Sin habilidades positivas.</div>';
+  const negative=state.negativeSkills.filter(s=>s!=='ninguna').map(s=>
+    `<div class="skill-catalog-item neg"><b>${escapeHtml(s)}</b><br>${escapeHtml(state.negativeSkillDescriptions[s]||'Sin descripción')}</div>`
+  ).join('')||'<div style="color:var(--dim);font-size:10px;">Sin habilidades negativas.</div>';
+  $('skillCatalog').innerHTML=
+    `<div class="skill-catalog-title">Positivas</div>${positive}<div class="skill-catalog-title">Negativas</div>${negative}`;
+}
+
+window.removeSkill = function(s) {
+  if (s === 'ninguna') return;
+  if (!confirm(`¿Eliminar la habilidad "${s}"?`)) return;
+  if (state.skills.includes(s)) {
+    state.skills = state.skills.filter(x => x !== s);
+    delete state.skillDescriptions[s];
+  }
+  if (state.negativeSkills.includes(s)) {
+    state.negativeSkills = state.negativeSkills.filter(x => x !== s);
+    delete state.negativeSkillDescriptions[s];
+  }
+  renderSkills();
+  showToast(`Habilidad "${s}" eliminada`);
+};
+
+$('addSkillBtn').addEventListener('click', () => {
+  const kind = $('f-newSkillType').value;
+  const val = $('f-newSkill').value.trim().toLowerCase();
+  const desc = $('f-newSkillDesc').value.trim();
+  if (!val) return;
+  if (state.skills.includes(val) || state.negativeSkills.includes(val)) { showToast(`"${val}" ya existe`, true); return; }
+  if (kind === 'negative') {
+    state.negativeSkills.push(val);
+    state.negativeSkillDescriptions[val] = desc || 'Sin descripción.';
+    if($('f-negskill')) $('f-negskill').value = val;
+  } else {
+    state.skills.push(val);
+    state.skillDescriptions[val] = desc || 'Sin descripción.';
+    $('f-skill').value = val;
+  }
+  renderSkills();
+  $('f-newSkill').value = '';
+  $('f-newSkillDesc').value = '';
+  showToast(`Habilidad "${val}" añadida`);
+});
+
+$('f-newSkill').addEventListener('keydown', e => { if(e.key==='Enter') $('addSkillBtn').click(); });
+
+// ── FORM ──
+function getFormData() {
+  const manualId = $('f-id')?.value.trim();
+  return {
+    id: manualId || state.editingId || uid(),
+    name: $('f-name').value.trim(),
+    fatigueCurrent: Number($('f-fatigueCurrent').value || 0),
+    fatigueMax: Number($('f-fatigueMax').value || 1),
+    story: $('f-story').value.trim(),
+    moraleTable: normalizeMoraleTableKey($('f-moraleTable')?.value||'A'),
+    moralCurrent: clampMoraleValue($('f-moraleCurrent')?.value??7, 10),
+    moraleStart: clampMoraleValue($('f-moraleCurrent')?.value??7, 10),
+    maxMorale: 10,
+    image: { url: $('f-imgUrl').value.trim(), deleteUrl: '' },
+    imageInjured: { url: $('f-imgInjuredUrl')?.value.trim()||'', deleteUrl: '' },
+    skill: $('f-skill').value,
+    skill2: $('f-skill2')?.value||'ninguna',
+    negativeSkill: $('f-negskill')?.value||'ninguna',
+    rarity: state.selectedRarity
+  };
+}
+
+function validateSurvivor(s) {
+  if (!s.id) return 'No se pudo generar un ID válido.';
+  if (!s.name) return 'El nombre es obligatorio.';
+  if (s.fatigueCurrent < 0 || s.fatigueMax < 1) return 'Valores de fatiga inválidos.';
+  if (s.fatigueCurrent > s.fatigueMax) return 'La fatiga actual no puede superar la máxima.';
+  if (s.moralCurrent < 1 || s.moralCurrent > 10) return 'La moral inicial debe estar entre 1 y 10.';
+  return '';
+}
+
+function resetForm() {
+  state.editingId = null;
+  if($('f-id')) $('f-id').value = '';
+  $('f-name').value = '';
+  $('f-fatigueCurrent').value = 3;
+  $('f-fatigueMax').value = 3;
+  $('f-story').value = '';
+  $('f-imgFile').value = '';
+  $('f-imgUrl').value = '';
+  $('f-imgInjuredFile').value = '';
+  $('f-imgInjuredUrl').value = '';
+  $('uploadInjuredStatus').textContent = '';
+  $('f-skill').value = state.skills[0] || 'ninguna';
+  if($('f-skill2')) $('f-skill2').value = 'ninguna';
+  if($('f-negskill')) $('f-negskill').value = 'ninguna';
+  setRarity(4);
+  if($('f-moraleTable')) $('f-moraleTable').value='A';
+  if($('f-moraleCurrent')) $('f-moraleCurrent').value=7;
+  setFormStatus('');
+  updateImgPreview('');
+  $('formMode').textContent = 'NUEVO';
+  $('formMode').style.color = '';
+}
+
+function fillForm(s) {
+  state.editingId = s.id;
+  if($('f-id')) $('f-id').value = s.id || '';
+  $('f-name').value = s.name || '';
+  $('f-fatigueCurrent').value = s.fatigueCurrent ?? 3;
+  $('f-fatigueMax').value = s.fatigueMax ?? 3;
+  $('f-story').value = s.story || '';
+  $('f-imgUrl').value = s.image?.url || '';
+  $('f-imgInjuredUrl').value = s.imageInjured?.url || s.imageUrlInjured || '';
+  $('f-skill').value = s.skill || 'ninguna';
+  if($('f-skill2')) $('f-skill2').value = s.skill2 || 'ninguna';
+  if($('f-negskill')) $('f-negskill').value = s.negativeSkill || 'ninguna';
+  setRarity(s.rarity ?? 4);
+  if($('f-moraleTable')) $('f-moraleTable').value=normalizeMoraleTableKey(s.moraleTable??s.moralTable??'A');
+  if($('f-moraleCurrent')) $('f-moraleCurrent').value=s.moralCurrent??s.moraleStart??s.morale??7;
+  updateImgPreview(s.image?.url || '');
+  setFormStatus('');
+  $('formMode').textContent = 'EDITANDO';
+  $('formMode').style.color = 'var(--amber-bright)';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function saveSurvivor() {
+  const s = getFormData();
+  const err = validateSurvivor(s);
+  if (err) { setFormStatus(err, 'err'); return; }
+  const duplicated = state.survivors.find(x => x.id === s.id && x.id !== state.editingId);
+  if (duplicated) { setFormStatus(`El ID "${s.id}" ya existe.`, 'err'); return; }
+  const editingIdx = state.editingId ? state.survivors.findIndex(x => x.id === state.editingId) : -1;
+  if (editingIdx >= 0) {
+    state.survivors[editingIdx] = s;
+    showToast(`"${s.name}" actualizado ✓`);
+  } else {
+    const idx = state.survivors.findIndex(x => x.id === s.id);
+    if (idx >= 0) state.survivors[idx] = s;
+    else state.survivors.push(s);
+    showToast(`"${s.name}" añadido ✓`);
+  }
+  resetForm();
+  render();
+}
+
+$('saveBtn').addEventListener('click', saveSurvivor);
+$('newBtn').addEventListener('click', resetForm);
+
+// ── RENDER ──
+const RARITY_LABELS = { 1:'Legendario', 2:'Raro', 3:'Poco común', 4:'Común' };
+
+function render() {
+  const list = $('survivorList');
+  if (!state.survivors.length) {
+    list.innerHTML = '<div class="empty-state">// Sin supervivientes. Crea el primero usando el formulario.</div>';
+  } else {
+    list.innerHTML = state.survivors.map(s => {
+      const img = s.image?.url || '';
+      const placeholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Crect width='90' height='90' fill='%23141a11'/%3E%3Ctext x='50%25' y='52%25' fill='%233d4a33' font-size='10' text-anchor='middle' font-family='monospace'%3ESin imagen%3C/text%3E%3C/svg%3E`;
+      const rarityLabel = RARITY_LABELS[s.rarity] || `R${s.rarity}`;
+      return `
+        <div class="survivor-card">
+          <img class="card-img" src="${escapeAttr(img || placeholder)}" alt="${escapeAttr(s.name)}" />
+          <div class="card-info">
+            <div class="card-head">
+              <div class="card-name">${escapeHtml(s.name)}</div>
+              <span class="rarity-badge">R${s.rarity} ${rarityLabel}</span>
+              <button class="story-btn" title="Leer historia" onclick="openStoryModal('${escapeJs(s.id)}')">📖</button>
+            </div>
+            <div class="card-meta">
+              ⚡ Fatiga: <span>${s.fatigueCurrent ?? 0} / ${s.fatigueMax ?? 0}</span>
+              &nbsp;&nbsp;
+              <span style="color:${getMoraleStateInfo(s.moraleTable, s.moralCurrent).color};font-weight:700;">${getMoraleStateInfo(s.moraleTable, s.moralCurrent).emoji} Moral: ${getMoraleStateInfo(s.moraleTable, s.moralCurrent).label}</span>
+              <span style="color:var(--muted);">· Tabla ${normalizeMoraleTableKey(s.moraleTable)}</span>
+            </div>
+            ${s.skill && s.skill !== 'ninguna' ? `<div class="skill-tag">${escapeHtml(s.skill)}</div>` : ''}
+          </div>
+          <div class="card-actions">
+            <button class="btn" onclick="editFromList('${escapeJs(s.id)}')">✎ Editar</button>
+            <button class="btn accent" onclick="duplicateFromList('${escapeJs(s.id)}')">⎘ Duplicar</button>
+            <button class="btn danger" onclick="deleteFromList('${escapeJs(s.id)}')">✕ Borrar</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  $('jsonPreview').textContent = state.survivors.length
+    ? JSON.stringify(state.survivors, null, 2)
+    : '// Aún no hay datos.';
+
+  $('headerCount').textContent = `${state.survivors.length} superviviente${state.survivors.length !== 1 ? 's' : ''} en sesión`;
+}
+
+// ── CARD ACTIONS ──
+window.editFromList = id => { const s = state.survivors.find(x => x.id===id); if(s) fillForm(s); };
+window.deleteFromList = id => {
+  const s = state.survivors.find(x => x.id===id);
+  if (!confirm(`¿Eliminar a "${s?.name || id}"? Esta acción no se puede deshacer.`)) return;
+  state.survivors = state.survivors.filter(x => x.id!==id);
+  if (state.editingId === id) resetForm();
+  render();
+  showToast('Superviviente eliminado');
+};
+window.duplicateFromList = id => {
+  const original = state.survivors.find(x => x.id===id);
+  if (!original) return;
+  const copy = JSON.parse(JSON.stringify(original));
+  copy.id = uid();
+  copy.name = original.name + ' (copia)';
+  state.survivors.push(copy);
+  render();
+  showToast(`"${copy.name}" duplicado`);
+};
+
+// ── STORY MODAL ──
+window.openStoryModal = function(id) {
+  const s = state.survivors.find(x => x.id===id);
+  if (!s) return;
+  $('storyModalTitle').textContent = s.name || 'Sin nombre';
+  $('storyModalText').textContent = s.story || 'Este superviviente no tiene historia registrada.';
+  const img = $('storyModalImg');
+  const noImg = document.querySelector('.no-img-modal');
+  if (s.image?.url) {
+    img.src = s.image.url;
+    img.style.display = 'block';
+    if (noImg) noImg.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    if (noImg) noImg.style.display = '';
+  }
+  $('storyModal').classList.add('open');
+};
+
+$('closeStoryBtn').addEventListener('click', () => $('storyModal').classList.remove('open'));
+$('storyModal').addEventListener('click', e => { if(e.target === $('storyModal')) $('storyModal').classList.remove('open'); });
+
+// ── DOWNLOAD ──
+$('importJsonBtn').addEventListener('click', () => $('importJsonFile').click());
+$('importJsonFile').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed)) { showToast('JSON inválido — debe ser un array', true); return; }
+    let added=0, updated=0;
+    parsed.forEach(item => {
+      const norm = normalizeSurvivorRecord(item);
+      const idx = state.survivors.findIndex(s => s.id === norm.id);
+      if (idx >= 0) { state.survivors[idx] = norm; updated++; }
+      else { state.survivors.push(norm); added++; }
+    });
+    render();
+    showToast(`${added+updated} superviviente${added+updated!==1?'s':''} importado${added+updated!==1?'s':''} ✓`);
+  } catch(err) {
+    showToast('Error: ' + err.message, true);
+  }
+  e.target.value = '';
+});
+
+$('downloadBtn').addEventListener('click', () => {
+  if (!state.survivors.length) { showToast('No hay supervivientes para exportar', true); return; }
+  const blob = new Blob([JSON.stringify(state.survivors, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'survivors.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('survivors.json descargado ✓');
+});
+
+// ── IMPORT ──
+$('importBtn').addEventListener('click', () => $('importFile').click());
+$('importFile').addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      if (!Array.isArray(parsed)) throw new Error('El archivo debe contener un array JSON.');
+      let added = 0, updated = 0;
+      parsed.forEach(item => {
+        const norm = normalizeSurvivorRecord(item);
+        const idx = state.survivors.findIndex(s => s.id === norm.id);
+        if (idx >= 0) { state.survivors[idx] = norm; updated++; }
+        else { state.survivors.push(norm); added++; }
+      });
+      render();
+      showToast(`Importados ${added} nuevos · ${updated} actualizados`);
+    } catch(err) {
+      showToast(err.message || 'JSON no válido', true);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// ── INIT ──
+renderSkills();
+render();
+
+async function autoLoadFromServer() {
+  try {
+    const res = await fetch('./data/survivors.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const parsed = await res.json();
+    if (!Array.isArray(parsed)) throw new Error('survivors.json no contiene un array');
+    let added = 0, updated = 0;
+    parsed.forEach(item => {
+      const norm = normalizeSurvivorRecord(item);
+      const idx = state.survivors.findIndex(s => s.id === norm.id);
+      if (idx >= 0) { state.survivors[idx] = norm; updated++; }
+      else { state.survivors.push(norm); added++; }
+    });
+    clearDataWarning('survivors.json');
+    render();
+    showToast(`${added + updated} superviviente${added+updated!==1?'s':''} cargado${added+updated!==1?'s':''} desde /data/ ✓`);
+  } catch(e) {
+    console.warn('No se pudo cargar survivors.json:', e.message);
+    setDataWarning('survivors.json', e.message || 'No se pudo cargar');
+    showToast('No se han cargado los datos correctos: survivors.json. Revisa /data o abre el editor desde un servidor local.', true);
+  }
+}
+autoLoadFromServer();
+</script>
+</body>
+</html>

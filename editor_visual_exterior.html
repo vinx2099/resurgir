@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor visual exterior — RESURGIR</title>
+<style>
+  :root{
+    --bg:#071007;
+    --panel:#0d170d;
+    --panel2:#101d10;
+    --line:#274227;
+    --text:#d8e7d0;
+    --muted:#93a38d;
+    --accent:#60d060;
+    --accent2:#7fd8ff;
+    --warn:#d0c060;
+    --danger:#d06a60;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+  .wrap{display:grid;grid-template-columns:380px 1fr;min-height:100vh}
+  .sidebar{background:var(--panel);border-right:1px solid var(--line);padding:14px;overflow:auto}
+  h1,h2,h3{margin:0 0 10px}
+  h1{font-size:18px}
+  .muted{color:var(--muted)}
+  .toolbar,.zone-tools{display:grid;gap:8px;margin-bottom:12px}
+  button,input,textarea,select{font:inherit}
+  button{padding:10px 12px;background:var(--panel2);color:var(--text);border:1px solid var(--line);cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.warn:hover{border-color:var(--warn)}
+  button.danger:hover{border-color:var(--danger)}
+  .building-list,.zone-list{display:grid;gap:8px;margin:12px 0}
+  .zone-item,.building-item{padding:10px;border:1px solid var(--line);background:var(--panel2);cursor:pointer}
+  .zone-item.active,.building-item.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .zone-item small,.building-item small{display:block;color:var(--muted);margin-top:4px}
+  .section{margin:18px 0}
+  .coords{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .coords label,.field{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+  .coords .span2{grid-column:1 / -1}
+  input[type="number"], input[type="text"], textarea, select{
+    width:100%;padding:8px;background:#0a130a;color:var(--text);border:1px solid var(--line)
+  }
+  textarea{min-height:180px;resize:vertical}
+  .main{padding:14px}
+  .map-shell{
+    border:1px solid var(--line);
+    background:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+      radial-gradient(circle at 30% 20%, rgba(40,110,40,.25), transparent 45%),
+      #091209;
+    background-size:40px 40px, 40px 40px, auto, auto;
+    position:relative;width:100%;aspect-ratio:16/9;overflow:hidden
+  }
+  .map-title{
+    position:absolute;left:12px;top:12px;z-index:5;padding:8px 12px;border:1px solid var(--accent);
+    background:rgba(10,20,10,.95);color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase
+  }
+  .hint{
+    position:absolute;right:12px;top:12px;z-index:5;padding:8px 12px;border:1px solid var(--line);
+    background:rgba(10,20,10,.95);color:var(--muted);font-size:11px
+  }
+  .node{
+    position:absolute;border:1px solid rgba(96,208,96,.65);background:rgba(0,0,0,.42);
+    background-size:cover;background-position:center;background-repeat:no-repeat;
+    color:#f0f4ed;user-select:none;overflow:hidden
+  }
+  .node.selected{outline:2px solid #7ff57f;box-shadow:0 0 0 1px #7ff57f inset}
+  .node.camp{
+    border-color:rgba(127,216,255,.9);
+    background:rgba(10,30,40,.55);
+  }
+  .node.slot{
+    border-style:dashed;
+    border-color:rgba(208,192,96,.8);
+    background:rgba(40,30,10,.25);
+  }
+  .node-label{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:4px;background:rgba(0,0,0,.32);text-shadow:0 1px 2px rgba(0,0,0,.8);pointer-events:none;font-size:12px
+  }
+  .handle{position:absolute;width:12px;height:12px;right:-1px;bottom:-1px;background:#7ff57f;cursor:nwse-resize}
+  .camp .handle{background:var(--accent2)}
+  .legend{font-size:12px;color:var(--muted);margin-top:8px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{padding:4px 8px;border:1px solid var(--line);background:var(--panel2);font-size:12px}
+  .json-preview{min-height:300px}
+  .subtle{font-size:11px;color:var(--muted)}
+  .stack{display:grid;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="sidebar">
+    <h1>Editor visual exterior</h1>
+    <div class="muted">Diseña zonas exteriores genéricas. Puedes colocar <b>espacios</b> y mover el <b>campamento móvil</b> sin depender todavía de qué <code>locations</code> cargará luego el juego.</div>
+
+    <div class="toolbar section">
+      <input id="fileInput" type="file" accept=".json,application/json">
+      <button id="loadSampleBtn">Cargar ejemplo exterior</button>
+      <button id="exportBtn">Descargar JSON</button>
+      <button id="copyBtn">Copiar JSON</button>
+    </div>
+
+    <div class="row">
+      <div class="pill">Arrastrar = mover</div>
+      <div class="pill">Esquina = redimensionar</div>
+      <div class="pill">Campamento móvil editable</div>
+    </div>
+
+    <div class="section">
+      <h3>Zonas</h3>
+      <div class="zone-tools">
+        <button id="addZoneBtn">+ Añadir zona</button>
+        <button id="cloneZoneBtn" class="warn">Duplicar zona actual</button>
+        <button id="removeZoneBtn" class="danger">Eliminar zona actual</button>
+      </div>
+      <div id="zoneList" class="zone-list"></div>
+    </div>
+
+    <div class="section stack" id="zoneEditor">
+      <h3>Datos de zona</h3>
+      <label class="field">Nombre de zona
+        <input id="zoneNameInput" type="text" placeholder="Ej: Sector industrial">
+      </label>
+      <label class="field">ID de zona
+        <input id="zoneIdInput" type="text" placeholder="ej: exterior_sector_industrial">
+      </label>
+      <label class="field">Día de desbloqueo
+        <input id="zoneUnlockInput" type="number" min="1" value="1">
+      </label>
+      <label class="field">Imagen/fondo URL (opcional)
+        <input id="zoneBgInput" type="text" placeholder="https://...">
+      </label>
+      <label class="field">Descripción breve
+        <input id="zoneDescInput" type="text" placeholder="Texto interno opcional">
+      </label>
+    </div>
+
+    <div class="section">
+      <h3>Nodos de la zona</h3>
+      <div class="zone-tools">
+        <button id="addSlotBtn">+ Añadir espacio</button>
+        <button id="addCampBtn" class="warn">Recrear campamento móvil</button>
+        <button id="removeNodeBtn" class="danger">Eliminar nodo seleccionado</button>
+      </div>
+      <div id="nodeList" class="building-list"></div>
+    </div>
+
+    <div id="nodeEditor" style="display:none" class="section">
+      <h3>Editor del nodo</h3>
+      <div class="coords">
+        <label class="span2">Imagen URL
+          <input id="imageUrlInput" type="text" placeholder="https://... o data:image/...">
+        </label>
+        <label class="span2">Cargar imagen local
+          <input id="imageFileInput" type="file" accept="image/*">
+        </label>
+        <label>Nombre
+          <input id="nameInput" type="text">
+        </label>
+        <label>ID
+          <input id="idInput" type="text">
+        </label>
+        <label>Tipo
+          <select id="kindInput">
+            <option value="slot">Espacio</option>
+            <option value="camp">Campamento móvil</option>
+            <option value="building">Edificio</option>
+          </select>
+        </label>
+        <label>Descubierto por defecto
+          <select id="discoveredInput">
+            <option value="false">No</option>
+            <option value="true">Sí</option>
+          </select>
+        </label>
+        <label>Left %
+          <input id="leftInput" type="number" min="0" max="100" step="0.1">
+        </label>
+        <label>Top %
+          <input id="topInput" type="number" min="0" max="100" step="0.1">
+        </label>
+        <label>Width %
+          <input id="widthInput" type="number" min="1" max="100" step="0.1">
+        </label>
+        <label>Height %
+          <input id="heightInput" type="number" min="1" max="100" step="0.1">
+        </label>
+      </div>
+      <div class="subtle" style="margin-top:8px">Los <b>espacios</b> sirven como huecos genéricos. Luego podrás convertirlos en edificios concretos o reutilizarlos según la zona que cargue el juego.</div>
+    </div>
+
+    <div class="section">
+      <h3>JSON actual</h3>
+      <textarea id="jsonPreview" class="json-preview" spellcheck="false"></textarea>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div style="font-weight:700">Mapa visual exterior</div>
+    <div class="muted">Diseña la zona actual con sus espacios y el campamento móvil.</div>
+    <div id="map" class="map-shell">
+      <div id="mapTitle" class="map-title">⬡ ZONA EXTERIOR</div>
+      <div class="hint">Campamento móvil + espacios genéricos</div>
+    </div>
+    <div class="legend">Exporta este JSON y luego podrás integrarlo en <code>locations.json</code> o usarlo como plantilla para varias zonas.</div>
+  </main>
+</div>
+
+<script>
+const sampleData = {
+  locations: [
+    {
+      id: "zona_autopista",
+      name: "Autopista rota",
+      unlockDay: 1,
+      description: "Zona exterior genérica con campamento móvil y espacios vacíos.",
+      background: "",
+      nodes: [
+        { id:"camp_mobile", name:"Campamento móvil", kind:"camp", discovered:true, map:{left:"8%", top:"70%", width:"14%", height:"14%"}, image:"" },
+        { id:"slot_1", name:"Espacio 1", kind:"slot", discovered:false, map:{left:"18%", top:"16%", width:"13%", height:"18%"}, image:"" },
+        { id:"slot_2", name:"Espacio 2", kind:"slot", discovered:false, map:{left:"42%", top:"24%", width:"14%", height:"18%"}, image:"" },
+        { id:"slot_3", name:"Espacio 3", kind:"slot", discovered:false, map:{left:"68%", top:"20%", width:"13%", height:"18%"}, image:"" },
+        { id:"slot_4", name:"Espacio 4", kind:"slot", discovered:false, map:{left:"60%", top:"58%", width:"14%", height:"18%"}, image:"" }
+      ]
+    }
+  ]
+};
+
+let data = structuredClone(sampleData);
+let selectedZoneId = sampleData.locations[0].id;
+let selectedNodeId = sampleData.locations[0].nodes[0].id;
+let drag = null;
+
+const map = document.getElementById('map');
+const mapTitle = document.getElementById('mapTitle');
+const zoneList = document.getElementById('zoneList');
+const nodeList = document.getElementById('nodeList');
+const jsonPreview = document.getElementById('jsonPreview');
+
+const zoneNameInput = document.getElementById('zoneNameInput');
+const zoneIdInput = document.getElementById('zoneIdInput');
+const zoneUnlockInput = document.getElementById('zoneUnlockInput');
+const zoneBgInput = document.getElementById('zoneBgInput');
+const zoneDescInput = document.getElementById('zoneDescInput');
+
+const nodeEditor = document.getElementById('nodeEditor');
+const leftInput = document.getElementById('leftInput');
+const topInput = document.getElementById('topInput');
+const widthInput = document.getElementById('widthInput');
+const heightInput = document.getElementById('heightInput');
+const nameInput = document.getElementById('nameInput');
+const idInput = document.getElementById('idInput');
+const kindInput = document.getElementById('kindInput');
+const imageUrlInput = document.getElementById('imageUrlInput');
+const imageFileInput = document.getElementById('imageFileInput');
+const discoveredInput = document.getElementById('discoveredInput');
+
+function pct(v, fallback='0%'){ return typeof v === 'string' && v.includes('%') ? v : fallback; }
+function percentToNum(v){ return parseFloat(String(v || '0').replace('%','')) || 0; }
+function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+function slugify(text){
+  return String(text||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'zona';
+}
+
+function normalizeNode(node, i=0){
+  return {
+    id: node.id || `slot_${i+1}`,
+    name: node.name || `Espacio ${i+1}`,
+    kind: node.kind || (node.id === 'camp_mobile' ? 'camp' : 'slot'),
+    discovered: Boolean(node.discovered),
+    image: node.image || '',
+    map: {
+      left: pct(node.map?.left, `${10+i*10}%`),
+      top: pct(node.map?.top, `${10+i*8}%`),
+      width: pct(node.map?.width, '12%'),
+      height: pct(node.map?.height, '16%')
+    }
+  };
+}
+
+function normalizeZone(zone, i=0){
+  const nodesSrc = Array.isArray(zone.nodes) ? zone.nodes : Array.isArray(zone.buildings) ? zone.buildings : [];
+  let nodes = nodesSrc.map((n, idx) => normalizeNode(n, idx));
+  if(!nodes.some(n => n.kind === 'camp' || n.id === 'camp_mobile')){
+    nodes.unshift(normalizeNode({id:'camp_mobile', name:'Campamento móvil', kind:'camp', discovered:true, map:{left:'8%',top:'70%',width:'14%',height:'14%'}}, 0));
+  }
+  return {
+    id: zone.id || `zona_${i+1}`,
+    name: zone.name || `Zona ${i+1}`,
+    unlockDay: Number(zone.unlockDay || zone.day || 1) || 1,
+    description: zone.description || '',
+    background: zone.background || zone.image || '',
+    nodes
+  };
+}
+
+function normalizeData(input){
+  const locations = Array.isArray(input?.locations)
+    ? input.locations.map((z, i) => normalizeZone(z, i))
+    : Array.isArray(input)
+      ? input.map((z, i) => normalizeZone(z, i))
+      : [normalizeZone(sampleData.locations[0], 0)];
+  return { locations };
+}
+
+function setData(input){
+  data = normalizeData(input);
+  if(!data.locations.length) data.locations.push(normalizeZone({}, 0));
+  if(!data.locations.some(z => z.id === selectedZoneId)) selectedZoneId = data.locations[0].id;
+  const zone = getSelectedZone();
+  if(!zone.nodes.some(n => n.id === selectedNodeId)) selectedNodeId = zone.nodes[0]?.id || null;
+  renderAll();
+}
+
+function getSelectedZone(){ return data.locations.find(z => z.id === selectedZoneId); }
+function getSelectedNode(){ return getSelectedZone()?.nodes.find(n => n.id === selectedNodeId); }
+
+function renderAll(){
+  renderZoneList();
+  renderZoneEditor();
+  renderNodeList();
+  renderMap();
+  renderNodeEditor();
+  jsonPreview.value = JSON.stringify(data, null, 2);
+}
+
+function renderZoneList(){
+  zoneList.innerHTML = '';
+  data.locations.forEach(zone => {
+    const el = document.createElement('div');
+    el.className = 'zone-item' + (zone.id === selectedZoneId ? ' active' : '');
+    el.innerHTML = `<div>${zone.name}</div><small>${zone.id} · ${zone.nodes.length} nodos</small>`;
+    el.onclick = () => {
+      selectedZoneId = zone.id;
+      selectedNodeId = zone.nodes[0]?.id || null;
+      renderAll();
+    };
+    zoneList.appendChild(el);
+  });
+}
+
+function renderZoneEditor(){
+  const zone = getSelectedZone();
+  if(!zone) return;
+  zoneNameInput.value = zone.name || '';
+  zoneIdInput.value = zone.id || '';
+  zoneUnlockInput.value = zone.unlockDay || 1;
+  zoneBgInput.value = zone.background || '';
+  zoneDescInput.value = zone.description || '';
+}
+
+function renderNodeList(){
+  const zone = getSelectedZone();
+  nodeList.innerHTML = '';
+  if(!zone) return;
+  zone.nodes.forEach(node => {
+    const el = document.createElement('div');
+    el.className = 'building-item' + (node.id === selectedNodeId ? ' active' : '');
+    const kindLabel = node.kind === 'camp' ? 'Campamento' : node.kind === 'slot' ? 'Espacio' : 'Edificio';
+    el.innerHTML = `<div>${node.name}</div><small>${node.id} · ${kindLabel}</small>`;
+    el.onclick = () => { selectedNodeId = node.id; renderAll(); };
+    nodeList.appendChild(el);
+  });
+}
+
+function renderMap(){
+  const zone = getSelectedZone();
+  map.querySelectorAll('.node').forEach(el => el.remove());
+  if(!zone) return;
+
+  mapTitle.textContent = `⬡ ${zone.name.toUpperCase()}`;
+  map.style.backgroundImage = zone.background
+    ? `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+       linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+       linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.18)),
+       url("${String(zone.background).replace(/"/g, '&quot;')}")`
+    : `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+       linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+       radial-gradient(circle at 30% 20%, rgba(40,110,40,.25), transparent 45%),
+       #091209`;
+
+  map.style.backgroundSize = zone.background ? '40px 40px, 40px 40px, auto, cover' : '40px 40px, 40px 40px, auto, auto';
+  map.style.backgroundPosition = zone.background ? '0 0, 0 0, 0 0, center' : '0 0, 0 0, 0 0, 0 0';
+
+  zone.nodes.forEach(node => {
+    const el = document.createElement('div');
+    el.className = `node ${node.kind === 'camp' ? 'camp' : ''} ${node.kind === 'slot' ? 'slot' : ''}` + (node.id === selectedNodeId ? ' selected' : '');
+    el.style.left = node.map.left;
+    el.style.top = node.map.top;
+    el.style.width = node.map.width;
+    el.style.height = node.map.height;
+    if(node.image){
+      el.style.backgroundImage = `linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.08)), url("${String(node.image).replace(/"/g, '&quot;')}")`;
+    }
+    const label = document.createElement('div');
+    label.className = 'node-label';
+    label.textContent = node.kind === 'camp' ? '⛺ ' + node.name : node.name;
+    el.appendChild(label);
+    el.addEventListener('mousedown', e => startDrag(e, node.id, 'move'));
+    el.addEventListener('click', e => { e.stopPropagation(); selectedNodeId = node.id; renderAll(); });
+
+    const handle = document.createElement('div');
+    handle.className = 'handle';
+    handle.addEventListener('mousedown', e => startDrag(e, node.id, 'resize'));
+    el.appendChild(handle);
+    map.appendChild(el);
+  });
+}
+
+function renderNodeEditor(){
+  const node = getSelectedNode();
+  if(!node){ nodeEditor.style.display = 'none'; return; }
+  nodeEditor.style.display = '';
+  nameInput.value = node.name || '';
+  idInput.value = node.id || '';
+  kindInput.value = node.kind || 'slot';
+  imageUrlInput.value = node.image || '';
+  discoveredInput.value = node.discovered ? 'true' : 'false';
+  leftInput.value = percentToNum(node.map.left);
+  topInput.value = percentToNum(node.map.top);
+  widthInput.value = percentToNum(node.map.width);
+  heightInput.value = percentToNum(node.map.height);
+}
+
+function updateSelectedZoneFromInputs(){
+  const zone = getSelectedZone();
+  if(!zone) return;
+  const prevId = zone.id;
+  zone.name = zoneNameInput.value.trim() || 'Zona sin nombre';
+  zone.id = zoneIdInput.value.trim() || slugify(zone.name);
+  zone.unlockDay = Number(zoneUnlockInput.value || 1) || 1;
+  zone.background = zoneBgInput.value.trim();
+  zone.description = zoneDescInput.value.trim();
+  if(selectedZoneId === prevId) selectedZoneId = zone.id;
+  renderAll();
+}
+
+[zoneNameInput, zoneIdInput, zoneUnlockInput, zoneBgInput, zoneDescInput].forEach(inp => inp.addEventListener('input', updateSelectedZoneFromInputs));
+
+function updateSelectedNodeFromInputs(){
+  const zone = getSelectedZone();
+  const node = getSelectedNode();
+  if(!zone || !node) return;
+  const prevId = node.id;
+  node.name = nameInput.value.trim() || 'Nodo sin nombre';
+  node.id = idInput.value.trim() || slugify(node.name);
+  node.kind = kindInput.value || 'slot';
+  node.image = imageUrlInput.value.trim();
+  node.discovered = discoveredInput.value === 'true';
+  node.map.left = `${clamp(parseFloat(leftInput.value)||0,0,100).toFixed(1)}%`;
+  node.map.top = `${clamp(parseFloat(topInput.value)||0,0,100).toFixed(1)}%`;
+  node.map.width = `${clamp(parseFloat(widthInput.value)||1,1,100).toFixed(1)}%`;
+  node.map.height = `${clamp(parseFloat(heightInput.value)||1,1,100).toFixed(1)}%`;
+  if(node.kind === 'camp'){
+    zone.nodes.forEach(n => { if(n !== node && n.kind === 'camp') n.kind = 'slot'; });
+    if(!node.id) node.id = 'camp_mobile';
+  }
+  if(selectedNodeId === prevId) selectedNodeId = node.id;
+  renderAll();
+}
+
+[leftInput, topInput, widthInput, heightInput, nameInput, idInput, kindInput, imageUrlInput, discoveredInput]
+  .forEach(inp => inp.addEventListener('input', updateSelectedNodeFromInputs));
+
+imageFileInput.addEventListener('change', async e => {
+  const file = e.target.files?.[0];
+  const node = getSelectedNode();
+  if(!file || !node) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    node.image = String(reader.result || '');
+    renderAll();
+  };
+  reader.readAsDataURL(file);
+});
+
+function startDrag(e, nodeId, mode){
+  e.preventDefault();
+  e.stopPropagation();
+  selectedNodeId = nodeId;
+  const node = getSelectedZone()?.nodes.find(x => x.id === nodeId);
+  const rect = map.getBoundingClientRect();
+  drag = {
+    nodeId, mode, startX:e.clientX, startY:e.clientY, rect,
+    left:percentToNum(node.map.left), top:percentToNum(node.map.top),
+    width:percentToNum(node.map.width), height:percentToNum(node.map.height)
+  };
+  renderAll();
+}
+
+window.addEventListener('mousemove', e => {
+  if(!drag) return;
+  const node = getSelectedZone()?.nodes.find(x => x.id === drag.nodeId);
+  if(!node) return;
+  const dxPct = ((e.clientX - drag.startX) / drag.rect.width) * 100;
+  const dyPct = ((e.clientY - drag.startY) / drag.rect.height) * 100;
+  if(drag.mode === 'move'){
+    node.map.left = `${clamp(drag.left + dxPct, 0, 100).toFixed(1)}%`;
+    node.map.top = `${clamp(drag.top + dyPct, 0, 100).toFixed(1)}%`;
+  } else {
+    node.map.width = `${clamp(drag.width + dxPct, 2, 100).toFixed(1)}%`;
+    node.map.height = `${clamp(drag.height + dyPct, 2, 100).toFixed(1)}%`;
+  }
+  renderAll();
+});
+window.addEventListener('mouseup', () => drag = null);
+
+document.getElementById('addZoneBtn').onclick = () => {
+  const idx = data.locations.length + 1;
+  const zone = normalizeZone({name:`Zona ${idx}`, id:`zona_${idx}`, unlockDay:1, nodes:[
+    {id:'camp_mobile', name:'Campamento móvil', kind:'camp', discovered:true, map:{left:'8%',top:'70%',width:'14%',height:'14%'}},
+    {id:'slot_1', name:'Espacio 1', kind:'slot', discovered:false, map:{left:'25%',top:'20%',width:'13%',height:'18%'}}
+  ]}, idx-1);
+  data.locations.push(zone);
+  selectedZoneId = zone.id;
+  selectedNodeId = zone.nodes[0].id;
+  renderAll();
+};
+
+document.getElementById('cloneZoneBtn').onclick = () => {
+  const zone = getSelectedZone();
+  if(!zone) return;
+  let copy = structuredClone(zone);
+  copy.id = `${zone.id}_copia`;
+  copy.name = `${zone.name} copia`;
+  copy.nodes = copy.nodes.map((n, i) => ({...n, id:`${n.id}_c${i+1}`}));
+  data.locations.push(copy);
+  selectedZoneId = copy.id;
+  selectedNodeId = copy.nodes[0]?.id || null;
+  renderAll();
+};
+
+document.getElementById('removeZoneBtn').onclick = () => {
+  if(data.locations.length <= 1){ alert('Debe quedar al menos una zona.'); return; }
+  const zone = getSelectedZone();
+  if(!zone) return;
+  if(!confirm(`Eliminar la zona "${zone.name}"?`)) return;
+  data.locations = data.locations.filter(z => z.id !== zone.id);
+  selectedZoneId = data.locations[0].id;
+  selectedNodeId = data.locations[0].nodes[0]?.id || null;
+  renderAll();
+};
+
+document.getElementById('addSlotBtn').onclick = () => {
+  const zone = getSelectedZone();
+  if(!zone) return;
+  const count = zone.nodes.filter(n => n.kind === 'slot').length + 1;
+  const slot = normalizeNode({
+    id:`slot_${count}`,
+    name:`Espacio ${count}`,
+    kind:'slot',
+    discovered:false,
+    map:{left:`${15 + count*8}%`, top:`${12 + count*6}%`, width:'13%', height:'18%'}
+  }, count);
+  zone.nodes.push(slot);
+  selectedNodeId = slot.id;
+  renderAll();
+};
+
+document.getElementById('addCampBtn').onclick = () => {
+  const zone = getSelectedZone();
+  if(!zone) return;
+  let camp = zone.nodes.find(n => n.kind === 'camp' || n.id === 'camp_mobile');
+  if(camp){
+    selectedNodeId = camp.id;
+    renderAll();
+    return;
+  }
+  camp = normalizeNode({id:'camp_mobile', name:'Campamento móvil', kind:'camp', discovered:true, map:{left:'8%',top:'70%',width:'14%',height:'14%'}}, 0);
+  zone.nodes.unshift(camp);
+  selectedNodeId = camp.id;
+  renderAll();
+};
+
+document.getElementById('removeNodeBtn').onclick = () => {
+  const zone = getSelectedZone();
+  const node = getSelectedNode();
+  if(!zone || !node) return;
+  if(node.kind === 'camp'){
+    alert('No elimines el campamento móvil desde aquí. Usa "Recrear campamento móvil" si quieres recolocarlo o cámbialo de tipo primero.');
+    return;
+  }
+  if(!confirm(`Eliminar "${node.name}"?`)) return;
+  zone.nodes = zone.nodes.filter(n => n.id !== node.id);
+  selectedNodeId = zone.nodes[0]?.id || null;
+  renderAll();
+};
+
+document.getElementById('loadSampleBtn').onclick = () => setData(structuredClone(sampleData));
+
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'locations_template.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 0);
+};
+
+document.getElementById('copyBtn').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+    alert('JSON copiado.');
+  } catch {
+    alert('No se pudo copiar.');
+  }
+};
+
+document.getElementById('fileInput').addEventListener('change', async e => {
+  const file = e.target.files?.[0];
+  if(!file) return;
+  const txt = await file.text();
+  const parsed = JSON.parse(txt);
+  setData(parsed);
+});
+
+setData(sampleData);
+</script>
+</body>
+</html>

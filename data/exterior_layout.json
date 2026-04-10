@@ -1,0 +1,510 @@
+{
+  "zones": [
+    {
+      "id": "outskirts",
+      "name": "Afueras del asentamiento",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "map": {
+            "left": "8%",
+            "top": "72%",
+            "width": "14%",
+            "height": "14%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_1",
+          "name": "Espacio 1",
+          "kind": "slot",
+          "riskLevel": 0,
+          "discovered": false,
+          "map": {
+            "left": "18%",
+            "top": "14%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_2",
+          "name": "Espacio 2",
+          "kind": "slot",
+          "riskLevel": 0,
+          "discovered": false,
+          "map": {
+            "left": "42%",
+            "top": "22%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_3",
+          "name": "Espacio 3",
+          "kind": "slot",
+          "riskLevel": 1,
+          "discovered": false,
+          "map": {
+            "left": "68%",
+            "top": "18%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_4",
+          "name": "Espacio 4",
+          "kind": "slot",
+          "riskLevel": 1,
+          "discovered": false,
+          "map": {
+            "left": "60%",
+            "top": "56%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_5",
+          "name": "Espacio 5",
+          "kind": "slot",
+          "riskLevel": 2,
+          "discovered": false,
+          "map": {
+            "left": "24%",
+            "top": "54%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "industrial",
+      "name": "Zona Industrial",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "map": {
+            "left": "8%",
+            "top": "72%",
+            "width": "14%",
+            "height": "14%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_1",
+          "name": "Espacio 1",
+          "kind": "slot",
+          "riskLevel": 1,
+          "discovered": false,
+          "map": {
+            "left": "18%",
+            "top": "14%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_2",
+          "name": "Espacio 2",
+          "kind": "slot",
+          "riskLevel": 2,
+          "discovered": false,
+          "map": {
+            "left": "42%",
+            "top": "22%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_3",
+          "name": "Espacio 3",
+          "kind": "slot",
+          "riskLevel": 2,
+          "discovered": false,
+          "map": {
+            "left": "68%",
+            "top": "18%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_4",
+          "name": "Espacio 4",
+          "kind": "slot",
+          "riskLevel": 3,
+          "discovered": false,
+          "map": {
+            "left": "60%",
+            "top": "56%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_5",
+          "name": "Espacio 5",
+          "kind": "slot",
+          "riskLevel": 3,
+          "discovered": false,
+          "map": {
+            "left": "24%",
+            "top": "54%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_6",
+          "name": "Espacio 6",
+          "kind": "slot",
+          "riskLevel": 0,
+          "discovered": false,
+          "map": {
+            "left": "80%",
+            "top": "42%",
+            "width": "12%",
+            "height": "16%"
+          },
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "manhunters",
+      "name": "Territorio de Cazadores",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "map": {
+            "left": "8%",
+            "top": "72%",
+            "width": "14%",
+            "height": "14%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_1",
+          "name": "Espacio 1",
+          "kind": "slot",
+          "riskLevel": 0,
+          "discovered": false,
+          "map": {
+            "left": "18%",
+            "top": "14%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_2",
+          "name": "Espacio 2",
+          "kind": "slot",
+          "riskLevel": 2,
+          "discovered": false,
+          "map": {
+            "left": "42%",
+            "top": "22%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_3",
+          "name": "Espacio 3",
+          "kind": "slot",
+          "riskLevel": 2,
+          "discovered": false,
+          "map": {
+            "left": "68%",
+            "top": "18%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_4",
+          "name": "Espacio 4",
+          "kind": "slot",
+          "riskLevel": 3,
+          "discovered": false,
+          "map": {
+            "left": "60%",
+            "top": "56%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_5",
+          "name": "Espacio 5",
+          "kind": "slot",
+          "riskLevel": 3,
+          "discovered": false,
+          "map": {
+            "left": "24%",
+            "top": "54%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_6",
+          "name": "Espacio 6",
+          "kind": "slot",
+          "riskLevel": 4,
+          "discovered": false,
+          "map": {
+            "left": "80%",
+            "top": "42%",
+            "width": "12%",
+            "height": "16%"
+          },
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "suburbs",
+      "name": "Barrio Residencial",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "map": {
+            "left": "8%",
+            "top": "72%",
+            "width": "14%",
+            "height": "14%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_1",
+          "name": "Espacio 1",
+          "kind": "slot",
+          "riskLevel": 0,
+          "discovered": false,
+          "map": {
+            "left": "18%",
+            "top": "14%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_2",
+          "name": "Espacio 2",
+          "kind": "slot",
+          "riskLevel": 0,
+          "discovered": false,
+          "map": {
+            "left": "42%",
+            "top": "22%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_3",
+          "name": "Espacio 3",
+          "kind": "slot",
+          "riskLevel": 0,
+          "discovered": false,
+          "map": {
+            "left": "68%",
+            "top": "18%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_4",
+          "name": "Espacio 4",
+          "kind": "slot",
+          "riskLevel": 1,
+          "discovered": false,
+          "map": {
+            "left": "60%",
+            "top": "56%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_5",
+          "name": "Espacio 5",
+          "kind": "slot",
+          "riskLevel": 1,
+          "discovered": false,
+          "map": {
+            "left": "24%",
+            "top": "54%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_6",
+          "name": "Espacio 6",
+          "kind": "slot",
+          "riskLevel": 2,
+          "discovered": false,
+          "map": {
+            "left": "80%",
+            "top": "42%",
+            "width": "12%",
+            "height": "16%"
+          },
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "deadzone",
+      "name": "Zona Muerta",
+      "background": "",
+      "nodes": [
+        {
+          "id": "camp_mobile",
+          "name": "Campamento móvil",
+          "kind": "camp",
+          "discovered": true,
+          "map": {
+            "left": "8%",
+            "top": "72%",
+            "width": "14%",
+            "height": "14%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_1",
+          "name": "Espacio 1",
+          "kind": "slot",
+          "riskLevel": 2,
+          "discovered": false,
+          "map": {
+            "left": "18%",
+            "top": "14%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_2",
+          "name": "Espacio 2",
+          "kind": "slot",
+          "riskLevel": 3,
+          "discovered": false,
+          "map": {
+            "left": "42%",
+            "top": "22%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_3",
+          "name": "Espacio 3",
+          "kind": "slot",
+          "riskLevel": 3,
+          "discovered": false,
+          "map": {
+            "left": "68%",
+            "top": "18%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_4",
+          "name": "Espacio 4",
+          "kind": "slot",
+          "riskLevel": 4,
+          "discovered": false,
+          "map": {
+            "left": "60%",
+            "top": "56%",
+            "width": "14%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_5",
+          "name": "Espacio 5",
+          "kind": "slot",
+          "riskLevel": 4,
+          "discovered": false,
+          "map": {
+            "left": "24%",
+            "top": "54%",
+            "width": "13%",
+            "height": "18%"
+          },
+          "image": ""
+        },
+        {
+          "id": "slot_6",
+          "name": "Espacio 6",
+          "kind": "slot",
+          "riskLevel": 4,
+          "discovered": false,
+          "map": {
+            "left": "80%",
+            "top": "42%",
+            "width": "12%",
+            "height": "16%"
+          },
+          "image": ""
+        }
+      ]
+    }
+  ]
+}

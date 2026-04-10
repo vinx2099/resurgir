@@ -1,0 +1,43 @@
+{
+  "item": [
+    "unos guantes",
+    "una bufanda",
+    "una linterna rota",
+    "una navaja oxidada",
+    "una mochila raída",
+    "un mechero húmedo",
+    "una foto ajada",
+    "un reloj sin correa",
+    "una radio de bolsillo",
+    "un juego de llaves"
+  ],
+  "location": [
+    "una vieja tienda de recuerdos",
+    "un coche abandonado",
+    "una gasolinera saqueada",
+    "el escaparate roto de una farmacia",
+    "una casa medio derruida",
+    "un portal cubierto de maleza",
+    "una parada de autobús oxidada",
+    "una oficina en ruinas",
+    "el interior de un autobús volcado",
+    "un callejón lleno de escombros"
+  ],
+  "food": [
+    "una lata de melocotón en almíbar",
+    "un paquete de galletas de chocolate",
+    "una bolsa de arroz a medio abrir",
+    "un bote de judías",
+    "media barra de pan dura",
+    "un tarro de miel cristalizada",
+    "una conserva de atún",
+    "unas patatas arrugadas y blandas",
+    "un paquete de pasta roto",
+    "una caja de cereales aplastada"
+  ],
+  "lore": [
+    "¿Lo han dejado queriendo o ha estado siempre ahí?",
+    "Parece que la suerte está de su parte",
+    "Menos es nada"
+  ]
+}

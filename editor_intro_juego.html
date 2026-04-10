@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RESURGIR — Editor de Intro</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c09; --panel: #0f120d; --panel2: #141a11;
+  --line: #2a3525; --line2: #3a4a30; --text: #c8d4b8;
+  --muted: #6b7a5e; --dim: #3d4a33;
+  --ok: #4a8a35; --ok-bright: #72c44e; --ok-glow: rgba(74,138,53,0.25);
+  --amber: #b87c2a; --amber-bright: #e8a83e;
+  --red: #8a3535; --red-bright: #c44e4e;
+  --blue: #2a5a8a; --blue-bright: #4e8ec4;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Share Tech Mono',monospace;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;padding:28px 20px 60px;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(circle at 20% 20%,rgba(114,196,78,0.06),transparent 40%),
+    repeating-linear-gradient(0deg,rgba(0,20,0,0.05) 0px,rgba(0,20,0,0.05) 1px,transparent 1px,transparent 4px);
+}
+
+/* LAYOUT */
+.root{max-width:1100px;margin:0 auto;position:relative;z-index:1;}
+header{display:flex;align-items:baseline;gap:16px;margin-bottom:28px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+header h1{font-family:'Oswald',sans-serif;font-size:22px;letter-spacing:.2em;text-transform:uppercase;color:var(--ok-bright);}
+header span{font-size:10px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
+
+.grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+
+/* LEFT PANEL */
+.left-col{display:flex;flex-direction:column;gap:16px;}
+.section-title{font-size:10px;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;}
+
+/* NEW SLIDE FORM */
+.add-panel{background:linear-gradient(180deg,rgba(15,18,13,.95),rgba(20,26,17,.95));border:1px solid var(--line);padding:16px;position:relative;}
+.add-panel::after{content:'';position:absolute;bottom:0;right:0;width:14px;height:14px;background:var(--bg);clip-path:polygon(100% 0,100% 100%,0 100%);}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px;}
+.field input[type=text], .field textarea, .field select, .field input[type=number]{
+  width:100%;background:rgba(10,12,9,.8);border:1px solid var(--line);
+  color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px;
+  padding:8px 10px;outline:none;transition:border-color .15s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--ok);}
+.field textarea{resize:vertical;min-height:64px;line-height:1.7;}
+.field input[type=number]{width:90px;}
+.field .hint{font-size:10px;color:var(--dim);margin-top:4px;}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:1px solid var(--ok);color:var(--ok-bright);background:rgba(74,138,53,.08);
+  font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  padding:10px 16px;cursor:pointer;transition:all .18s ease;
+}
+.btn:hover{background:rgba(74,138,53,.15);border-color:var(--ok-bright);box-shadow:0 0 14px var(--ok-glow);}
+.btn.amber{border-color:var(--amber);color:var(--amber-bright);background:rgba(184,124,42,.08);}
+.btn.amber:hover{background:rgba(184,124,42,.15);border-color:var(--amber-bright);}
+.btn.red{border-color:var(--red);color:var(--red-bright);background:rgba(138,53,53,.08);}
+.btn.red:hover{background:rgba(138,53,53,.15);border-color:var(--red-bright);}
+.btn.blue{border-color:var(--blue);color:var(--blue-bright);background:rgba(42,90,138,.08);}
+.btn.blue:hover{background:rgba(42,90,138,.15);border-color:var(--blue-bright);}
+.btn-full{width:100%;}
+
+/* GLOBAL SETTINGS */
+.settings-panel{background:linear-gradient(180deg,rgba(15,18,13,.95),rgba(20,26,17,.95));border:1px solid var(--line);padding:16px;position:relative;}
+.settings-panel::after{content:'';position:absolute;bottom:0;right:0;width:14px;height:14px;background:var(--bg);clip-path:polygon(100% 0,100% 100%,0 100%);}
+.inline-fields{display:flex;gap:10px;flex-wrap:wrap;}
+.inline-fields .field{flex:1;min-width:100px;}
+
+/* RIGHT PANEL - SLIDE LIST */
+.right-col{}
+.slides-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.slide-count{font-size:11px;color:var(--muted);letter-spacing:.1em;}
+.empty-state{
+  border:1px dashed var(--line);padding:40px 20px;text-align:center;
+  font-size:11px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;
+}
+.slide-list{display:flex;flex-direction:column;gap:8px;}
+
+/* SLIDE CARD */
+.slide-card{
+  background:linear-gradient(180deg,rgba(15,18,13,.95),rgba(20,26,17,.95));
+  border:1px solid var(--line);
+  display:grid;grid-template-columns:auto 90px 1fr auto;gap:0;
+  position:relative;overflow:hidden;
+  transition:border-color .15s;
+}
+.slide-card:hover{border-color:var(--line2);}
+.slide-card.dragging{opacity:.4;border-color:var(--ok);}
+.slide-card.drag-over{border-color:var(--ok-bright);box-shadow:0 0 12px var(--ok-glow);}
+
+/* drag handle */
+.drag-handle{
+  display:flex;align-items:center;justify-content:center;
+  width:28px;cursor:grab;color:var(--dim);font-size:14px;
+  border-right:1px solid var(--line);
+  background:rgba(10,12,9,.4);
+  user-select:none;
+}
+.drag-handle:active{cursor:grabbing;}
+
+/* thumb */
+.slide-thumb{
+  width:90px;height:64px;overflow:hidden;
+  background:#0b0d0a;border-right:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.slide-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.slide-thumb .no-img{font-size:9px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:4px;}
+
+/* content */
+.slide-content{padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-width:0;}
+.slide-num{font-size:9px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;}
+.slide-img-name{font-size:11px;color:var(--ok-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.slide-text-preview{font-size:10px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.slide-meta{font-size:9px;color:var(--dim);margin-top:2px;}
+
+/* actions */
+.slide-actions{
+  display:flex;flex-direction:column;border-left:1px solid var(--line);
+  flex-shrink:0;
+}
+.slide-act-btn{
+  flex:1;width:36px;border:0;background:transparent;cursor:pointer;
+  color:var(--dim);font-size:13px;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.slide-act-btn:hover.edit{color:var(--amber-bright);background:rgba(184,124,42,.08);}
+.slide-act-btn:hover.del{color:var(--red-bright);background:rgba(138,53,53,.08);}
+.slide-act-btn:not(:last-child){border-bottom:1px solid var(--line);}
+
+/* EDIT MODAL */
+.modal-bg{
+  display:none;position:fixed;inset:0;background:rgba(3,5,3,.88);
+  backdrop-filter:blur(4px);z-index:9999;
+  align-items:center;justify-content:center;padding:20px;
+}
+.modal-bg.open{display:flex;}
+.modal{
+  width:min(580px,96vw);background:linear-gradient(180deg,rgba(15,18,13,.98),rgba(20,26,17,.98));
+  border:1px solid var(--line2);position:relative;overflow:hidden;
+}
+.modal::after{content:'';position:absolute;bottom:0;right:0;width:18px;height:18px;background:var(--bg);clip-path:polygon(100% 0,100% 100%,0 100%);z-index:2;}
+.modal-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:1px solid var(--line);
+  background:rgba(12,15,11,.96);
+}
+.modal-topbar .title{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber-bright);}
+.modal-body{padding:18px;display:flex;flex-direction:column;gap:12px;}
+.modal-footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;}
+
+/* PREVIEW */
+.preview-section{margin-top:20px;}
+.preview-label{font-size:10px;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;}
+.preview-box{
+  width:100%;aspect-ratio:16/9;background:#0b0d0a;border:1px solid var(--line);
+  position:relative;overflow:hidden;display:flex;align-items:flex-end;
+  max-height:340px;
+}
+.preview-img{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;}
+.preview-text-block{
+  position:relative;z-index:2;width:100%;padding:18px 22px 20px;
+  background:linear-gradient(0deg,rgba(5,8,4,.92) 40%,transparent);
+}
+.preview-slide-num{font-size:9px;color:var(--ok);letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;}
+.preview-slide-text{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text);line-height:1.75;}
+.preview-controls{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.prev-dots{display:flex;gap:6px;align-items:center;}
+.dot{width:7px;height:7px;border:1px solid var(--dim);cursor:pointer;transition:all .15s;}
+.dot.active{background:var(--ok-bright);border-color:var(--ok-bright);}
+
+/* EXPORT */
+.export-panel{margin-top:20px;background:linear-gradient(180deg,rgba(15,18,13,.95),rgba(20,26,17,.95));border:1px solid var(--line);padding:16px;position:relative;}
+.export-panel::after{content:'';position:absolute;bottom:0;right:0;width:14px;height:14px;background:var(--bg);clip-path:polygon(100% 0,100% 100%,0 100%);}
+.export-output{
+  background:rgba(8,10,7,.8);border:1px solid var(--line);padding:12px;
+  font-size:10px;line-height:1.7;color:var(--muted);max-height:160px;overflow-y:auto;
+  white-space:pre;margin-top:10px;
+}
+.export-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
+@media(max-width:820px){
+  .grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="root">
+  <header>
+    <h1>RESURGIR — Editor de Intro</h1>
+    <span>// Secuencia de diapositivas de apertura</span>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div class="left-col">
+
+      <!-- GLOBAL SETTINGS -->
+      <div class="settings-panel">
+        <div class="section-title">Configuración global</div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>Duración por slide (ms)</label>
+            <input type="number" id="cfgDuration" value="4000" min="500" step="100"/>
+          </div>
+          <div class="field">
+            <label>Transición (ms)</label>
+            <input type="number" id="cfgTransition" value="800" min="100" step="100"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Música de fondo (ruta en pics/ o data/music/)</label>
+          <input type="text" id="cfgMusic" value="./data/music/wasteland.mp3" placeholder="./data/music/intro.mp3"/>
+        </div>
+        <div class="field">
+          <label>Sonido de transición (ruta)</label>
+          <input type="text" id="cfgSfx" value="./data/sfx/slide.mp3" placeholder="./data/sfx/click.mp3"/>
+          <div class="hint">Deja vacío para sin sonido de slide</div>
+        </div>
+        <div class="field">
+          <label>Texto del botón "Skip"</label>
+          <input type="text" id="cfgSkip" value="Saltar intro"/>
+        </div>
+        <div class="field">
+          <label>URL destino al terminar / skip</label>
+          <input type="text" id="cfgTarget" value="resurgir.html"/>
+        </div>
+      </div>
+
+      <!-- ADD SLIDE -->
+      <div class="add-panel">
+        <div class="section-title">Nueva diapositiva</div>
+        <div class="field">
+          <label>Imagen (nombre de archivo en pics/)</label>
+          <input type="text" id="newImg" placeholder="escena_01.jpg"/>
+          <div class="hint">Ej: escena_01.jpg · No incluyas la ruta "pics/"</div>
+        </div>
+        <div class="field">
+          <label>Texto de la diapositiva</label>
+          <textarea id="newText" placeholder="El mundo tal como lo conocíamos... ya no existe."></textarea>
+        </div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>Duración override (ms)</label>
+            <input type="number" id="newDuration" placeholder="(global)" min="500" step="100"/>
+            <div class="hint">Vacío = usa global</div>
+          </div>
+          <div class="field">
+            <label>Alineación texto</label>
+            <select id="newAlign">
+              <option value="left">Izquierda</option>
+              <option value="center">Centro</option>
+              <option value="right">Derecha</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-full" onclick="addSlide()">+ Añadir diapositiva</button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-col">
+      <div class="slides-header">
+        <div class="section-title">Secuencia</div>
+        <div class="slide-count" id="slideCount">0 diapositivas</div>
+      </div>
+      <div id="emptyState" class="empty-state">Aún no hay diapositivas — añade la primera desde el panel izquierdo</div>
+      <div id="slideList" class="slide-list"></div>
+
+      <!-- PREVIEW -->
+      <div class="preview-section">
+        <div class="preview-label">// Vista previa</div>
+        <div class="preview-box" id="previewBox">
+          <img class="preview-img" id="previewImg" src="" alt="" style="display:none"/>
+          <div class="preview-text-block">
+            <div class="preview-slide-num" id="previewNum">— / —</div>
+            <div class="preview-slide-text" id="previewText">Selecciona una diapositiva</div>
+          </div>
+        </div>
+        <div class="preview-controls">
+          <div class="prev-dots" id="prevDots"></div>
+        </div>
+      </div>
+
+      <!-- EXPORT -->
+      <div class="export-panel">
+        <div class="section-title">Exportar</div>
+        <div class="export-btns">
+          <button class="btn" onclick="exportJSON()">Exportar JSON</button>
+          <button class="btn amber" onclick="exportHTML()">Generar intro.html</button>
+          <button class="btn blue" onclick="copyToClipboard()">Copiar JSON</button>
+        </div>
+        <div class="export-output" id="exportOutput">// El código aparecerá aquí</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <div class="modal-topbar">
+      <div class="title">Editar diapositiva</div>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Imagen (nombre en pics/)</label>
+        <input type="text" id="editImg" placeholder="escena_02.jpg"/>
+      </div>
+      <div class="field">
+        <label>Texto</label>
+        <textarea id="editText" style="min-height:80px"></textarea>
+      </div>
+      <div class="inline-fields">
+        <div class="field">
+          <label>Duración override (ms)</label>
+          <input type="number" id="editDuration" placeholder="(global)" min="500" step="100"/>
+        </div>
+        <div class="field">
+          <label>Alineación</label>
+          <select id="editAlign">
+            <option value="left">Izquierda</option>
+            <option value="center">Centro</option>
+            <option value="right">Derecha</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn red" onclick="closeModal()">Cancelar</button>
+      <button class="btn amber" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let slides = [];
+let dragSrc = null;
+let editIdx = null;
+let previewCurrent = 0;
+
+/* ---- CRUD ---- */
+function addSlide(){
+  const img = document.getElementById('newImg').value.trim();
+  const text = document.getElementById('newText').value.trim();
+  const dur = document.getElementById('newDuration').value;
+  const align = document.getElementById('newAlign').value;
+  if(!img && !text){ alert('Rellena al menos imagen o texto.'); return; }
+  slides.push({ img: img || '', text: text || '', duration: dur ? parseInt(dur) : null, align });
+  document.getElementById('newImg').value = '';
+  document.getElementById('newText').value = '';
+  document.getElementById('newDuration').value = '';
+  render();
+}
+
+function deleteSlide(i){
+  slides.splice(i,1);
+  if(previewCurrent >= slides.length) previewCurrent = Math.max(0, slides.length-1);
+  render();
+}
+
+function openEdit(i){
+  editIdx = i;
+  const s = slides[i];
+  document.getElementById('editImg').value = s.img;
+  document.getElementById('editText').value = s.text;
+  document.getElementById('editDuration').value = s.duration || '';
+  document.getElementById('editAlign').value = s.align || 'left';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('editModal').classList.remove('open');
+  editIdx = null;
+}
+
+function saveEdit(){
+  if(editIdx === null) return;
+  slides[editIdx] = {
+    img: document.getElementById('editImg').value.trim(),
+    text: document.getElementById('editText').value.trim(),
+    duration: document.getElementById('editDuration').value ? parseInt(document.getElementById('editDuration').value) : null,
+    align: document.getElementById('editAlign').value
+  };
+  closeModal();
+  render();
+}
+
+/* ---- DRAG & DROP ---- */
+function onDragStart(e, i){
+  dragSrc = i;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(()=>document.querySelectorAll('.slide-card')[i].classList.add('dragging'),0);
+}
+function onDragEnd(e, i){
+  document.querySelectorAll('.slide-card').forEach(c=>c.classList.remove('dragging','drag-over'));
+}
+function onDragOver(e, i){
+  e.preventDefault();
+  document.querySelectorAll('.slide-card').forEach((c,idx)=>c.classList.toggle('drag-over', idx===i && idx!==dragSrc));
+}
+function onDrop(e, i){
+  e.preventDefault();
+  if(dragSrc === null || dragSrc === i) return;
+  const moved = slides.splice(dragSrc, 1)[0];
+  slides.splice(i, 0, moved);
+  dragSrc = null;
+  render();
+}
+
+/* ---- RENDER ---- */
+function render(){
+  const list = document.getElementById('slideList');
+  const empty = document.getElementById('emptyState');
+  const count = document.getElementById('slideCount');
+  count.textContent = slides.length + ' diapositiva' + (slides.length!==1?'s':'');
+  empty.style.display = slides.length ? 'none' : 'block';
+  list.innerHTML = '';
+  slides.forEach((s, i)=>{
+    const card = document.createElement('div');
+    card.className = 'slide-card';
+    card.draggable = true;
+    card.addEventListener('dragstart', e=>onDragStart(e,i));
+    card.addEventListener('dragend', e=>onDragEnd(e,i));
+    card.addEventListener('dragover', e=>onDragOver(e,i));
+    card.addEventListener('drop', e=>onDrop(e,i));
+    const imgSrc = s.img ? './pics/'+s.img : '';
+    card.innerHTML = `
+      <div class="drag-handle" title="Arrastrar para reordenar">⠿</div>
+      <div class="slide-thumb">
+        ${imgSrc ? `<img src="${imgSrc}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+        <div class="no-img" style="display:none">Sin imagen</div>`
+        : `<div class="no-img">Sin imagen</div>`}
+      </div>
+      <div class="slide-content">
+        <div class="slide-num">Slide ${i+1}</div>
+        <div class="slide-img-name">${s.img || '— sin imagen —'}</div>
+        <div class="slide-text-preview">${s.text || '<em style="color:var(--dim)">Sin texto</em>'}</div>
+        <div class="slide-meta">${s.duration ? s.duration+'ms' : 'duración global'} · ${s.align||'left'}</div>
+      </div>
+      <div class="slide-actions">
+        <button class="slide-act-btn edit" title="Editar" onclick="openEdit(${i})">✎</button>
+        <button class="slide-act-btn del" title="Eliminar" onclick="deleteSlide(${i})">✕</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+  renderPreview();
+  renderDots();
+}
+
+function renderPreview(){
+  if(!slides.length){
+    document.getElementById('previewNum').textContent = '— / —';
+    document.getElementById('previewText').textContent = 'Selecciona una diapositiva';
+    document.getElementById('previewImg').style.display = 'none';
+    return;
+  }
+  const idx = Math.min(previewCurrent, slides.length-1);
+  const s = slides[idx];
+  const img = document.getElementById('previewImg');
+  if(s.img){
+    img.src = './pics/'+s.img;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+  document.getElementById('previewNum').textContent = `Slide ${idx+1} / ${slides.length}`;
+  document.getElementById('previewText').textContent = s.text || '(sin texto)';
+  document.getElementById('previewText').style.textAlign = s.align || 'left';
+}
+
+function renderDots(){
+  const dots = document.getElementById('prevDots');
+  dots.innerHTML = '';
+  slides.forEach((_,i)=>{
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===previewCurrent?' active':'');
+    d.onclick = ()=>{ previewCurrent=i; renderPreview(); renderDots(); };
+    dots.appendChild(d);
+  });
+}
+
+/* ---- EXPORT ---- */
+function buildConfig(){
+  return {
+    duration: parseInt(document.getElementById('cfgDuration').value) || 4000,
+    transition: parseInt(document.getElementById('cfgTransition').value) || 800,
+    music: document.getElementById('cfgMusic').value.trim(),
+    sfx: document.getElementById('cfgSfx').value.trim(),
+    skipLabel: document.getElementById('cfgSkip').value.trim() || 'Saltar intro',
+    target: document.getElementById('cfgTarget').value.trim() || 'resurgir.html',
+    slides: slides.map(s=>({
+      img: s.img ? './pics/'+s.img : '',
+      text: s.text,
+      duration: s.duration || null,
+      align: s.align || 'left'
+    }))
+  };
+}
+
+function exportJSON(){
+  const cfg = buildConfig();
+  const json = JSON.stringify(cfg, null, 2);
+  document.getElementById('exportOutput').textContent = json;
+}
+
+function copyToClipboard(){
+  const cfg = buildConfig();
+  navigator.clipboard.writeText(JSON.stringify(cfg, null, 2))
+    .then(()=>alert('JSON copiado al portapapeles'))
+    .catch(()=>alert('No se pudo copiar automáticamente'));
+}
+
+function exportHTML(){
+  const cfg = buildConfig();
+  const html = generateIntroHTML(cfg);
+  document.getElementById('exportOutput').textContent = html;
+
+  // download
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'intro.html';
+  a.click();
+}
+
+function generateIntroHTML(cfg){
+  const slidesJSON = JSON.stringify(cfg.slides);
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RESURGIR — Intro</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c09;--text:#c8d4b8;--muted:#6b7a5e;--dim:#3d4a33;
+  --ok:#4a8a35;--ok-bright:#72c44e;--ok-glow:rgba(74,138,53,0.25);
+  --amber:#b87c2a;--amber-bright:#e8a83e;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{
+  font-family:'Share Tech Mono',monospace;
+  background:var(--bg);color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+}
+/* scan lines sobre todo */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:100;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0.055) 0px,rgba(0,0,0,0.055) 1px,transparent 1px,transparent 3px);
+}
+/* vignette de fondo */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+}
+
+/* STAGE: ocupa toda la pantalla, centra el contenido */
+#stage{
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  z-index:1;
+}
+
+/* Cada slide es absoluta, centrada */
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;
+  transition:opacity ${cfg.transition}ms ease;
+  padding:20px;
+  gap:0;
+}
+.slide.active{opacity:1;}
+
+/* Contenedor de imagen: respeta proporción natural, limitado al viewport */
+.slide-img-wrap{
+  position:relative;
+  max-width:min(92vw, 860px);
+  max-height:65vh;
+  line-height:0;
+  /* sutil borde post-apo */
+  box-shadow:0 0 0 1px rgba(114,196,78,0.12), 0 8px 48px rgba(0,0,0,0.65);
+}
+.slide-img-wrap img{
+  display:block;
+  max-width:100%;
+  max-height:65vh;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  /* leve ken burns solo en imagen */
+  transform:scale(1.03);
+  transition:transform ${cfg.duration + cfg.transition}ms linear;
+}
+.slide.active .slide-img-wrap img{
+  transform:scale(1);
+}
+/* placeholder si no hay imagen */
+.slide-no-img{
+  width:min(92vw,860px);height:220px;
+  background:rgba(15,18,13,0.6);
+  border:1px dashed var(--dim);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;
+}
+
+/* texto bajo la imagen */
+.slide-text-wrap{
+  max-width:min(92vw,860px);
+  width:100%;
+  padding:16px 20px 0;
+  border-top:1px solid rgba(114,196,78,0.12);
+  margin-top:0;
+}
+.slide-label{
+  font-size:9px;color:var(--ok);letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;
+}
+.slide-text{
+  font-size:clamp(12px,1.6vw,16px);
+  color:var(--text);line-height:1.85;
+}
+
+/* progress bar */
+#progressBar{
+  position:fixed;top:0;left:0;height:2px;
+  background:var(--ok-bright);width:0%;transition:width linear;
+  z-index:200;box-shadow:0 0 8px var(--ok-glow);
+}
+/* skip btn */
+#skipBtn{
+  position:fixed;bottom:24px;right:24px;z-index:200;
+  border:1px solid rgba(74,138,53,0.35);color:var(--ok-bright);
+  background:rgba(10,12,9,0.75);backdrop-filter:blur(6px);
+  font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  padding:9px 14px;cursor:pointer;transition:all .18s;
+}
+#skipBtn:hover{background:rgba(74,138,53,0.15);border-color:var(--ok-bright);}
+/* dots */
+#dots{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;z-index:200;
+}
+.pdot{
+  width:6px;height:6px;border:1px solid var(--dim);
+  transition:all .25s;cursor:pointer;
+}
+.pdot.on{background:var(--ok-bright);border-color:var(--ok-bright);}
+</style>
+</head>
+<body>
+<div id="progressBar"></div>
+<div id="stage"></div>
+<div id="dots"></div>
+<button id="skipBtn">${escapeHtml(cfg.skipLabel)}</button>
+
+<audio id="bgMusic" loop preload="auto">
+  ${cfg.music ? `<source src="${escapeHtml(cfg.music)}" type="audio/mpeg">` : ''}
+</audio>
+${cfg.sfx ? `<audio id="sfx" preload="auto"><source src="${escapeHtml(cfg.sfx)}" type="audio/mpeg"></audio>` : ''}
+
+<script>
+const SLIDES = ${slidesJSON};
+const DURATION = ${cfg.duration};
+const TRANSITION = ${cfg.transition};
+const TARGET = '${escapeHtml(cfg.target)}';
+let cur = 0, timer = null, started = false;
+
+const stage = document.getElementById('stage');
+const dotsEl = document.getElementById('dots');
+const bar = document.getElementById('progressBar');
+const bgMusic = document.getElementById('bgMusic');
+const sfx = ${cfg.sfx ? "document.getElementById('sfx')" : 'null'};
+
+function buildSlides(){
+  SLIDES.forEach((s,i)=>{
+    const el = document.createElement('div');
+    el.className = 'slide';
+    el.id = 'slide'+i;
+
+    const imgBlock = s.img
+      ? \`<div class="slide-img-wrap"><img src="\${s.img}" alt="" draggable="false"/></div>\`
+      : \`<div class="slide-no-img">// sin imagen</div>\`;
+
+    el.innerHTML = \`
+      \${imgBlock}
+      <div class="slide-text-wrap" style="text-align:\${s.align||'left'}">
+        <div class="slide-label">// \${String(i+1).padStart(2,'0')} — \${String(SLIDES.length).padStart(2,'0')}</div>
+        <div class="slide-text">\${s.text||''}</div>
+      </div>\`;
+    stage.appendChild(el);
+
+    const d = document.createElement('div');
+    d.className='pdot'; d.onclick=()=>goTo(i);
+    dotsEl.appendChild(d);
+  });
+}
+
+function goTo(idx){
+  if(idx >= SLIDES.length){ end(); return; }
+  clearTimeout(timer);
+  document.querySelectorAll('.slide').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on',i===idx));
+  cur = idx;
+  const dur = SLIDES[idx].duration || DURATION;
+  bar.style.transition='none'; bar.style.width='0%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    bar.style.transition=\`width \${dur}ms linear\`;
+    bar.style.width='100%';
+  }));
+  if(sfx && started){ sfx.currentTime=0; sfx.play().catch(()=>{}); }
+  timer = setTimeout(()=>goTo(idx+1), dur + TRANSITION);
+}
+
+function end(){
+  clearTimeout(timer);
+  document.body.style.opacity='0';
+  document.body.style.transition='opacity 0.6s ease';
+  setTimeout(()=>{ window.location.href = TARGET; }, 600);
+}
+
+function start(){
+  started = true;
+  if(bgMusic && bgMusic.querySelector('source')){
+    bgMusic.volume = 0.22;
+    bgMusic.play().catch(()=>{});
+  }
+  goTo(0);
+}
+
+buildSlides();
+document.getElementById('skipBtn').onclick = end;
+document.addEventListener('click', ()=>{ if(!started) start(); }, { once:true });
+document.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ if(!started) start(); else goTo(cur+1); } if(e.key==='Escape') end(); });
+start();
+<\/script>
+</body>
+</html>`;
+}
+
+function escapeHtml(str){
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// init
+render();
+document.getElementById('editModal').addEventListener('click', e=>{ if(e.target===document.getElementById('editModal')) closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+</script>
+</body>
+</html>

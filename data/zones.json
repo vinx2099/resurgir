@@ -6,10 +6,26 @@
     "flavor": "El polvo cubre las aceras. Algún cartel publicitario todavía resiste, como si el mundo no hubiera terminado.",
     "unlockDay": 1,
     "slots": [
-      { "riskLevel": 0, "count": 2 },
-      { "riskLevel": 1, "count": 2 },
-      { "riskLevel": 2, "count": 1 }
-    ]
+      {
+        "riskLevel": 0,
+        "count": 2
+      },
+      {
+        "riskLevel": 1,
+        "count": 2
+      },
+      {
+        "riskLevel": 2,
+        "count": 1
+      }
+    ],
+    "startsUnlocked": true,
+    "requiresVehicle": false,
+    "fuelCost": 0,
+    "travelDays": 0,
+    "returnFuelCost": 0,
+    "returnTravelDays": 0,
+    "temporaryCamp": true
   },
   {
     "id": "industrial",
@@ -18,11 +34,30 @@
     "flavor": "Las chimeneas ya no humean. El silencio de las naves industriales tiene algo perturbador.",
     "unlockDay": 7,
     "slots": [
-      { "riskLevel": 1, "count": 1 },
-      { "riskLevel": 2, "count": 2 },
-      { "riskLevel": 3, "count": 2 },
-      { "riskLevel": 0, "count": 1 }
-    ]
+      {
+        "riskLevel": 1,
+        "count": 1
+      },
+      {
+        "riskLevel": 2,
+        "count": 2
+      },
+      {
+        "riskLevel": 3,
+        "count": 2
+      },
+      {
+        "riskLevel": 0,
+        "count": 1
+      }
+    ],
+    "startsUnlocked": false,
+    "requiresVehicle": true,
+    "fuelCost": 1,
+    "travelDays": 1,
+    "returnFuelCost": 1,
+    "returnTravelDays": 1,
+    "temporaryCamp": true
   },
   {
     "id": "manhunters",
@@ -31,11 +66,30 @@
     "flavor": "Cráneos en los postes. Marcas en las paredes. Alguien quiere que sepas que este territorio tiene dueño.",
     "unlockDay": 14,
     "slots": [
-      { "riskLevel": 0, "count": 1 },
-      { "riskLevel": 2, "count": 2 },
-      { "riskLevel": 3, "count": 2 },
-      { "riskLevel": 4, "count": 1 }
-    ]
+      {
+        "riskLevel": 0,
+        "count": 1
+      },
+      {
+        "riskLevel": 2,
+        "count": 2
+      },
+      {
+        "riskLevel": 3,
+        "count": 2
+      },
+      {
+        "riskLevel": 4,
+        "count": 1
+      }
+    ],
+    "startsUnlocked": false,
+    "requiresVehicle": true,
+    "fuelCost": 1,
+    "travelDays": 1,
+    "returnFuelCost": 1,
+    "returnTravelDays": 1,
+    "temporaryCamp": true
   },
   {
     "id": "suburbs",
@@ -44,10 +98,28 @@
     "flavor": "Juguetes en la calle. Fotos de familia tiradas. Este lugar recuerda demasiado a lo que fue.",
     "unlockDay": 5,
     "slots": [
-      { "riskLevel": 0, "count": 3 },
-      { "riskLevel": 1, "count": 2 },
-      { "riskLevel": 2, "count": 1 }
-    ]
+      {
+        "riskLevel": 0,
+        "count": 3
+      },
+      {
+        "riskLevel": 1,
+        "count": 2
+      },
+      {
+        "riskLevel": 2,
+        "count": 1
+      }
+    ],
+    "startsUnlocked": false,
+    "unlockBuilding": "atalaya",
+    "unlockBuildingLevel": 1,
+    "requiresVehicle": false,
+    "fuelCost": 0,
+    "travelDays": 0,
+    "returnFuelCost": 0,
+    "returnTravelDays": 0,
+    "temporaryCamp": true
   },
   {
     "id": "deadzone",
@@ -56,9 +128,25 @@
     "flavor": "El cielo tiene un color extraño sobre este sector. Los pájaros no se acercan.",
     "unlockDay": 21,
     "slots": [
-      { "riskLevel": 2, "count": 1 },
-      { "riskLevel": 3, "count": 2 },
-      { "riskLevel": 4, "count": 3 }
-    ]
+      {
+        "riskLevel": 2,
+        "count": 1
+      },
+      {
+        "riskLevel": 3,
+        "count": 2
+      },
+      {
+        "riskLevel": 4,
+        "count": 3
+      }
+    ],
+    "startsUnlocked": false,
+    "requiresVehicle": true,
+    "fuelCost": 2,
+    "travelDays": 2,
+    "returnFuelCost": 2,
+    "returnTravelDays": 2,
+    "temporaryCamp": true
   }
 ]

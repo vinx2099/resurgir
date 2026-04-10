@@ -1,0 +1,46 @@
+{
+  "entries": [
+    {
+      "nombre": "Acciones conjuntas",
+      "texto": "Acciones conjuntas permite realizar una acción básica con más de un integrante a la vez. El primero que se elija es considerado el líder y los demás los compañeros. Al contrario que una acción simple, estas acciones conjuntas aportan posibilidades de encontrar un botín mayor, y también una posible amenaza.",
+      "related": []
+    },
+    {
+      "nombre": "Atacar",
+      "texto": "Acción simple. El Superviviente puede realizar un ataque preventivo a una amenaza que se acerque al campamento. Esta acción no cuenta con las mejoras defensivas de la base, pero cuenta con el efecto sorpresa de salir a por el enemigo.",
+      "related": [
+        "Combatiente"
+      ]
+    },
+    {
+      "nombre": "Combatiente",
+      "texto": "Habilidad de Superviviente.\nAñade +1 al combate cuando realiza un ataque preventivo.",
+      "related": []
+    },
+    {
+      "nombre": "Defender",
+      "texto": "Acción simple. El superviviente se prepara para hacer frente a una amenaza que ha llegado a la base. En la defensa se cuentan los valores defensivos que pueda tener la base.",
+      "related": []
+    },
+    {
+      "nombre": "Descansar",
+      "texto": "Acción simple. El Superviviente descansa y recupera fatiga. El descanso a veces puede ayudar al Superviviente a subir su moral.",
+      "related": []
+    },
+    {
+      "nombre": "Explorar",
+      "texto": "Acción simple. El Superviviente sale del campamento para explorar la zona. Pueden darse distintas situaciones durante esta acción.",
+      "related": []
+    },
+    {
+      "nombre": "Forrajear",
+      "texto": "Acción simple. El Superviviente sale del campamento a buscar alimento. Corre el riesgo de sufrir alguna herida.",
+      "related": []
+    },
+    {
+      "nombre": "Reciclar",
+      "texto": "Acción simple. El Superviviente sale del campamento para encontrar materiales. Corre el riesgo de sufrir alguna herida.",
+      "related": []
+    }
+  ]
+}

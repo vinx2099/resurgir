@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor de edificios base — RESURGIR</title>
+  <style>
+    :root{
+      --bg:#0a0c09; --panel:#0f120d; --panel2:#141a11; --line:#2a3525; --line2:#3a4a30;
+      --text:#c8d4b8; --muted:#6b7a5e; --ok:#4a8a35; --ok2:#72c44e; --accent:#b87c2a; --danger:#c44e4e;
+      --font: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font)}
+    .top{padding:14px 18px;border-bottom:1px solid var(--line2);background:#060807}
+    .top h1{margin:0;font-size:20px;letter-spacing:.08em;color:var(--ok2)}
+    .top p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.6}
+    .wrap{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 88px)}
+    .sidebar{border-right:1px solid var(--line2);background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:12px}
+    .main{padding:14px;background:var(--panel2)}
+    .panel{border:1px solid var(--line);background:var(--panel);padding:12px}
+    .controls{display:grid;gap:10px}
+    .row{display:grid;gap:6px}
+    label{font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+    input[type="text"], input[type="password"], textarea, select{
+      width:100%;background:#0b0e0a;border:1px solid var(--line2);color:var(--text);padding:9px 10px;font:inherit
+    }
+    textarea{min-height:150px;resize:vertical;line-height:1.6}
+    button{
+      background:rgba(74,138,53,.1);border:1px solid var(--ok);color:var(--ok2);padding:9px 12px;cursor:pointer;font:inherit
+    }
+    button:hover{background:var(--ok);color:#fff}
+    button.secondary{border-color:var(--line2);color:var(--text);background:transparent}
+    button.secondary:hover{background:#1b2117}
+    button.accent{border-color:var(--accent);color:#f3c06b;background:rgba(184,124,42,.1)}
+    button.accent:hover{background:var(--accent);color:#fff}
+    .list{overflow:auto;border:1px solid var(--line);background:#0b0e0a}
+    .item{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
+    .item:hover{background:#151b12}
+    .item.active{background:rgba(74,138,53,.14);border-left:3px solid var(--ok2);padding-left:9px}
+    .item .name{font-size:13px;color:var(--text)}
+    .item .meta{font-size:10px;color:var(--muted);margin-top:3px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .preview{border:1px solid var(--line2);min-height:260px;background:#0b0e0a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .preview img{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+    .hint{font-size:11px;color:var(--muted);line-height:1.7}
+    .status{font-size:12px;line-height:1.6;padding:10px 12px;border:1px solid var(--line2);background:#0b0e0a;color:var(--text)}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .small{font-size:11px;color:var(--muted)}
+    @media (max-width: 980px){
+      .wrap{grid-template-columns:1fr}
+      .sidebar{border-right:0;border-bottom:1px solid var(--line2)}
+      .grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h1>Editor de edificios base</h1>
+    <p>Carga tu <b>buildings.json</b>, edita la <b>imagen</b> y la <b>descripción</b> de cada edificio de la base y descarga el JSON actualizado.</p>
+  </div>
+
+  <div class="wrap">
+    <aside class="sidebar">
+      <div class="panel controls">
+        <div class="row">
+          <label>1. Cargar buildings.json</label>
+          <input id="jsonFile" type="file" accept="application/json,.json" />
+        </div>
+        <div class="row">
+          <label>2. API key de IMGBB</label>
+          <input id="imgbbKey" type="password" placeholder="Pega aquí tu API key" />
+        </div>
+        <div class="toolbar">
+          <button id="downloadBtn" class="accent">Descargar JSON</button>
+          <button id="saveCurrentBtn" class="secondary">Guardar edificio</button>
+        </div>
+        <div class="hint">El editor trabaja sobre el archivo que cargues. No toca el juego por sí solo: al final descarga un <b>buildings.json</b> nuevo para sustituir el anterior.</div>
+      </div>
+
+      <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0;flex:1">
+        <div class="row">
+          <label>Edificios de la base</label>
+          <div class="small" id="countInfo">0 edificios cargados</div>
+        </div>
+        <div id="buildingList" class="list" style="flex:1"></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="grid">
+        <section class="panel" style="display:grid;gap:12px;align-content:start;">
+          <div class="row">
+            <label>ID</label>
+            <input id="fieldId" type="text" readonly />
+          </div>
+          <div class="row">
+            <label>Nombre</label>
+            <input id="fieldName" type="text" readonly />
+          </div>
+          <div class="row">
+            <label>Imagen</label>
+            <input id="fieldImage" type="text" placeholder="URL o data URI" />
+          </div>
+          <div class="row">
+            <label>Subir imagen a IMGBB</label>
+            <input id="imageFile" type="file" accept="image/*" />
+            <div class="toolbar">
+              <button id="uploadBtn">Subir imagen</button>
+              <button id="refreshPreviewBtn" class="secondary">Actualizar vista previa</button>
+            </div>
+          </div>
+          <div class="row">
+            <label>Descripción breve</label>
+            <textarea id="fieldDescription" placeholder="Texto corto para mostrar al pulsar sobre el edificio en el juego"></textarea>
+          </div>
+        </section>
+
+        <section class="panel" style="display:grid;gap:12px;align-content:start;">
+          <div>
+            <label>Vista previa</label>
+            <div class="preview" id="imagePreview"><span class="small">Sin imagen</span></div>
+          </div>
+          <div>
+            <label>Resumen</label>
+            <div class="status" id="statusBox">Carga un buildings.json para empezar.</div>
+          </div>
+          <div class="hint">
+            El juego leerá estos campos si existen:
+            <br>• <b>image</b>: imagen del edificio
+            <br>• <b>description</b>: texto descriptivo corto
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+<script>
+let buildingsData = [];
+let selectedIndex = -1;
+
+const $ = sel => document.querySelector(sel);
+
+function setStatus(msg, isError=false){
+  const box = $('#statusBox');
+  box.textContent = msg;
+  box.style.borderColor = isError ? 'var(--danger)' : 'var(--line2)';
+  box.style.color = isError ? 'var(--danger)' : 'var(--text)';
+}
+
+function renderList(){
+  const list = $('#buildingList');
+  const baseBuildings = buildingsData
+    .map((b, index) => ({b, index}))
+    .filter(x => String(x.b.category || 'Base').toLowerCase() === 'base');
+  $('#countInfo').textContent = `${baseBuildings.length} edificios cargados`;
+  if(!baseBuildings.length){
+    list.innerHTML = '<div class="item"><div class="name">No hay edificios de categoría Base</div></div>';
+    return;
+  }
+  list.innerHTML = baseBuildings.map(({b, index}) => `
+    <div class="item ${index===selectedIndex?'active':''}" data-index="${index}">
+      <div class="name">${escapeHtml(b.name || b.id || 'Sin nombre')}</div>
+      <div class="meta">${escapeHtml(b.id || '')}</div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.item[data-index]').forEach(el => {
+    el.addEventListener('click', () => {
+      saveCurrentFields();
+      selectedIndex = Number(el.dataset.index);
+      renderList();
+      renderEditor();
+    });
+  });
+}
+
+function renderEditor(){
+  const b = buildingsData[selectedIndex];
+  if(!b){
+    $('#fieldId').value = '';
+    $('#fieldName').value = '';
+    $('#fieldImage').value = '';
+    $('#fieldDescription').value = '';
+    $('#imagePreview').innerHTML = '<span class="small">Sin imagen</span>';
+    return;
+  }
+  $('#fieldId').value = b.id || '';
+  $('#fieldName').value = b.name || '';
+  $('#fieldImage').value = b.image || '';
+  $('#fieldDescription').value = b.description || '';
+  refreshPreview();
+  setStatus(`Editando ${b.name || b.id}. Recuerda pulsar “Guardar edificio” antes de descargar el JSON.`);
+}
+
+function saveCurrentFields(){
+  const b = buildingsData[selectedIndex];
+  if(!b) return;
+  b.image = $('#fieldImage').value.trim();
+  b.description = $('#fieldDescription').value.trim();
+}
+
+function refreshPreview(){
+  const src = $('#fieldImage').value.trim();
+  const box = $('#imagePreview');
+  if(src){
+    box.innerHTML = `<img src="${escapeAttr(src)}" alt="preview">`;
+  } else {
+    box.innerHTML = '<span class="small">Sin imagen</span>';
+  }
+}
+
+function loadJsonFromFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!Array.isArray(parsed)) throw new Error('El JSON debe contener un array.');
+      buildingsData = parsed;
+      selectedIndex = buildingsData.findIndex(b => String(b.category || 'Base').toLowerCase() === 'base');
+      renderList();
+      renderEditor();
+      setStatus('buildings.json cargado correctamente.');
+    }catch(err){
+      setStatus(`Error al leer el JSON: ${err.message}`, true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function downloadJson(){
+  saveCurrentFields();
+  if(!Array.isArray(buildingsData) || !buildingsData.length){
+    setStatus('No hay datos cargados para descargar.', true);
+    return;
+  }
+  const blob = new Blob([JSON.stringify(buildingsData, null, 2)], {type:'application/json;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'buildings.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus('JSON preparado para descargar.');
+}
+
+async function uploadToImgbb(){
+  saveCurrentFields();
+  const file = $('#imageFile').files[0];
+  const key = $('#imgbbKey').value.trim();
+  if(!file){
+    setStatus('Selecciona una imagen antes de subirla.', true);
+    return;
+  }
+  if(!key){
+    setStatus('Falta la API key de IMGBB.', true);
+    return;
+  }
+  try{
+    setStatus('Subiendo imagen a IMGBB...');
+    const base64 = await fileToBase64(file);
+    const formData = new FormData();
+    formData.append('image', base64.split(',')[1]);
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}`, {
+      method:'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if(!res.ok || !data?.success || !data?.data?.url){
+      throw new Error(data?.error?.message || 'La subida no devolvió una URL válida.');
+    }
+    $('#fieldImage').value = data.data.url;
+    refreshPreview();
+    saveCurrentFields();
+    setStatus('Imagen subida correctamente y asignada al edificio actual.');
+  }catch(err){
+    setStatus(`Error al subir la imagen: ${err.message}`, true);
+  }
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function escapeHtml(str=''){
+  return String(str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function escapeAttr(str=''){ return escapeHtml(str); }
+
+$('#jsonFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(file) loadJsonFromFile(file);
+});
+$('#downloadBtn').addEventListener('click', downloadJson);
+$('#saveCurrentBtn').addEventListener('click', () => {
+  saveCurrentFields();
+  setStatus('Edificio guardado en memoria. Ya puedes seguir editando u obtener el JSON.');
+});
+$('#uploadBtn').addEventListener('click', uploadToImgbb);
+$('#refreshPreviewBtn').addEventListener('click', refreshPreview);
+$('#fieldImage').addEventListener('input', refreshPreview);
+</script>
+</body>
+</html>

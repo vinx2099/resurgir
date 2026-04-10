@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RESURGIR — Editor de Zonas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Share+Tech+Mono&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e08;--panel:#0f1410;--panel2:#131a10;
+  --line:#1e2a18;--line2:#243020;
+  --text:#c8d4b8;--muted:#6a7a5a;--dim:#3d4a33;
+  --ok:#4a8a35;--ok-bright:#72c44e;--ok-glow:rgba(74,138,53,0.08);
+  --amber:#b87c2a;--amber-bright:#e8a84a;
+  --danger:#8a3535;--danger-bright:#c84040;
+  --accent:#4a7a6a;--accent-bright:#72c4a4;
+  --font-display:'Oswald',sans-serif;
+  --font-mono:'Share Tech Mono',monospace;
+  --font-worn:'Special Elite',cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:12px;min-height:100vh;}
+.topbar{background:var(--panel);border-bottom:1px solid var(--line2);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-title{font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:0.1em;color:var(--accent-bright);}
+.topbar a{font-size:10px;color:var(--muted);text-decoration:none;border:1px solid var(--line2);padding:3px 10px;transition:all 0.15s;}
+.topbar a:hover{color:var(--ok-bright);border-color:var(--ok-bright);}
+.layout{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:16px;max-width:1400px;margin:0 auto;}
+.panel{background:var(--panel);border:1px solid var(--line2);}
+.panel-header{font-family:var(--font-display);font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent-bright);padding:10px 14px;border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;}
+.panel-body{padding:14px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field.full{grid-column:1/-1;}
+label{font-size:9px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
+input[type=text],input[type=number],select,textarea{background:var(--panel2);border:1px solid var(--line2);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:6px 8px;outline:none;width:100%;transition:border-color 0.15s;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent-bright);}
+textarea{resize:vertical;min-height:56px;font-family:var(--font-worn);font-size:12px;}
+.section-divider{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:9px;color:var(--amber-bright);letter-spacing:0.12em;text-transform:uppercase;}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--line2);}
+.btn{background:var(--panel2);border:1px solid var(--line2);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:7px 14px;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;}
+.btn:hover{border-color:var(--ok);color:var(--ok-bright);}
+.btn.primary{border-color:var(--accent-bright);color:var(--accent-bright);background:rgba(74,122,106,0.08);}
+.btn.primary:hover{background:rgba(74,122,106,0.18);}
+.btn.danger{border-color:var(--danger);color:var(--danger-bright);}
+
+/* Slots */
+.slots-container{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.slot-row{display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;padding:6px 8px;border:1px solid var(--line2);background:var(--panel2);}
+.slot-risk-label{font-size:11px;}
+.slot-count-label{font-size:9px;color:var(--muted);text-align:center;}
+.risk-pill{display:inline-block;padding:2px 7px;font-size:9px;border:1px solid;letter-spacing:0.06em;text-transform:uppercase;font-family:var(--font-mono);}
+.risk-0{border-color:var(--ok);color:var(--ok-bright);}
+.risk-1{border-color:#8a7a35;color:#e8c84a;}
+.risk-2{border-color:var(--amber);color:var(--amber-bright);}
+.risk-3{border-color:#8a5535;color:#e89a4a;}
+.risk-4{border-color:var(--danger);color:var(--danger-bright);}
+
+/* Zone list */
+.zone-list{display:flex;flex-direction:column;gap:8px;}
+.zone-card{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--accent);padding:10px 12px;cursor:pointer;transition:all 0.15s;}
+.zone-card:hover{border-color:var(--accent-bright);}
+.zone-card.selected{border-color:var(--accent-bright);background:rgba(74,122,106,0.06);}
+.zone-card-name{font-family:var(--font-display);font-size:14px;letter-spacing:0.07em;color:var(--accent-bright);margin-bottom:3px;}
+.zone-card-desc{font-size:10px;color:var(--muted);margin-bottom:6px;line-height:1.5;}
+.zone-card-slots{display:flex;gap:4px;flex-wrap:wrap;}
+.zone-card-actions{display:flex;justify-content:flex-end;margin-top:8px;gap:6px;}
+
+/* Preview */
+.preview-zone{background:var(--panel2);border:1px solid var(--line2);padding:14px;}
+.preview-name{font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:0.08em;color:var(--accent-bright);margin-bottom:6px;}
+.preview-desc{font-size:12px;color:var(--text);line-height:1.7;margin-bottom:8px;}
+.preview-flavor{font-family:var(--font-worn);font-size:12px;color:var(--muted);line-height:1.7;border-left:2px solid var(--line2);padding-left:10px;font-style:italic;margin-bottom:10px;}
+.preview-slots{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+.preview-unlock{font-size:10px;color:var(--dim);}
+
+.preview-box{background:var(--panel2);border:1px solid var(--line2);padding:10px;font-size:10px;color:var(--muted);line-height:1.7;white-space:pre-wrap;font-family:var(--font-mono);max-height:300px;overflow-y:auto;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--ok);color:var(--ok-bright);padding:8px 20px;font-size:11px;opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:999;}
+.toast.show{opacity:1;}
+.toast.err{border-color:var(--danger);color:var(--danger-bright);}
+.empty-state{text-align:center;padding:40px 20px;color:var(--dim);font-size:11px;}
+
+.counter-btn{background:var(--panel);border:1px solid var(--line2);color:var(--text);width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;}
+.counter-btn:hover{border-color:var(--ok-bright);color:var(--ok-bright);}
+.counter-val{font-family:var(--font-display);font-size:16px;font-weight:600;min-width:24px;text-align:center;color:var(--text);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">◈ EDITOR DE ZONAS</div>
+  <a href="index.html">← INICIO</a>
+</div>
+
+<div class="layout">
+  <!-- LEFT: Form -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <span id="formMode">NUEVA ZONA</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" id="newBtn">+ Nueva</button>
+          <button class="btn primary" id="saveBtn">✓ Guardar</button>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <div class="section-divider"><span>Identidad</span></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>ID único</label>
+            <input type="text" id="f-id" placeholder="ej: industrial"/>
+          </div>
+          <div class="field">
+            <label>Día de desbloqueo</label>
+            <input type="number" id="f-unlockDay" value="1" min="1" max="999"/>
+          </div>
+          <div class="field full">
+            <label>Nombre de la zona</label>
+            <input type="text" id="f-name" placeholder="ej: Zona Industrial"/>
+          </div>
+          <div class="field full">
+            <label>Descripción (info para el jugador)</label>
+            <textarea id="f-description" placeholder="Describe qué tipo de zona es y qué puede encontrar el jugador..."></textarea>
+          </div>
+          <div class="field full">
+            <label>Texto de ambientación (narrativo, aparece al explorar)</label>
+            <textarea id="f-flavor" placeholder="Texto atmosférico en cursiva que aparece al entrar en la zona..."></textarea>
+          </div>
+        </div>
+
+        <div class="section-divider"><span>Composición de ubicaciones</span></div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:10px;">Define cuántas ubicaciones de cada nivel de riesgo aparecen en esta zona. El juego elegirá aleatoriamente de <code>locations.json</code>.</div>
+
+        <div class="slots-container" id="slotsContainer">
+          <!-- Generated by JS -->
+        </div>
+
+        <div style="margin-top:10px;padding:8px 10px;border:1px solid var(--line2);background:rgba(74,122,106,0.04);">
+          <div style="font-size:10px;color:var(--accent-bright);margin-bottom:4px;">Total de ubicaciones: <span id="totalSlots" style="font-family:var(--font-display);font-size:14px;">0</span></div>
+          <div style="font-size:9px;color:var(--dim);">Recomendado: entre 5 y 8 ubicaciones por zona.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Live preview -->
+    <div class="panel" style="margin-top:12px;">
+      <div class="panel-header">Vista previa narrativa</div>
+      <div class="panel-body">
+        <div id="narrativePreview" class="preview-zone">
+          <div class="preview-name" id="prevName">—</div>
+          <div class="preview-desc" id="prevDesc"></div>
+          <div class="preview-flavor" id="prevFlavor" style="display:none;"></div>
+          <div class="preview-slots" id="prevSlots"></div>
+          <div class="preview-unlock" id="prevUnlock"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: List + JSON -->
+  <div style="display:flex;flex-direction:column;gap:12px;">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span>Zonas (<span id="zoneCount">0</span>)</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" id="importJsonBtn">⬆ Importar</button>
+          <input type="file" id="importJsonFile" accept=".json" style="display:none">
+          <button class="btn" style="border-color:var(--amber);color:var(--amber-bright);" id="downloadBtn">⬇ Exportar</button>
+        </div>
+      </div>
+      <div class="panel-body" style="max-height:420px;overflow-y:auto;">
+        <div id="zoneList" class="zone-list">
+          <div class="empty-state">// Sin zonas todavía.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">JSON generado</div>
+      <div class="panel-body">
+        <pre id="previewBox" class="preview-box">// Aquí aparecerá el JSON...</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const RISK_LEVELS = [
+  { level: 0, label: 'Nivel 0 — Seguro',   cls: 'risk-0', color: 'var(--ok-bright)' },
+  { level: 1, label: 'Nivel 1 — Bajo',     cls: 'risk-1', color: '#e8c84a' },
+  { level: 2, label: 'Nivel 2 — Medio',    cls: 'risk-2', color: 'var(--amber-bright)' },
+  { level: 3, label: 'Nivel 3 — Alto',     cls: 'risk-3', color: '#e89a4a' },
+  { level: 4, label: 'Nivel 4 — Extremo',  cls: 'risk-4', color: 'var(--danger-bright)' },
+];
+const RISK_NAMES = ['Seguro','Bajo','Medio','Alto','Extremo'];
+
+const state = { zones: [], editingId: null, slotCounts: [0,0,0,0,0] };
+
+function uid(){ return 'zone_'+Math.random().toString(36).slice(2,8); }
+function escapeHtml(s){ return String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function showToast(msg,err=false){
+  const t=$('toast'); t.textContent=msg;
+  t.className='toast show'+(err?' err':'');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',2800);
+}
+
+// ── BUILD SLOTS UI ──
+function buildSlotsUI(){
+  const container=$('slotsContainer');
+  container.innerHTML='';
+  RISK_LEVELS.forEach(({level,label,cls,color})=>{
+    const row=document.createElement('div');
+    row.className='slot-row';
+    row.innerHTML=`
+      <div class="slot-risk-label">
+        <span class="risk-pill ${cls}">R${level}</span>
+        <span style="margin-left:8px;font-size:11px;color:var(--muted);">${RISK_NAMES[level]}</span>
+      </div>
+      <button class="counter-btn" onclick="changeSlot(${level},-1)">−</button>
+      <div class="counter-val" id="slotCount-${level}">${state.slotCounts[level]}</div>
+      <button class="counter-btn" onclick="changeSlot(${level},1)">+</button>
+    `;
+    container.appendChild(row);
+  });
+  updateTotals();
+}
+
+function changeSlot(level, delta){
+  state.slotCounts[level]=Math.max(0, state.slotCounts[level]+delta);
+  $(`slotCount-${level}`).textContent=state.slotCounts[level];
+  updateTotals();
+  updatePreview();
+}
+
+function updateTotals(){
+  const total=state.slotCounts.reduce((a,b)=>a+b,0);
+  $('totalSlots').textContent=total;
+  $('totalSlots').style.color=total<5?'var(--danger-bright)':total>8?'var(--amber-bright)':'var(--ok-bright)';
+}
+
+// ── FORM READ ──
+function getFormData(){
+  const slots=[];
+  state.slotCounts.forEach((count,level)=>{ if(count>0) slots.push({riskLevel:level,count}); });
+  return {
+    id: state.editingId||uid(),
+    name: $('f-name').value.trim(),
+    description: $('f-description').value.trim(),
+    flavor: $('f-flavor').value.trim()||undefined,
+    unlockDay: Number($('f-unlockDay').value)||1,
+    slots,
+  };
+}
+
+function updatePreview(){
+  const z=getFormData();
+  // Narrative preview
+  $('prevName').textContent=z.name||'Sin nombre';
+  $('prevDesc').textContent=z.description||'';
+  const flavorEl=$('prevFlavor');
+  if(z.flavor){ flavorEl.textContent=z.flavor; flavorEl.style.display=''; }
+  else { flavorEl.style.display='none'; }
+  $('prevSlots').innerHTML=z.slots.map(s=>`<span class="risk-pill risk-${s.riskLevel}">${s.count}× R${s.riskLevel}</span>`).join('');
+  $('prevUnlock').textContent=z.unlockDay>1?`Disponible desde el día ${z.unlockDay}`:'Disponible desde el inicio';
+  // JSON preview
+  $('previewBox').textContent=JSON.stringify(z,null,2);
+}
+
+// ── SAVE ──
+function saveZone(){
+  if(!state.editingId) state.editingId=uid();
+  const z=getFormData();
+  if(!z.name){ showToast('El nombre es obligatorio',true); return; }
+  if(!z.slots.length){ showToast('Añade al menos un slot',true); return; }
+  const idx=state.zones.findIndex(x=>x.id===z.id);
+  if(idx>=0){ state.zones[idx]=z; showToast(`"${z.name}" actualizado ✓`); }
+  else { state.zones.push(z); showToast(`"${z.name}" añadida ✓`); }
+  state.editingId=null;
+  resetForm();
+  render();
+}
+
+// ── RESET ──
+function resetForm(){
+  state.editingId=null;
+  state.slotCounts=[0,0,0,0,0];
+  $('f-id').value=''; $('f-name').value='';
+  $('f-description').value=''; $('f-flavor').value='';
+  $('f-unlockDay').value='1';
+  buildSlotsUI();
+  $('formMode').textContent='NUEVA ZONA';
+  updatePreview();
+}
+
+// ── FILL ──
+function fillForm(z){
+  state.editingId=z.id;
+  state.slotCounts=[0,0,0,0,0];
+  (z.slots||[]).forEach(s=>{ if(s.riskLevel>=0&&s.riskLevel<=4) state.slotCounts[s.riskLevel]=s.count||0; });
+  $('f-id').value=z.id||'';
+  $('f-name').value=z.name||'';
+  $('f-description').value=z.description||'';
+  $('f-flavor').value=z.flavor||'';
+  $('f-unlockDay').value=z.unlockDay||1;
+  buildSlotsUI();
+  $('formMode').textContent='EDITANDO';
+  updatePreview();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── RENDER LIST ──
+function render(){
+  $('zoneCount').textContent=state.zones.length;
+  const el=$('zoneList');
+  if(!state.zones.length){ el.innerHTML='<div class="empty-state">// Sin zonas todavía.</div>'; return; }
+  el.innerHTML=state.zones.map(z=>`
+    <div class="zone-card ${state.editingId===z.id?'selected':''}" onclick="fillForm(state.zones.find(x=>x.id==='${z.id}'))">
+      <div class="zone-card-name">${escapeHtml(z.name)}</div>
+      <div class="zone-card-desc">${escapeHtml((z.description||'').slice(0,80))}${(z.description||'').length>80?'...':''}</div>
+      <div class="zone-card-slots">
+        ${(z.slots||[]).map(s=>`<span class="risk-pill risk-${s.riskLevel}">${s.count}× R${s.riskLevel}</span>`).join('')}
+        <span style="font-size:9px;color:var(--dim);margin-left:4px;">${(z.slots||[]).reduce((a,s)=>a+s.count,0)} ubicaciones</span>
+        ${z.unlockDay>1?`<span style="font-size:9px;color:var(--muted);">· Día ${z.unlockDay}</span>`:''}
+      </div>
+      <div class="zone-card-actions">
+        <button class="btn danger" onclick="event.stopPropagation();deleteZone('${z.id}')" style="padding:3px 8px;font-size:11px;">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function deleteZone(id){
+  if(!confirm('¿Eliminar esta zona?')) return;
+  state.zones=state.zones.filter(z=>z.id!==id);
+  if(state.editingId===id) resetForm();
+  render();
+  showToast('Zona eliminada');
+}
+
+// ── IMPORT / EXPORT ──
+$('importJsonBtn').addEventListener('click',()=>$('importJsonFile').click());
+$('importJsonFile').addEventListener('change',async e=>{
+  const file=e.target.files?.[0]; if(!file) return;
+  try {
+    const parsed=JSON.parse(await file.text());
+    if(!Array.isArray(parsed)){ showToast('Debe ser un array',true); return; }
+    let added=0,updated=0;
+    parsed.forEach(z=>{
+      const idx=state.zones.findIndex(x=>x.id===z.id);
+      if(idx>=0){ state.zones[idx]=z; updated++; }
+      else { state.zones.push(z); added++; }
+    });
+    render(); showToast(`${added+updated} zonas importadas ✓`);
+  } catch(err){ showToast('Error: '+err.message,true); }
+  e.target.value='';
+});
+
+$('downloadBtn').addEventListener('click',()=>{
+  if(!state.zones.length){ showToast('Sin zonas para exportar',true); return; }
+  const blob=new Blob([JSON.stringify(state.zones,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='zones.json'; a.click();
+  showToast('zones.json descargado ✓');
+});
+
+// Auto-load
+async function autoLoad(){
+  try {
+    const res=await fetch('./data/zones.json');
+    if(!res.ok) return;
+    const data=await res.json();
+    if(!Array.isArray(data)) return;
+    data.forEach(z=>{ if(!state.zones.find(x=>x.id===z.id)) state.zones.push(z); });
+    render(); showToast(`${data.length} zonas cargadas desde /data/ ✓`);
+  } catch(e){}
+}
+
+$('saveBtn').addEventListener('click',saveZone);
+$('newBtn').addEventListener('click',resetForm);
+['f-id','f-name','f-description','f-flavor','f-unlockDay'].forEach(id=>{
+  $(id)?.addEventListener('input',updatePreview);
+});
+
+buildSlotsUI();
+updatePreview();
+autoLoad();
+</script>
+</body>
+</html>

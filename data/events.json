@@ -1,241 +1,5 @@
 [
   {
-    "id": "lluvia_acida",
-    "name": "Lluvia ácida",
-    "image": "https://i.ibb.co/HfTD9shg/lluvia-acida.jpg",
-    "text": "Una fuerte tormenta pone en peligro salir al exterior. La lluvia puede contener radiación por lo que se ha decidido no realizar ninguna actividad fuera de los muros.",
-    "days": 2,
-    "weight": 6,
-    "type": "city",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "limitAction",
-        "action": "explorar",
-        "days": 2
-      },
-      {
-        "type": "limitAction",
-        "action": "forraje",
-        "days": 2
-      }
-    ]
-  },
-  {
-    "id": "fanatic_cerca",
-    "name": "Fanáticos en la zona",
-    "image": "https://i.ibb.co/prrvDWJY/fanatic001.jpg",
-    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de fanáticos parece estar vigilando el asentamiento.",
-    "days": 1,
-    "weight": 6,
-    "type": "city",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "sectarians",
-        "attackStrength": 3,
-        "arrivalDays": 2,
-        "effectOnVictory": [
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          },
-          {
-            "type": "addResource",
-            "resource": "materials",
-            "amount": 2
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "stabilityChange",
-            "amount": -2
-          },
-          {
-            "type": "injureSurvivor"
-          }
-        ]
-      }
-    ],
-    "skipWhenAttackActive": true
-  },
-  {
-    "id": "explore_comida",
-    "name": "Despensa intacta",
-    "image": "https://i.ibb.co/LXfMPNrX/suministros001.jpg",
-    "text": "{survivor} localiza una vieja caja con latas de comida en un camión que había cerca del asentamiento. ¿Lo han dejado queriendo o ha estado delante de nuestras narices todo este rato?",
-    "days": 1,
-    "weight": 6,
-    "type": "explore",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "food",
-        "amount": 2
-      }
-    ]
-  },
-  {
-    "id": "banda_hostil2",
-    "name": "Grupo de caza",
-    "image": "https://i.ibb.co/YBDxnr3h/grupo-caza.jpg",
-    "text": "Un grupo de caza ha detectado a {survivor} y le ha seguido hasta el asentamiento.",
-    "days": 1,
-    "weight": 8,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "random",
-        "attackStrength": 3,
-        "arrivalDays": 1,
-        "combatPopupVictory": {
-          "text": "Les ganamos y encima nos quedamos con su ciervo... todo genial."
-        },
-        "combatPopupDefeat": {
-          "text": "Han luchado como demonios... he pensado que no eran humanos."
-        },
-        "effectOnVictory": [
-          {
-            "type": "addResource",
-            "resource": "food",
-            "amount": 2
-          },
-          {
-            "type": "moraleAll",
-            "amount": 1
-          }
-        ],
-        "effectOnDefeat": [
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 1
-          },
-          {
-            "type": "injureSurvivor"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "explore_nails",
-    "name": "en el clavo...",
-    "image": "https://i.ibb.co/d0s892JZ/nails.jpg",
-    "text": "{survivor} ha encontrado una caja con puntillas y algún tornillo en la basura.",
-    "days": 1,
-    "weight": 10,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "materials",
-        "amount": 1
-      }
-    ]
-  },
-  {
-    "id": "explore_nada2",
-    "name": "nada de nada",
-    "image": "https://i.ibb.co/MyP9K89r/nada.jpg",
-    "text": "{survivor} no encuentra nada de interés. Un paseo en balde.",
-    "days": 1,
-    "weight": 10,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": []
-  },
-  {
-    "id": "explore_nada",
-    "name": "Sin novedad",
-    "image": "https://i.ibb.co/zWJV53Tr/nada2.jpg",
-    "text": "{survivor} no encuentra nada de interés. Mañana será otro día.",
-    "days": 1,
-    "weight": 10,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": []
-  },
-  {
-    "id": "explore_herida",
-    "name": "Trampa de pinchos",
-    "image": "https://i.ibb.co/n8tjd8ZG/trampa.jpg",
-    "text": "{survivor} cae en una trampa improvisada en un agujero. Consigue llegar herido al campamento mientras maldice a esos malditos salvajes.",
-    "days": 1,
-    "weight": 7,
-    "type": "explore",
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "injureExplorer"
-      }
-    ]
-  },
-  {
-    "id": "explore_medicamentos",
-    "name": "Clínica abandonada",
-    "image": "https://i.ibb.co/8gyVT6Kt/clinica-abandonada.jpg",
-    "text": "{survivor} encuentra una antigua clínica con algunos suministros médicos todavía utilizables.",
-    "days": 1,
-    "weight": 3,
-    "type": "explore",
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Lo mejor será coger algo rápido y marcharse.",
-        "effects": [
-          {
-            "type": "addResource",
-            "resource": "meds",
-            "amount": 1
-          }
-        ]
-      },
-      "B": {
-        "label": "El sótano tiene que tener un almacén mayor",
-        "effects": [
-          {
-            "type": "setAttackThreat",
-            "hostileType": "random",
-            "arrivalDays": 1,
-            "combatPopupVictory": {
-              "text": "El sótano escondía más cajas de las esperadas. El riesgo ha merecido la pena."
-            },
-            "combatPopupDefeat": {
-              "text": "El ruido ha atraído problemas. Se ha pagado caro rebuscar más de la cuenta."
-            },
-            "effectOnDefeat": [
-              {
-                "type": "injureExplorer",
-                "injuryLevel": "seria"
-              }
-            ]
-          },
-          {
-            "type": "addResource",
-            "resource": "meds",
-            "amount": 2
-          },
-          {
-            "type": "addResource",
-            "resource": "food",
-            "amount": 1
-          }
-        ]
-      }
-    }
-  },
-  {
     "id": "incendio_almacen",
     "name": "Incendio en el taller",
     "image": "https://i.ibb.co/GQ1DwPVq/fuego.jpg",
@@ -261,65 +25,6 @@
         "days": 1
       }
     ]
-  },
-  {
-    "id": "kirk001",
-    "name": "Un par de manos más",
-    "image": "https://i.ibb.co/HftQNbDN/aliados001.jpg",
-    "text": "Kirk conoce a un superviviente que está viviendo por su cuenta en una caravana. Podría ser útil tener un par de manos más en el asentamiento, pero hay que demostrarle al superviviente que somos de fiar.",
-    "days": 1,
-    "weight": 6,
-    "type": "city",
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "survivor",
-          "id": "survivor_kirk"
-        },
-        {
-          "type": "and",
-          "conditions": [
-            {
-              "type": "day_min",
-              "value": 3
-            },
-            {
-              "type": "day_max",
-              "value": 5
-            }
-          ]
-        }
-      ]
-    },
-    "priority": true,
-    "skipWhenAttackActive": true,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Dale a Kirk alimento para convencer al superviviente.",
-        "effects": [
-          {
-            "type": "removeResource",
-            "resource": "food",
-            "amount": 2
-          },
-          {
-            "type": "addSurvivorRandom"
-          }
-        ]
-      },
-      "B": {
-        "label": "Es mejor guardar recursos por ahora... nunca se sabe.",
-        "effects": [
-          {
-            "type": "moraleSurvivor",
-            "amount": -1,
-            "targetId": "survivor_kirk"
-          }
-        ]
-      }
-    }
   },
   {
     "id": "comercio002",
@@ -354,42 +59,6 @@
     }
   },
   {
-    "id": "discusion_turnos",
-    "name": "Discusión por los turnos",
-    "image": "https://i.ibb.co/8nzRtT8H/comercio002.jpg",
-    "text": "La tensión por el reparto de tareas estalla en plena cena. Dos supervivientes casi llegan a las manos y el resto observa en silencio.",
-    "days": 1,
-    "weight": 5,
-    "type": "city",
-    "skipWhenAttackActive": true,
-    "repeatable": true,
-    "choiceMode": "choice",
-    "options": {
-      "A": {
-        "label": "Ceder y darles una noche libre",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": 1
-          },
-          {
-            "type": "fatigueAll",
-            "amount": -1
-          }
-        ]
-      },
-      "B": {
-        "label": "Imponer disciplina",
-        "effects": [
-          {
-            "type": "stabilityChange",
-            "amount": -1
-          }
-        ]
-      }
-    }
-  },
-  {
     "id": "noche_tranquila",
     "name": "Noche tranquila",
     "image": "https://i.ibb.co/GQwDbJLk/noche-calma.jpg",
@@ -410,77 +79,6 @@
         "injuryLevel": "simple"
       }
     ]
-  },
-  {
-    "id": "combustible_olvidado",
-    "name": "Bidones olvidados",
-    "image": "",
-    "text": "{survivor} encuentra dos garrafas todavía selladas bajo una lona mugrienta. Huelen fatal, pero el combustible sigue siendo útil.",
-    "days": 1,
-    "weight": 10,
-    "type": "explore",
-    "repeatable": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "addResource",
-        "resource": "fuel",
-        "amount": 2
-      }
-    ]
-  },
-  {
-    "id": "personal001",
-    "name": "el dormitorio",
-    "image": "",
-    "text": "Quieren hablar contigo",
-    "days": 1,
-    "weight": 8,
-    "type": "personal",
-    "condition": {
-      "type": "and",
-      "conditions": [
-        {
-          "type": "day_min",
-          "value": 4
-        },
-        {
-          "type": "day_max",
-          "value": 6
-        }
-      ]
-    },
-    "personalSurvivorId": "survivor_vw4cahg8",
-    "startNode": "Test",
-    "nodes": {
-      "Test": {
-        "text": "Mi dormitorio tiene goteras y no consigo descansar correctamente. Me gustaría contar con algo de cemento y madera para repararlo.",
-        "options": {
-          "A": {
-            "label": "Entregar materiales",
-            "effects": [
-              {
-                "type": "removeResource",
-                "resource": "materials",
-                "amount": 1
-              }
-            ]
-          },
-          "B": {
-            "label": "No entregar nada",
-            "effects": [
-              {
-                "type": "moraleSurvivor",
-                "amount": -1,
-                "targetId": "survivor_vw4cahg8"
-              }
-            ]
-          }
-        }
-      }
-    },
-    "choiceMode": "personal",
-    "effects": []
   },
   {
     "id": "raiders_cerca",
@@ -531,35 +129,6 @@
     ]
   },
   {
-    "id": "explorar_lobos",
-    "name": "bestias salvajes",
-    "image": "https://i.ibb.co/Y4cS5PGR/grupo-caza.jpg",
-    "text": "¡Lobos!",
-    "days": 1,
-    "weight": 4,
-    "type": "explore",
-    "skipWhenAttackActive": true,
-    "choiceMode": "direct",
-    "effects": [
-      {
-        "type": "setAttackThreat",
-        "hostileType": "random",
-        "attackStrength": 3,
-        "arrivalDays": 1,
-        "combatPopupVictory": {},
-        "combatPopupDefeat": {},
-        "effectOnVictory": [
-          {
-            "type": "addResource",
-            "resource": "food",
-            "amount": 1
-          }
-        ],
-        "effectOnDefeat": []
-      }
-    ]
-  },
-  {
     "id": "fiebre_en_barracones",
     "name": "Fiebre en los barracones",
     "image": "https://i.ibb.co/8gHY12mQ/fiebre.jpg",
@@ -601,10 +170,197 @@
     }
   },
   {
-    "id": "familia_en_la_carretera",
-    "name": "Familia en la carretera",
-    "image": "https://i.ibb.co/JwHtgPjn/survivor-van.jpg",
-    "text": "{survivor} se cruza con una pequeña familia escondida en una furgoneta. Llevan días sobreviviendo con lo puesto y dudan de cualquiera que se acerque.",
+    "id": "fanatic_cerca",
+    "name": "Fanáticos en la zona",
+    "image": "https://i.ibb.co/prrvDWJY/fanatic001.jpg",
+    "text": "Exploradores reportan movimiento hostil en los alrededores. Un grupo de fanáticos parece estar vigilando el asentamiento.",
+    "days": 1,
+    "weight": 7,
+    "type": "city",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "sectarians",
+        "hostileVariant": "random",
+        "arrivalDays": 2,
+        "combatPopupVictory": {},
+        "combatPopupDefeat": {},
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "injureSurvivor"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "personal001",
+    "name": "el dormitorio",
+    "image": "https://i.ibb.co/KSSBc50/personal001.jpg",
+    "text": "Quieren hablar contigo",
+    "days": 1,
+    "weight": 8,
+    "type": "personal",
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "day_min",
+          "value": 4
+        },
+        {
+          "type": "day_max",
+          "value": 6
+        }
+      ]
+    },
+    "personalSurvivorId": "survivor_vw4cahg8",
+    "startNode": "Test",
+    "nodes": {
+      "Test": {
+        "text": "Mi dormitorio tiene goteras y no consigo descansar correctamente. Me gustaría contar con algo de cemento y madera para repararlo.",
+        "options": {
+          "A": {
+            "label": "Entregar materiales",
+            "effects": [
+              {
+                "type": "removeResource",
+                "resource": "materials",
+                "amount": 1
+              },
+              {
+                "type": "moraleSurvivor",
+                "amount": 1,
+                "targetId": "survivor_vw4cahg8"
+              }
+            ]
+          },
+          "B": {
+            "label": "No entregar nada",
+            "effects": [
+              {
+                "type": "moraleSurvivor",
+                "amount": -1,
+                "targetId": "survivor_vw4cahg8"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "choiceMode": "personal",
+    "effects": []
+  },
+  {
+    "id": "choice_explore_007",
+    "name": "pasillo inundado",
+    "image": "",
+    "text": "Un edificio administrativo tiene un pasillo inundado que lleva a un almacén seco al fondo.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Meterse hasta la rodilla (+1 combustible, -1 moral a todos)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      },
+      "B": {
+        "label": "Cruzar deprisa y cargar lo que haya (+2 combustible, riesgo de herida simple)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 2
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "simple"
+          }
+        ]
+      },
+      "C": {
+        "label": "No mojarse (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_008",
+    "name": "tejado accesible",
+    "image": "",
+    "text": "Desde un andamio medio caído se puede alcanzar el tejado de una tienda. Arriba podría quedar una mochila olvidada.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Coger solo lo visible (+1 materiales, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Explorar todo el tejado (+1 herramientas, riesgo de herida seria)",
+        "effects": [
+          {
+            "type": "addItem",
+            "itemId": "worker_toolkit",
+            "target": "base",
+            "amount": 1
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "seria"
+          }
+        ]
+      },
+      "C": {
+        "label": "No subir (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_009",
+    "name": "gritos apagados",
+    "image": "",
+    "text": "Entre dos edificios se escucha una llamada de auxilio casi ahogada. Puede ser una trampa o alguien realmente solo.",
     "days": 1,
     "weight": 3,
     "type": "explore",
@@ -612,7 +368,7 @@
     "choiceMode": "choice",
     "options": {
       "A": {
-        "label": "Ofrecer comida y convencerlos",
+        "label": "Responder con cautela (+1 superviviente, -1 comida)",
         "effects": [
           {
             "type": "removeResource",
@@ -621,19 +377,36 @@
           },
           {
             "type": "addSurvivorRandom"
-          },
-          {
-            "type": "addSurvivorRandom"
-          },
-          {
-            "type": "removeResource",
-            "resource": "meds",
-            "amount": 1
           }
         ]
       },
       "B": {
-        "label": "Seguir de largo",
+        "label": "Correr a ayudar (+1 superviviente, riesgo de amenaza en 2 días)",
+        "effects": [
+          {
+            "type": "addSurvivorRandom"
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "Había alguien que merecía la pena salvar. También os han visto."
+            },
+            "combatPopupDefeat": {
+              "text": "Era demasiado arriesgado. La ayuda terminó señalando el asentamiento."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "stabilityChange",
+                "amount": -1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "No intervenir (sin recompensa, -1 moral a todos)",
         "effects": [
           {
             "type": "moraleAll",
@@ -644,10 +417,3728 @@
     }
   },
   {
+    "id": "choice_explore_010",
+    "name": "tienda de camping",
+    "image": "",
+    "text": "Una tienda de artículos de montaña parece casi intacta. El escaparate roto hace mucho ruido con el viento.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Entrar y coger solo vendas (+1 meds, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Saquear estanterías (+1 meds, +2 materiales, riesgo de amenaza en 1 día)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "La tienda guardaba material muy útil. El ruido del escaparate no pasó desapercibido."
+            },
+            "combatPopupDefeat": {
+              "text": "Demasiado tiempo dentro. Otros siguieron el rastro hasta la base."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "materials",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Seguir explorando (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_002",
+    "name": "huellas cerca del pozo",
+    "image": "",
+    "text": "Aparecen huellas recientes alrededor del pozo. Alguien merodea demasiado cerca del agua.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Montar guardia esta noche (-1 fatiga a todos, evita saqueo)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          }
+        ]
+      },
+      "B": {
+        "label": "Tender una emboscada (riesgo de amenaza en 1 día, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "La trampa funcionó y el campamento gana confianza."
+            },
+            "combatPopupDefeat": {
+              "text": "No salió bien. Ahora saben cómo entrar."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Ignorarlo (sin coste, -1 combustible robado)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "fuel",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_005",
+    "name": "rumores de saqueo",
+    "image": "",
+    "text": "Un par de exploradores creen haber sido seguidos al volver. El asentamiento debe decidir cómo responder.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Doblar vigilancia (-1 fatiga a todos, evita sorpresas)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          }
+        ]
+      },
+      "B": {
+        "label": "Salir a por ellos (riesgo de amenaza en 2 días, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "La base cree haber recuperado la iniciativa."
+            },
+            "combatPopupDefeat": {
+              "text": "La salida reveló demasiado. Vienen en camino."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "materials",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "No hacer nada (sin coste, -1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_006",
+    "name": "olor a enfermedad",
+    "image": "",
+    "text": "En los barracones se extiende una tos seca. Aún no es una epidemia, pero puede ir a más.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Gastar medicinas (-1 meds, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Aislar a los enfermos (-1 estabilidad, evita gasto)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Esperar y racionar esfuerzos (-1 fatiga a todos, -1 moral a todos)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_008",
+    "name": "consumo extra",
+    "image": "",
+    "text": "Las reservas bajan más rápido de lo normal. Alguien propone una comida caliente común para levantar el ánimo.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Preparar cena para todos (-2 comida, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Mantener raciones estrictas (sin coste, -1 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Compensar con un tebeo compartido (+1 cómic, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "addItem",
+            "itemId": "comic_book",
+            "target": "base",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_010",
+    "name": "gallinas nerviosas",
+    "image": "",
+    "text": "El gallinero está alterado. Algo o alguien merodea por la noche y el grupo discute si gastar recursos en protegerlo.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "gallinero"
+    },
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Reforzar vallas (-1 materiales, +1 gallina salvada)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "chickens",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Poner una guardia cebada (-1 comida, riesgo de amenaza en 1 día)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "La guardia detectó movimiento hostil a tiempo."
+            },
+            "combatPopupDefeat": {
+              "text": "La espera no sirvió. La base ha quedado marcada."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "chickens",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Dejarlo para mañana (sin coste, -1 gallina)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "chickens",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_explore_011",
+    "name": "paso subterráneo",
+    "image": "",
+    "text": "Bajo un edificio derrumbado hay acceso a un viejo paso de mantenimiento. Allí abajo puede quedar combustible o alguien usándolo como escondite.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Bajar un poco (+1 combustible, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Explorar el túnel completo (+3 combustible, riesgo de herida seria)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 3
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "seria"
+          }
+        ]
+      },
+      "C": {
+        "label": "Taparlo y seguir (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_012",
+    "name": "cadáver con mapa",
+    "image": "",
+    "text": "Un cadáver reciente lleva un mapa mal dibujado y una bolsa con provisiones. Puede señalar algo interesante o una trampa reciente.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Coger solo la bolsa (+1 comida, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Seguir el mapa (+2 materiales, riesgo de amenaza en 2 días)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "El mapa llevaba a un escondite útil. También a miradas indiscretas."
+            },
+            "combatPopupDefeat": {
+              "text": "La pista estaba vigilada. Seguiros hasta la base ha sido fácil."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Quemarlo todo (sin recompensa, +1 estabilidad por prudencia)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_explore_013",
+    "name": "consultorio dental",
+    "image": "",
+    "text": "Un antiguo consultorio conserva cajones cerrados. No parece gran cosa, pero algunos analgésicos podrían seguir siendo útiles.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Revisar solo el botiquín (+1 meds, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Desmontar todo el gabinete (+1 meds, +1 materiales, riesgo de herida simple)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "simple"
+          }
+        ]
+      },
+      "C": {
+        "label": "No perder tiempo (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_014",
+    "name": "bici de reparto",
+    "image": "",
+    "text": "Una bicicleta de reparto caída junto a un portal conserva dos alforjas cerradas con correas.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Abrir una alforja (+1 comida, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Llevarse la bici entera (+2 materiales, riesgo de amenaza en 1 día)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "La bicicleta dio más juego del esperado. El rastro ha sido demasiado visible."
+            },
+            "combatPopupDefeat": {
+              "text": "Mover tanto trasto dejó un rastro fácil de seguir."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "materials",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Ignorarla (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_015",
+    "name": "reja del supermercado",
+    "image": "",
+    "text": "La persiana de un pequeño supermercado sigue bajada a medias. Forzarla llevaría tiempo y ruido.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Meter el brazo y coger lo que haya (+2 comida, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Levantar la reja del todo (+4 comida, riesgo de amenaza en 1 día)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 4
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "La despensa escondía bastante más comida de lo esperado."
+            },
+            "combatPopupDefeat": {
+              "text": "Levantar la reja hizo demasiado ruido. Habéis atraído a gente equivocada."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "No tocar la persiana (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_016",
+    "name": "consulta veterinaria",
+    "image": "",
+    "text": "Una consulta veterinaria conserva vendas, jaulas y medicamentos difíciles de identificar.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Coger solo vendas (+1 meds, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Rebuscar armarios y neveras (+2 meds, riesgo de herida simple)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 2
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "simple"
+          }
+        ]
+      },
+      "C": {
+        "label": "Marcharse (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_017",
+    "name": "furgón de reparto",
+    "image": "",
+    "text": "Un furgón de reparto está encajado contra una farola. La caja posterior parece cerrada desde dentro.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Abrir solo la puerta lateral (+1 materiales, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Volcar la carga al completo (+3 materiales, riesgo de amenaza en 2 días)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 3
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "La carga era útil y abundante. El movimiento del furgón os delató."
+            },
+            "combatPopupDefeat": {
+              "text": "El esfuerzo llamó demasiadas miradas. El camino de vuelta quedó marcado."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "materials",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "No entretenerse (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_018",
+    "name": "atajo por la cornisa",
+    "image": "",
+    "text": "Para llegar a un ático intacto hay que usar una cornisa estrecha entre dos edificios.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Entrar en el primer piso seguro (+1 cómic, sin riesgo)",
+        "effects": [
+          {
+            "type": "addItem",
+            "itemId": "comic_book",
+            "target": "base",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Cruzar hasta el ático (+1 meds, riesgo de herida seria)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "seria"
+          }
+        ]
+      },
+      "C": {
+        "label": "Bajar y buscar otra ruta (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_019",
+    "name": "oficina con caja fuerte",
+    "image": "",
+    "text": "Una vieja oficina conserva una caja fuerte pequeña atornillada al suelo. Abrirla costará tiempo y ruido.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Desatornillarla y llevarla (+2 materiales, sin riesgo inmediato)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Abrirla allí mismo (+1 meds, +1 combustible, riesgo de amenaza en 1 día)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "La caja tenía algo más que papeles inútiles. El golpeo resonó por todo el bloque."
+            },
+            "combatPopupDefeat": {
+              "text": "Golpear la caja atrajo una atención que no necesitabais."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "fuel",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Ignorarla (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_020",
+    "name": "pensión cerrada",
+    "image": "",
+    "text": "Una antigua pensión tiene varias habitaciones cerradas. Algunas podrían contener equipaje abandonado.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Registrar una sola habitación (+1 comida, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Revisar toda la planta (+1 comida, +1 meds, riesgo de herida simple)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "simple"
+          }
+        ]
+      },
+      "C": {
+        "label": "No perder luz del día (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_011",
+    "name": "muro mal apuntalado",
+    "image": "",
+    "text": "Parte del muro exterior se ha vencido ligeramente tras la última noche. Hay que decidir si repararlo ya o esperar.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "muros"
+    },
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Reparar de inmediato (-2 materiales, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Esperar y vigilar (sin coste, riesgo de amenaza en 2 días)",
+        "effects": [
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "La vigilancia ganó tiempo, pero era una apuesta."
+            },
+            "combatPopupDefeat": {
+              "text": "El fallo en la defensa animó a quienes merodeaban fuera."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "stabilityChange",
+                "amount": -1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Taparlo con chatarra ligera (-1 materiales, sin mejora estable)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_013",
+    "name": "mercader desconfiado",
+    "image": "",
+    "text": "Un comerciante ambulante se acerca con pocas ganas de hablar. Solo hará trato rápido.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Comprar vendas (-2 comida, +1 meds)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Comprar combustible (-2 materiales, +1 fuel)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "No comerciar (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_014",
+    "name": "vela por los caídos",
+    "image": "",
+    "text": "Alguien propone una pequeña ceremonia por los que ya no están. Cuesta tiempo y recursos, pero puede unir al grupo.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Hacerla con una buena cena (-1 comida, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Solo unas palabras (+1 moral a todos, sin coste)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "No remover el pasado (sin coste, -1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_016",
+    "name": "motor a pedales",
+    "image": "",
+    "text": "En el taller intentan adaptar un viejo motor para apoyar al generador. Puede salir bien o dejar el taller inservible un día.",
+    "days": 1,
+    "weight": 3,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "taller"
+    },
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Probar el invento (+1 combustible ahorrado, riesgo de taller inhabilitado 1 día)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          },
+          {
+            "type": "disableBuilding",
+            "building": "taller",
+            "days": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Guardar piezas para más adelante (+2 materiales, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      },
+      "C": {
+        "label": "Descartarlo (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_018",
+    "name": "barracón médico saturado",
+    "image": "",
+    "text": "El barracón médico no da abasto. Hay heridos leves y enfermos leves reclamando atención al mismo tiempo.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "barracon_medico"
+    },
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Priorizar curas serias (-1 meds, curar herida seria)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "healSurvivor",
+            "injuryLevel": "seria"
+          }
+        ]
+      },
+      "B": {
+        "label": "Repartir vendas para todos (-1 meds, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "Racionar atención (sin coste, -1 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_019",
+    "name": "pasos tras la valla",
+    "image": "",
+    "text": "Varias sombras rondan de noche el perímetro. No atacan, pero prueban tiempos y distancias.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Encender focos y delatar fuerza (-1 electricidad, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "electricity",
+            "amount": 1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Seguirles el juego (riesgo de amenaza en 1 día, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "La defensa respondió con firmeza y el grupo lo nota."
+            },
+            "combatPopupDefeat": {
+              "text": "Se acercaron demasiado y ya saben mucho del asentamiento."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "materials",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "No provocar (sin coste, -1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_020",
+    "name": "viajeros hambrientos",
+    "image": "",
+    "text": "Un pequeño grupo de viajeros pide agua, un poco de comida y la posibilidad de calentarse antes de seguir.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Darles víveres (-2 comida, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Intercambiar por chatarra (-1 comida, +2 materiales)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      },
+      "C": {
+        "label": "Echarlos (sin coste, -1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_explore_021",
+    "name": "puente de servicio",
+    "image": "",
+    "text": "Un puente de servicio conecta con la azotea de un bloque comercial. Está combado, pero aún aguanta.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Quedarse en el primer tramo (+1 materiales, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Cruzar entero (+1 pistol, riesgo de herida seria)",
+        "effects": [
+          {
+            "type": "addItem",
+            "itemId": "ranged_pistol",
+            "target": "base",
+            "amount": 1
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "seria"
+          }
+        ]
+      },
+      "C": {
+        "label": "Dar media vuelta (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_022",
+    "name": "bar saqueado",
+    "image": "",
+    "text": "Detrás de la barra queda acceso a un pequeño almacén con cierre roto. El olor indica que alguien ha pasado hace poco.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Coger conservas del suelo (+1 comida, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Revolver todo (+2 comida, +1 combustible, riesgo de amenaza en 1 día)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "Había más botín del esperado entre las cajas del bar."
+            },
+            "combatPopupDefeat": {
+              "text": "Quien usaba el bar os ha tomado la matrícula."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Salir en silencio (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_023",
+    "name": "almacén frigorífico",
+    "image": "",
+    "text": "Una nave con cámaras frigoríficas aún cerradas promete recursos, pero las puertas pesan y cada golpe retumba.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Forzar una sola cámara (+2 comida, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Abrir toda la nave (+4 comida, riesgo de amenaza en 2 días)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 4
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "La nave tenía reservas para varios días. También hizo más ruido del aconsejable."
+            },
+            "combatPopupDefeat": {
+              "text": "Vaciar una nave entera os ha dejado muy expuestos."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 2
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "No arriesgar (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_024",
+    "name": "tablones podridos",
+    "image": "",
+    "text": "Un piso de madera podrida da acceso a un despacho con cajones intactos.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Apoyar peso poco a poco (+1 materiales, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Cruzar rápido y vaciar cajones (+2 materiales, riesgo de herida simple)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "simple"
+          }
+        ]
+      },
+      "C": {
+        "label": "No tentar la suerte (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_025",
+    "name": "maletín médico",
+    "image": "",
+    "text": "Bajo el asiento de un coche familiar asoma un maletín médico con cierre duro.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Llevarse solo el maletín (+1 meds, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Desmontar el coche completo (+1 meds, +1 materiales, riesgo de herida simple)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "simple"
+          }
+        ]
+      },
+      "C": {
+        "label": "Seguir de largo (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_026",
+    "name": "motel de carretera",
+    "image": "",
+    "text": "Un motel en ruinas ofrece habitaciones revueltas pero aún cerradas en la planta superior.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Registrar dos cuartos (+1 comida, +1 materiales, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Subir hasta la última planta (+1 comic, riesgo de amenaza en 2 días)",
+        "effects": [
+          {
+            "type": "addItem",
+            "itemId": "comic_book",
+            "target": "base",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "El ático guardaba algo inesperadamente útil."
+            },
+            "combatPopupDefeat": {
+              "text": "Demasiado movimiento en un edificio visible desde lejos."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "No entrar (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_027",
+    "name": "clínica veterinaria trasera",
+    "image": "",
+    "text": "Detrás de la clínica hay un cobertizo de suministros muy mal cerrado.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Coger solo vendas (+1 meds, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Vaciar estantes (+2 meds, riesgo de herida seria)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 2
+          },
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "seria"
+          }
+        ]
+      },
+      "C": {
+        "label": "No revolver nada (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_explore_030",
+    "name": "casa con sótano",
+    "image": "",
+    "text": "Una casa modesta tiene un sótano seco y bien cerrado. Puede guardar provisiones o un habitante poco amistoso.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Bajar solo lo justo (+1 comida, sin riesgo)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Registrar el sótano entero (+2 comida, +1 meds, riesgo de amenaza en 1 día)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "El sótano escondía recursos valiosos y bien conservados."
+            },
+            "combatPopupDefeat": {
+              "text": "No estabais solos en la zona. La visita al sótano os ha señalado."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Cerrar y salir (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_021",
+    "name": "reparto desigual",
+    "image": "",
+    "text": "Algunos creen que quien arriesga fuera debería comer más. Otros dicen que eso romperá al grupo.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Ración extra para exploradores (-1 comida, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Mantener igualdad (sin coste, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "Reducir todas las raciones (sin coste, -1 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_023",
+    "name": "charla junto al fuego",
+    "image": "",
+    "text": "Al final del día, alguien saca tema sobre abandonar la base y buscar algo mejor. La conversación divide al grupo.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Recordar por qué seguís aquí (+1 estabilidad, sin coste)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Prometer una gran salida pronto (+1 moral a todos, riesgo de decepción -1 estabilidad)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": 1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Cortar la charla (sin coste, -1 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_024",
+    "name": "saco roto",
+    "image": "",
+    "text": "Un saco entero de provisiones se ha echado a perder por humedad. Aún puede salvarse una parte si se actúa rápido.",
+    "days": 1,
+    "weight": 6,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Secarlo y separar lo útil (-1 materiales, salva +1 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Tirarlo todo (sin coste, -1 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "Usarlo como cebo para plagas (-1 comida, +1 estabilidad por limpieza)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_026",
+    "name": "noche sin dormir",
+    "image": "",
+    "text": "Ruidos constantes alrededor del campamento mantienen a casi todos despiertos. Hay que decidir cómo pasar la noche.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Encender turnos de guardia (-1 fatiga a todos, evita sustos)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          }
+        ]
+      },
+      "B": {
+        "label": "Hacer una salida corta (riesgo de amenaza en 1 día, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "Salir al encuentro dio algo de control al grupo."
+            },
+            "combatPopupDefeat": {
+              "text": "La salida nocturna animó a los merodeadores."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Taparse los oídos y aguantar (sin coste, -1 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_027",
+    "name": "trueque dudoso",
+    "image": "",
+    "text": "Un desconocido ofrece una chaqueta reforzada a cambio de provisiones. Jura que nadie le sigue.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Aceptar el trato (-2 comida, +1 chaqueta)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addItem",
+            "itemId": "armor_jacket",
+            "target": "base",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Apretarle para bajar precio (-1 comida, +1 chaqueta, riesgo de amenaza en 2 días)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "addItem",
+            "itemId": "armor_jacket",
+            "target": "base",
+            "amount": 1
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "Conseguisteis un mejor trato, pero el vendedor no olvida."
+            },
+            "combatPopupDefeat": {
+              "text": "El trato acabó dejando un rastro hasta la base."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "stabilityChange",
+                "amount": -1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Rechazarlo (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_028",
+    "name": "restos del banquete",
+    "image": "",
+    "text": "Tras una pequeña celebración quedan restos y utensilios que podrían aprovecharse o guardarse para después.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Guardar sobras (+1 comida, sin coste)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Compartir todo con el grupo (sin coste, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "No perder tiempo (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_029",
+    "name": "manta corta",
+    "image": "",
+    "text": "Una noche especialmente fría obliga a repartir mantas y sitio bajo techo. No hay comodidad para todos.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Usar combustible para calentar (-1 fuel, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "fuel",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Apretarse como se pueda (sin coste, -1 fatiga a todos)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Mover gente al almacén (sin coste, -1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_030",
+    "name": "señales en la colina",
+    "image": "",
+    "text": "Desde la colina vecina hacen señales con espejos durante unos minutos. No queda claro si son amistosas.",
+    "days": 1,
+    "weight": 3,
+    "type": "city",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Responder con calma (+1 materiales por posible intercambio)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Enviar a alguien a reunirse (riesgo de amenaza en 2 días, +1 superviviente)",
+        "effects": [
+          {
+            "type": "addSurvivorByRarity",
+            "rarity": 3
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "La señal trajo un nuevo aliado potencial."
+            },
+            "combatPopupDefeat": {
+              "text": "La reunión era observada. Habéis regalado vuestra posición."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "C": {
+        "label": "Ignorarlos (sin coste, -1 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_101",
+    "name": "Maletín militar",
+    "image": "",
+    "text": "Entre los restos aparece un maletín militar sellado.",
+    "days": 1,
+    "weight": 2,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Abrirlo (riesgo de herida seria, +4 medicamentos)",
+        "effects": [
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "seria"
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 4
+          }
+        ]
+      },
+      "B": {
+        "label": "Dejarlo donde está",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "event_102",
+    "name": "Campamento abandonado",
+    "image": "",
+    "text": "Das con un campamento abandonado hace poco. Podría quedar algo útil... o alguien cerca.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Registrar con prisas (+2 comida, +2 materiales, amenaza de ataque en 1 día)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "hostileVariant": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "La incursión mereció la pena."
+            },
+            "combatPopupDefeat": {
+              "text": "El campamento tenía dueños cerca. Os han seguido."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      },
+      "B": {
+        "label": "Evitarlo",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "event_103",
+    "name": "Mochila militar",
+    "image": "",
+    "text": "Encuentras una mochila militar de alta calidad medio oculta entre la maleza.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Revisarla (-1 fatiga al explorador, +3 materiales, +2 medicamentos)",
+        "effects": [
+          {
+            "type": "removeFatigue",
+            "targetMode": "action",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 3
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Ignorarla",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "event_104",
+    "name": "Señal de radio",
+    "image": "",
+    "text": "Una radio antigua emite coordenadas entre chasquidos y estática.",
+    "days": 1,
+    "weight": 1,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Seguir la señal (amenaza de ataque en 2 días, +3 comida, +3 materiales)",
+        "effects": [
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "hostileVariant": "random",
+            "arrivalDays": 2,
+            "combatPopupVictory": {
+              "text": "La señal os llevó hasta un escondite valioso."
+            },
+            "combatPopupDefeat": {
+              "text": "La señal era conocida por otros. Os han tomado la matrícula."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "stabilityChange",
+                "amount": -1
+              }
+            ]
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 3
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 3
+          }
+        ]
+      },
+      "B": {
+        "label": "Ignorarla",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "event_105",
+    "name": "Restos de convoy",
+    "image": "",
+    "text": "Un convoy destruido aún guarda suministros entre humo y metal retorcido.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Saquear rápido (herida simple al explorador, +3 materiales, +2 comida)",
+        "effects": [
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "simple"
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 3
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Saquear a fondo (-2 fatiga al explorador, +4 materiales, +3 comida)",
+        "effects": [
+          {
+            "type": "removeFatigue",
+            "targetMode": "action",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 4
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 3
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_107",
+    "name": "Almacén oculto",
+    "image": "",
+    "text": "Una trampilla medio enterrada conduce a un pequeño almacén escondido.",
+    "days": 1,
+    "weight": 2,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Entrar (amenaza de ataque en 1 día, +4 materiales, +2 comida)",
+        "effects": [
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "hostileVariant": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "Vaciáis el almacén antes de que nadie llegue."
+            },
+            "combatPopupDefeat": {
+              "text": "La trampilla tenía más ojos encima de los que parecía."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "removeResource",
+                "resource": "food",
+                "amount": 1
+              }
+            ]
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 4
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Cerrar y seguir",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "event_108",
+    "name": "Vehículo funcional",
+    "image": "",
+    "text": "Un vehículo maltrecho parece conservar piezas aprovechables y quizá algo más.",
+    "days": 1,
+    "weight": 2,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Intentar moverlo (-2 fatiga al explorador, +5 materiales)",
+        "effects": [
+          {
+            "type": "removeFatigue",
+            "targetMode": "action",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 5
+          }
+        ]
+      },
+      "B": {
+        "label": "Desmontarlo con calma (+4 materiales)",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 4
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_109",
+    "name": "Refugio médico",
+    "image": "",
+    "text": "Encuentras un antiguo puesto médico parcialmente intacto.",
+    "days": 1,
+    "weight": 2,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Buscar suministros (-1 fatiga al explorador, +5 medicamentos)",
+        "effects": [
+          {
+            "type": "removeFatigue",
+            "targetMode": "action",
+            "amount": 1
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 5
+          }
+        ]
+      },
+      "B": {
+        "label": "Usarlo para curar (curar herida simple)",
+        "effects": [
+          {
+            "type": "healSurvivor",
+            "injuryLevel": "simple"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_110",
+    "name": "Caja sellada",
+    "image": "",
+    "text": "Una caja sellada sin marcas aguarda entre el polvo y los escombros.",
+    "days": 1,
+    "weight": 2,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Abrirla (herida seria al explorador, +3 materiales, +3 comida)",
+        "effects": [
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "seria"
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 3
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 3
+          }
+        ]
+      },
+      "B": {
+        "label": "Dejarla cerrada",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "event_111",
+    "name": "Derrumbe en el huerto",
+    "image": "",
+    "text": "Parte del huerto se ha venido abajo tras la lluvia de la noche.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Reparar hoy (-2 fatiga a todos, huerto inhabilitado 1 día)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": 2
+          },
+          {
+            "type": "disableBuilding",
+            "building": "huerto",
+            "days": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Ignorarlo por ahora (-3 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 3
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_112",
+    "name": "Infección silenciosa",
+    "image": "",
+    "text": "Uno de los supervivientes empieza a mostrar síntomas preocupantes.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "injureSurvivor",
+        "injuryLevel": "seria"
+      }
+    ]
+  },
+  {
+    "id": "event_113",
+    "name": "Colapso en barracones",
+    "image": "",
+    "text": "Una estructura cede durante la noche y los barracones quedan comprometidos.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "disableBuilding",
+        "building": "barracones",
+        "days": 2
+      }
+    ]
+  },
+  {
+    "id": "event_114",
+    "name": "Explorador atrapado",
+    "image": "",
+    "text": "El explorador queda atrapado bajo un montón de escombros inestables.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Forzar la salida (herida seria al explorador)",
+        "effects": [
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "seria"
+          }
+        ]
+      },
+      "B": {
+        "label": "Esperar y hacer ruido (amenaza de ataque en 1 día)",
+        "effects": [
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "hostileVariant": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "El rescate improvisado no salió del todo mal."
+            },
+            "combatPopupDefeat": {
+              "text": "Alguien oyó el ruido antes que los tuyos."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "stabilityChange",
+                "amount": -1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_115",
+    "name": "Sabotaje interno",
+    "image": "",
+    "text": "Alguien ha manipulado reservas y herramientas durante la noche.",
+    "days": 1,
+    "weight": 3,
+    "type": "city",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Investigar a fondo (-1 fatiga a todos, +2 estabilidad)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": 1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Mirar hacia otro lado (-4 materiales)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 4
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_117",
+    "name": "Ataque coordinado",
+    "image": "",
+    "text": "Los raiders preparan algo serio y los vigías están seguros de ello.",
+    "days": 1,
+    "weight": 3,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "random",
+        "hostileVariant": "random",
+        "arrivalDays": 1,
+        "combatPopupVictory": {
+          "text": "La defensa fue dura, pero el asentamiento aguantó."
+        },
+        "combatPopupDefeat": {
+          "text": "El ataque llegó antes de estar listos."
+        },
+        "effectOnVictory": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ],
+        "effectOnDefeat": [
+          {
+            "type": "stabilityChange",
+            "amount": -2
+          },
+          {
+            "type": "injureSurvivor",
+            "injuryLevel": "seria"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "event_118",
+    "name": "Refugio con trampa",
+    "image": "",
+    "text": "El refugio parecía seguro… demasiado.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Entrar igual (herida grave al explorador, +3 materiales, +2 comida)",
+        "effects": [
+          {
+            "type": "injureExplorer",
+            "injuryLevel": "grave"
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 3
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Evitarlo",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "event_121",
+    "name": "Explosión en generador",
+    "image": "",
+    "text": "El generador sufre una explosión parcial y queda fuera de servicio.",
+    "days": 1,
+    "weight": 3,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "disableBuilding",
+        "building": "generador",
+        "days": 3
+      }
+    ],
+    "condition": {
+      "type": "building",
+      "id": "generador"
+    }
+  },
+  {
+    "id": "event_125",
+    "name": "Lluvia ácida",
+    "image": "",
+    "text": "Una lluvia corrosiva complica la jornada y obliga a improvisar coberturas.",
+    "days": 1,
+    "weight": 3,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "fatigueAll",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "event_126",
+    "name": "Superviviente conflictivo",
+    "image": "",
+    "text": "Un superviviente lleva días tensando la convivencia y hoy estalla la discusión.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Expulsarlo (-1 estabilidad)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      },
+      "B": {
+        "label": "Controlar la situación (-1 fatiga a todos, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": 1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_129",
+    "name": "Almacén saqueado",
+    "image": "",
+    "text": "Faltan suministros y no parece cosa del azar.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "removeResource",
+        "resource": "materials",
+        "amount": 3
+      }
+    ]
+  },
+  {
+    "id": "event_130",
+    "name": "Rastro peligroso",
+    "image": "",
+    "text": "Un rastro reciente conduce a algo valioso… o a problemas mayores.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Seguirlo (amenaza de ataque en 1 día, +3 comida, +2 materiales)",
+        "effects": [
+          {
+            "type": "setAttackThreat",
+            "hostileType": "random",
+            "hostileVariant": "random",
+            "arrivalDays": 1,
+            "combatPopupVictory": {
+              "text": "El rastro llevaba a un escondite menor pero útil."
+            },
+            "combatPopupDefeat": {
+              "text": "Seguisteis el rastro correcto hasta la emboscada correcta."
+            },
+            "effectOnDefeat": [
+              {
+                "type": "injureExplorer",
+                "injuryLevel": "simple"
+              }
+            ]
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 3
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "No arriesgarse",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_009",
+    "name": "candado roto",
+    "image": "https://i.ibb.co/HTVr449w/choice-city-009.jpg",
+    "text": "El almacén amanece con el candado roto. No parece un gran saqueo, pero alguien ha metido mano.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "condition": {
+      "type": "stability_max",
+      "value": 4
+    },
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Reforzarlo ahora (-2 materiales, evita más pérdidas)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Usar cebo para descubrir al ladrón (-1 comida, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "No tocar nada. Habrá que estar más atento",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "pollo001",
+    "name": "zorros en el gallinero",
+    "image": "https://i.ibb.co/przFNTH3/pollo001.jpg",
+    "text": "El gallinero ha sido atacado. Las gallinas han podido escapar, pero hay que reconstruir el gallinero.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "gallinero"
+    },
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "removeResource",
+        "resource": "chickens",
+        "amount": 1
+      },
+      {
+        "type": "destroyBuilding",
+        "building": "gallinero"
+      }
+    ]
+  },
+  {
+    "id": "pollo002",
+    "name": "la puerta del gallinero",
+    "image": "https://i.ibb.co/przFNTH3/pollo001.jpg",
+    "text": "Alguien se ha dejado abierta la puerta del gallinero.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "gallinero"
+    },
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "removeResource",
+        "resource": "chickens",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "trader001",
+    "name": "el chatarrero",
+    "image": "https://i.ibb.co/MxFJRv0j/trader001.jpg",
+    "text": "Mercader de objetos",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Comprar herramientas de obra (-4 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 4
+          },
+          {
+            "type": "addItem",
+            "target": "base",
+            "amount": 1,
+            "itemId": "worker_toolkit"
+          }
+        ]
+      },
+      "B": {
+        "label": "Comprar cómic viejo (-2 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addItem",
+            "target": "base",
+            "amount": 1,
+            "itemId": "comic_book"
+          }
+        ]
+      },
+      "C": {
+        "label": "No comprar",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "ambush001",
+    "name": "¡Emboscada!",
+    "image": "https://i.ibb.co/9BvMkdL/ambus001.jpg",
+    "text": "Emboscada",
+    "days": 1,
+    "weight": 8,
+    "type": "ambush",
+    "relatedAction": "explorar",
+    "tags": [
+      "emboscada",
+      "ambush"
+    ],
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "sectarians",
+        "hostileVariant": "sectarians_zealots",
+        "arrivalDays": 1,
+        "combatPopupVictory": {},
+        "combatPopupDefeat": {},
+        "effectOnVictory": [],
+        "effectOnDefeat": []
+      }
+    ]
+  },
+  {
+    "id": "ambush002",
+    "name": "¡Emboscada!",
+    "image": "https://i.ibb.co/5b1LLQJ/ambus002.jpg",
+    "text": "Emboscada",
+    "days": 1,
+    "weight": 8,
+    "type": "ambush",
+    "relatedAction": "explorar",
+    "tags": [
+      "emboscada",
+      "ambush"
+    ],
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "setAttackThreat",
+        "hostileType": "raiders",
+        "hostileVariant": "raiders_light",
+        "arrivalDays": 1,
+        "combatPopupVictory": {},
+        "combatPopupDefeat": {},
+        "effectOnVictory": [],
+        "effectOnDefeat": []
+      }
+    ]
+  },
+  {
+    "id": "trader002",
+    "name": "el druida",
+    "image": "https://i.ibb.co/cXkh1d0q/trader002.jpg",
+    "text": "Mercader de medicamentos",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Comprar medicamentos (-4 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 4
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Atención médica (curar herida seria) (-2 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "healSurvivor",
+            "injuryLevel": "seria"
+          }
+        ]
+      },
+      "C": {
+        "label": "No comprar",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "discusion_turnos",
+    "name": "Discusión por los turnos",
+    "image": "https://i.ibb.co/5xfg0vFV/discusion-turnos.jpg",
+    "text": "La tensión por el reparto de tareas estalla en plena cena. Dos supervivientes casi llegan a las manos y el resto observa en silencio.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "condition": {
+      "type": "stability_max",
+      "value": 5
+    },
+    "skipWhenAttackActive": true,
+    "relatedAction": "forraje",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Ceder darle ración extra en la cena.",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Imponer disciplina",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "lowmorale",
+    "name": "crisis personal",
+    "image": "https://i.ibb.co/5xfg0vFV/discusion-turnos.jpg",
+    "text": "crisis personal",
+    "days": 1,
+    "weight": 1,
+    "type": "city",
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "hint003",
+    "name": "¿qué pasa con el taller?",
+    "image": "",
+    "text": "{actor1} te señala el viejo taller. \"La gente ha hablado, y le resulta extraño que no estemos aprovechando el taller para poder reciclar materiales que nos ayuden a levantar esto\" ¿Tienes pensado construirlo?",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "condition": {
+      "type": "not_building",
+      "id": "taller"
+    },
+    "priority": true,
+    "day": 6,
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Será lo próximo que construya.",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Confiad en mi...",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1,
+            "targetRef": "eventActor1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hint004",
+    "name": "¿Queremos luz?",
+    "image": "",
+    "text": "{actor1} se queja de la falta de electricidad en el campamento. \"Parecemos del medievo con las antorchas\". El taller tiene cosas que podríamos usar para montar un generador, pero hay que acondicionarlo. ¿Lo hacemos? Te puedo dar unos cuantos cables...",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "condition": {
+      "type": "building_level",
+      "id": "taller",
+      "minLevel": 1
+    },
+    "priority": true,
+    "day": 9,
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Venga, todo sea por la electricidad.",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Confía en mi. Lo tengo todo planeado.",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1,
+            "targetRef": "eventActor1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hint002",
+    "name": "revolución industrial",
+    "image": "",
+    "text": "{actor1} te señala el viejo taller. \"La gente ha hablado, y le resulta extraño que no estemos aprovechando el taller para poder reciclar materiales que nos ayuden a levantar esto\" ¿Tienes pensado construirlo?",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "condition": {
+      "type": "not_building",
+      "id": "taller"
+    },
+    "priority": true,
+    "day": 4,
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Será lo próximo que construya.",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Confiad en mi...",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1,
+            "targetRef": "eventActor1"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hint001",
+    "name": "trabajo por hacer",
+    "image": "https://i.ibb.co/nNGkQThF/b-huerto.jpg",
+    "text": "{actor1} se acerca y se presenta con un carrillo con herramientas. Te señala el viejo huerto y un viejo edificio. \"Taller o Huerto\" es lo primero que deberíamos arreglar si queremos tener una oportunidad en este asentamiento.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "day": 2,
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Vamos a centrarnos en el huerto.",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "El taller, sin duda.",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_001",
+    "name": "goteras sobre las literas",
+    "image": "https://i.ibb.co/8DJhLkmj/choice-city-001.jpg",
+    "text": "La lluvia se cuela por el techo de los barracones. Si no se hace algo, la gente apenas podrá dormir esta noche.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "condition": {
+      "type": "building_level",
+      "id": "barracones",
+      "minLevel": 1
+    },
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Usar lonas y material (-2 materiales, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Apretarse y aguantar (sin coste, -1 fatiga a todos)",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Mover a todos al almacén (-1 estabilidad, evita gasto)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      },
+      "D": {
+        "label": "Usar canaletas para desviar el agua y aprovecharla.",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ],
+        "requirement": {
+          "type": "skill",
+          "skill": "Ingeniero"
+        }
+      }
+    }
+  },
+  {
+    "id": "choice_city_actor_001",
+    "name": "Raciones discutidas",
+    "image": "https://i.ibb.co/8DJhLkmj/choice-city-001.jpg",
+    "text": "{actor1} y {actor2} discuten delante de todos por cómo repartir las últimas provisiones. Ambos esperan que tomes partido.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "participants": 2,
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Apoyar a {actor1}",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "modifyLink"
+          }
+        ]
+      },
+      "B": {
+        "label": "Apoyar a {actor2}",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          },
+          {
+            "type": "addResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "modifyLink"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_003",
+    "name": "pelea en el almacén",
+    "image": "",
+    "text": "{actor1} afirma que {actor2} ha estado robando comida. {actor2} lo niega, acusando realmente al primero de robar esa comida. El resto espera una decisión al respecto.",
+    "days": 1,
+    "weight": 7,
+    "type": "city",
+    "participants": 2,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Dar la razón a {actor1}",
+        "effects": [
+          {
+            "type": "modifyLink",
+            "actorA": "actor1",
+            "actorB": "actor2",
+            "linkType": "rivalidad",
+            "action": "add",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          }
+        ]
+      },
+      "B": {
+        "label": "Dar la razón a {actor2}",
+        "effects": [
+          {
+            "type": "modifyLink",
+            "actorA": "actor1",
+            "actorB": "actor1",
+            "linkType": "odio",
+            "action": "add",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Castigar a ambos con tareas extras.",
+        "effects": [
+          {
+            "type": "removeFatigue",
+            "targetMode": "actor1",
+            "amount": 1
+          },
+          {
+            "type": "removeFatigue",
+            "targetMode": "actor2",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          },
+          {
+            "type": "modifyLink",
+            "actorA": "actor1",
+            "actorB": "actor1",
+            "linkType": "rivalidad",
+            "action": "add",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hint005",
+    "name": "pocos tomates",
+    "image": "",
+    "text": "{actor1} viene con una caja de tomates. \"Con esto no vamos a poder alimentar a todo el mundo. Habría que mejorar el huerto y plantar más cosas. Hay que ponerle ganas y trabajo\". Tengo unas semillas de calabacín y de pimientos que seguro que conseguimos sacar adelante.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "condition": {
+      "type": "building_level",
+      "id": "huerto",
+      "minLevel": 1
+    },
+    "day": 5,
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Venga, hagamos crecer el huerto.",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Confía en mi. Lo tengo todo planeado.",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_004",
+    "name": "cables recalentados",
+    "image": "",
+    "text": "El generador improvisado da señales de sobrecarga. Puede aguantar una noche más o morir ahora mismo.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "generador"
+    },
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Pararlo y revisarlo (-1 combustible, evita daños)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "fuel",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Exprimirlo un día más (+1 electricidad moral, riesgo de inhabilitar generador 1 día)",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          },
+          {
+            "type": "disableBuilding",
+            "building": "generador",
+            "days": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "Apagar media base (-1 moral a todos, sin gasto)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "quest001",
+    "name": "La mochila (Regreso)",
+    "image": "",
+    "text": "He vuelto",
+    "days": 1,
+    "weight": 0,
+    "type": "quest",
+    "tags": [
+      "quest"
+    ],
+    "participants": 1,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "meds",
+        "amount": 1
+      },
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "randomTier": "T2"
+      }
+    ]
+  },
+  {
+    "id": "explore_herida",
+    "name": "Trampa de pinchos",
+    "image": "",
+    "text": "{survivor} cae en una trampa improvisada en un agujero. Consigue llegar herido al campamento mientras maldice a esos malditos salvajes.",
+    "days": 1,
+    "weight": 7,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "injureExplorer"
+      }
+    ]
+  },
+  {
+    "id": "explore_nada2",
+    "name": "nada de nada",
+    "image": "",
+    "text": "{survivor} no encuentra nada de interés. Un paseo en balde.",
+    "days": 1,
+    "weight": 10,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "explore_medicamentos",
+    "name": "Clínica abandonada",
+    "image": "https://i.ibb.co/8gyVT6Kt/clinica-abandonada.jpg",
+    "text": "{survivor} encuentra una antigua clínica con algunos suministros médicos todavía utilizables.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "meds",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "explorer33",
+    "name": "bricomanía",
+    "image": "",
+    "text": "encuentra una caja de herramientas en {location}. {lore}.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "itemId": "worker_toolkit"
+      }
+    ]
+  },
+  {
+    "id": "choice_explore_028",
+    "name": "ráfaga de disparos",
+    "image": "",
+    "text": "No muy lejos se escucha un breve intercambio de disparos.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "event_127",
+    "name": "Señales de vida",
+    "image": "",
+    "text": "Detectas movimiento a lo lejos. Podría ser ayuda… o una trampa.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addSurvivorByRarity",
+        "rarity": 3
+      }
+    ]
+  },
+  {
+    "id": "event_100",
+    "name": "Refugio intacto",
+    "image": "",
+    "text": "Encuentras un refugio milagrosamente intacto, algo casi imposible en esta zona.",
+    "days": 1,
+    "weight": 1,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 3
+      },
+      {
+        "type": "addResource",
+        "resource": "meds",
+        "amount": 2
+      },
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "randomType": "any"
+      }
+    ]
+  },
+  {
+    "id": "event_123",
+    "name": "Viejo mapa",
+    "image": "",
+    "text": "Un mapa antiguo revela un viejo bunker de un loco preparacionista. Bendita locura.",
+    "days": 1,
+    "weight": 2,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 4
+      },
+      {
+        "type": "addResource",
+        "resource": "meds",
+        "amount": 3
+      },
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "randomType": "any"
+      }
+    ]
+  },
+  {
+    "id": "choice_explore_029",
+    "name": "depósito de herramientas",
+    "image": "",
+    "text": "Una nave menor conserva un armario metálico repleto de herramientas de obra, aunque el suelo está cubierto de cristales.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "itemId": "worker_toolkit"
+      }
+    ]
+  },
+  {
+    "id": "event_106",
+    "name": "Superviviente experto",
+    "image": "",
+    "text": "Un superviviente te observa desde la distancia, esperando tu reacción. Finalmente se decide a salir de forma pacífica y a pedir asilo.",
+    "days": 1,
+    "weight": 2,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addSurvivorByRarity",
+        "rarity": 3
+      }
+    ]
+  },
+  {
     "id": "story_dia14_refugiados",
-    "name": "Grupo de refugiados",
+    "name": "Refugiado a las puertas",
     "image": "https://i.ibb.co/HpdT4zQ7/idea1.jpg",
-    "text": "Un pequeño grupo llega al asentamiento pidiendo refugio. Están agotados y hambrientos. Acogerlos supondrá un esfuerzo.",
+    "text": "Ha llegado un refugiado a las puertas, pidiendo asilo.",
     "days": 1,
     "weight": 0,
     "type": "story",
@@ -655,28 +4146,19 @@
       "type": "stability_min",
       "value": 7
     },
-    "priority": true,
     "day": 14,
     "choiceMode": "choice",
     "options": {
       "A": {
-        "label": "Acogerlos (+2 Supervivientes)",
+        "label": "Hablar con el refugiado. A ver qué ofrece.",
         "effects": [
           {
-            "type": "stabilityChange",
-            "amount": 2
-          },
-          {
             "type": "addSurvivorRandom"
-          },
-          {
-            "type": "addSurvivorByRarity",
-            "rarity": 3
           }
         ]
       },
       "B": {
-        "label": "Rechazarlos",
+        "label": "Rechazarlo.",
         "effects": [
           {
             "type": "stabilityChange",
@@ -689,12 +4171,62 @@
         ]
       },
       "C": {
-        "label": "Darles víveres y que sigan su camino.",
+        "label": "Darles víveres y que siga su camino.",
         "effects": [
           {
             "type": "removeResource",
             "resource": "food",
             "amount": 2
+          },
+          {
+            "type": "moraleAll",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_017",
+    "name": "sirena lejana",
+    "image": "",
+    "text": "De madrugada suena una sirena distante. Algunos quieren ir a ver qué pasa, otros prefieren cerrar puertas y rezar.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Nadie saldrá a explorar como medida de cautela durante los dos próximos días.",
+        "effects": [
+          {
+            "type": "limitAction",
+            "action": "explorar",
+            "days": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "Mandar una patrulla a investigar.",
+        "effects": [
+          {
+            "type": "setAttackThreat",
+            "arrivalDays": 2,
+            "hostileType": "forces",
+            "hostileVariant": "random",
+            "chancePercent": 100
+          }
+        ]
+      },
+      "C": {
+        "label": "Hacer una fogata común (-1 combustible, +1 moral a todos)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "fuel",
+            "amount": 1
           },
           {
             "type": "moraleAll",
@@ -705,17 +4237,1313 @@
     }
   },
   {
-    "id": "npc_joe_intro",
-    "name": "Joe, solo joe",
+    "id": "event_122",
+    "name": "Emboscada al explorar",
     "image": "",
-    "text": "Joe está aquí, y quiere partirte la crisma.",
+    "text": "Una emboscada sorprende al explorador en mitad del saqueo. Consigue huir, pero no sale gratis.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "injureExplorer"
+      }
+    ]
+  },
+  {
+    "id": "explore_nada",
+    "name": "Sin novedad",
+    "image": "",
+    "text": "no encuentra nada de interés. Mañana será otro día.",
+    "days": 1,
+    "weight": 10,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "choice_city_actor_004",
+    "name": "La pieza buena",
+    "image": "",
+    "text": "Aparece una pieza mecánica en buen estado. {actor1} quiere usarla para una reparación arriesgada. {actor2} prefiere guardarla para reforzar la base. Ambos te presionan.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "participants": 2,
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Entregársela a {actor1}",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          },
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Entregársela a {actor2}",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": 1
+          },
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          },
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "event_124",
+    "name": "Enfermería saturada",
+    "image": "",
+    "text": "No hay recursos suficientes para atender a todos como se merecen.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Incrementar las raciones para los enfermos.",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Usar medicamentos para tratar de contener las infecciones.",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "No hacer nada, esperemos que se curen solos.",
+        "effects": [
+          {
+            "type": "injureSurvivor"
+          },
+          {
+            "type": "createThreat",
+            "threatId": "shelter_infection"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "explore_nails",
+    "name": "¡Hallazgo!",
+    "image": "https://i.ibb.co/d0s892JZ/nails.jpg",
+    "text": "localiza {item} en {location}. {lore}",
+    "days": 1,
+    "weight": 10,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "materials",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "lluvia_acida",
+    "name": "Lluvia ácida",
+    "image": "https://i.ibb.co/HfTD9shg/lluvia-acida.jpg",
+    "text": "Una fuerte tormenta pone en peligro salir al exterior. La lluvia puede contener radiación por lo que se ha decidido no realizar ninguna actividad fuera de los muros.",
+    "days": 2,
+    "weight": 6,
+    "type": "city",
+    "priority": true,
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "limitAction",
+        "action": "explorar",
+        "days": 2
+      },
+      {
+        "type": "limitAction",
+        "action": "forraje",
+        "days": 2
+      }
+    ]
+  },
+  {
+    "id": "explorerambush001",
+    "name": "emboscada",
+    "image": "",
+    "text": "ha sufrido una emboscada mientras exploraba.",
+    "days": 1,
+    "weight": 8,
+    "type": "explore",
+    "priority": true,
+    "tags": [
+      "emboscada",
+      "explorar"
+    ],
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "sin_rastro_rescate",
+    "name": "Sin rastro (Rescate)",
+    "image": "",
+    "text": "Una pista reciente lleva hasta un escondite improvisado. Puede que todavía lleguéis a tiempo, pero sacar a vuestro compañer@ de allí no será fácil.",
+    "days": 1,
+    "weight": 0,
+    "type": "quest",
+    "tags": [
+      "quest",
+      "rescue",
+      "kidnap"
+    ],
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Entrar por la fuerza",
+        "effects": [
+          {
+            "type": "rescueKidnappedSurvivor",
+            "kidnapKey": "sin_rastro",
+            "returnInjuryChance": 60,
+            "returnInjuryLevel": "simple",
+            "returnText": "↩ {name} regresa al campamento tras el rescate."
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Distraerlos y negociar (-2 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "rescueKidnappedSurvivor",
+            "kidnapKey": "sin_rastro",
+            "returnInjuryChance": 35,
+            "returnInjuryLevel": "simple",
+            "returnText": "↩ {name} vuelve al campamento tras una negociación tensa."
+          }
+        ]
+      },
+      "C": {
+        "label": "Llegáis tarde (-2 moral a todos)",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "sin_rastro",
+    "name": "Sin rastro",
+    "image": "",
+    "text": "{actor1} no vuelve al campamento al caer la noche. Cerca del perímetro hay huellas de forcejeo, un rastro roto y demasiado silencio.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "day": 18,
+    "tags": [
+      "kidnap",
+      "quest"
+    ],
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Organizar una búsqueda inmediata",
+        "effects": [
+          {
+            "type": "kidnapSurvivor",
+            "targetMode": "actor1",
+            "kidnapKey": "sin_rastro",
+            "reason": "secuestro"
+          },
+          {
+            "type": "activateQuest",
+            "questId": "sin_rastro_rescate",
+            "minDays": 1,
+            "maxDays": 1,
+            "leadTargetMode": "actor2",
+            "priority": true,
+            "timing": "next_day"
+          }
+        ]
+      },
+      "B": {
+        "label": "Esperar al amanecer y reunir fuerzas",
+        "effects": [
+          {
+            "type": "kidnapSurvivor",
+            "targetMode": "actor1",
+            "kidnapKey": "sin_rastro",
+            "reason": "secuestro"
+          },
+          {
+            "type": "activateQuest",
+            "questId": "sin_rastro_rescate",
+            "minDays": 2,
+            "maxDays": 2,
+            "priority": true,
+            "timing": "range"
+          },
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Cerrar filas y no mover a nadie esta noche",
+        "effects": [
+          {
+            "type": "kidnapSurvivor",
+            "targetMode": "actor1",
+            "kidnapKey": "sin_rastro",
+            "reason": "secuestro"
+          },
+          {
+            "type": "activateQuest",
+            "questId": "sin_rastro_rescate",
+            "minDays": 3,
+            "maxDays": 3,
+            "priority": true,
+            "timing": "range"
+          },
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "cantina001",
+    "name": "La cantina",
+    "image": "",
+    "text": "{actor1} se te acerca y te propone construir una cantina en uno de los edificios abandonados. Lo de la zona para charlar y demás suena aburrido, aquí también se puede hablar.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "condition": {
+      "type": "building",
+      "id": "edificio_abandonado_1"
+    },
+    "day": 16,
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Me parece bien, puede ser útil para desahogarse un poco.",
+        "effects": [
+          {
+            "type": "unlockAbandonedBuilding",
+            "building": "cantina"
+          }
+        ]
+      },
+      "B": {
+        "label": "Puede traernos problemas. Mejor pensar en darle otro uso.",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": -2
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "joe_stalking",
+    "name": "This is JoE",
+    "image": "https://i.ibb.co/5XBSdWCm/joe-001.jpg",
+    "text": "Los rumores de los mercaderes eran ciertos. Existe un megalómano que se hace llamar \"The Real Joe\" y que ha reunido a muchos desgraciados para formar un ejército y atacar asentamientos.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "day": 11,
+    "tags": [
+      "npc",
+      "amenaza"
+    ],
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "createThreat",
+        "threatId": "joe_stalking"
+      },
+      {
+        "type": "activateQuest",
+        "questId": "quest_joe001",
+        "minDays": 10,
+        "maxDays": 15,
+        "priority": true,
+        "timing": "range"
+      }
+    ]
+  },
+  {
+    "id": "quest_joe001",
+    "name": "Hey Joe",
+    "image": "",
+    "text": "Los megáfonos de Joe dejan clara una cosa. Quieren a {actor1}. Si se lo entregamos, promete dejarnos tranquilos por un tiempo, mientras nos portemos de forma correcta.",
+    "days": 1,
+    "weight": 0,
+    "type": "quest",
+    "priority": true,
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Entregar a {actor1}. No hay otra solución.",
+        "effects": [
+          {
+            "type": "kidnapSurvivor",
+            "targetMode": "actor1",
+            "kidnapKey": "joe001",
+            "reason": "Secuestro",
+            "logText": "{actor1} ha sido entregado."
+          },
+          {
+            "type": "moraleAll",
+            "amount": -2
+          }
+        ]
+      },
+      "B": {
+        "label": "No vamos a entregar a nadie. Aquí os esperamos.",
+        "effects": [
+          {
+            "type": "setAttackThreat",
+            "arrivalDays": 1,
+            "hostileType": "npc_joe",
+            "hostileVariant": "random",
+            "chancePercent": 100
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "Indica a los incursores que quieres hablar directamente con Joe. Que no se esconde detrás de sus palomas mensajeras.",
+        "effects": [],
+        "requirement": {
+          "type": "skill",
+          "skill": "Líder"
+        }
+      }
+    }
+  },
+  {
+    "id": "hint_lider",
+    "name": "Bastón de mando",
+    "image": "https://i.ibb.co/35V54Yv9/hint-lider.jpg",
+    "text": "Esto parece que está funcionando, pero necesitamos una figura pública que pueda servir de faro en momentos oscuros.",
     "days": 1,
     "weight": 0,
     "type": "story",
     "priority": true,
-    "skipWhenAttackActive": true,
-    "day": 10,
+    "day": 3,
+    "tags": [
+      "líder",
+      "hint"
+    ],
+    "participants": 3,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Elegir a {actor1}.",
+        "effects": [
+          {
+            "type": "addSkill",
+            "skill": "Líder",
+            "targetMode": "actor1"
+          }
+        ]
+      },
+      "B": {
+        "label": "Elegir a {actor2}.",
+        "effects": [
+          {
+            "type": "addSkill",
+            "skill": "Líder",
+            "targetMode": "actor2"
+          }
+        ]
+      },
+      "C": {
+        "label": "Elegir a {actor3}.",
+        "effects": [
+          {
+            "type": "addSkill",
+            "skill": "Líder",
+            "targetMode": "actor3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "banda_hostil2",
+    "name": "Grupo de caza",
+    "image": "",
+    "text": "Un grupo de caza ha detectado la exploración y os han seguido hasta el asentamiento.",
+    "days": 1,
+    "weight": 6,
+    "type": "explore",
+    "repeatable": true,
     "choiceMode": "direct",
     "effects": []
+  },
+  {
+    "id": "choice_city_022",
+    "name": "chispazo en el taller",
+    "image": "",
+    "text": "Una mala conexión provoca un fogonazo en el taller. Hay discusión sobre seguir trabajando o parar en seco.",
+    "days": 1,
+    "weight": 3,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "taller"
+    },
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Es mejor parar y tratar de arreglar lo que sea que esté fallando.",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 1
+          },
+          {
+            "type": "disableBuilding",
+            "building": "cantina",
+            "days": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "No ha sido nada... PONER % DE QUE PASE",
+        "effects": [
+          {
+            "type": "disableBuilding",
+            "building": "taller",
+            "days": 3
+          }
+        ]
+      },
+      "C": {
+        "label": "No es nada que no podamos arreglar con un poco de cinta americana.",
+        "effects": [
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ],
+        "requirement": {
+          "type": "skill",
+          "skill": "Ingeniero"
+        }
+      }
+    }
+  },
+  {
+    "id": "choice_city_012",
+    "name": "turno agotador",
+    "image": "",
+    "text": "Después de varios días tensos, algunos quieren parar una jornada completa mientras otros insisten en seguir produciendo.",
+    "days": 1,
+    "weight": 6,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Un buen descanso nos hará ver las cosas de otra forma.",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 1
+          },
+          {
+            "type": "disableBuilding",
+            "building": "taller",
+            "days": 1
+          },
+          {
+            "type": "disableBuilding",
+            "building": "huerto",
+            "days": 1
+          },
+          {
+            "type": "limitAction",
+            "action": "forraje",
+            "days": 1
+          },
+          {
+            "type": "limitAction",
+            "action": "explorar",
+            "days": 1
+          },
+          {
+            "type": "limitAction",
+            "action": "construir",
+            "days": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Hay que mantener el ritmo. No queda otra.",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "Se puede trabajar un poco más... y tener postre extra para todos.",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "moraleAll",
+            "amount": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "choice_city_007",
+    "name": "radio entrecortada",
+    "image": "",
+    "text": "La torre capta una señal breve. Podría ser una oferta de trueque... o alguien localizando la base.",
+    "days": 1,
+    "weight": 4,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "torre_radio"
+    },
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Responder (ABRE QUEST)",
+        "effects": []
+      },
+      "B": {
+        "label": "Guardar silencio (sin coste, sin recompensa)",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "choice_city_015",
+    "name": "caza de ratas",
+    "image": "",
+    "text": "Los almacenes muestran señales de plaga. Algo está mordiendo sacos y tablones por las noches.",
+    "days": 1,
+    "weight": 5,
+    "type": "city",
+    "repeatable": true,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Poner trampas (-1 materiales, evita pérdidas)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Usar parte de la comida como cebo (-1 comida, +1 estabilidad)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "No hacer nada.",
+        "effects": [
+          {
+            "type": "createThreat",
+            "threatId": "shelter_infection"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "hint_zonacomun",
+    "name": "La zona común",
+    "image": "",
+    "text": "{actor1} sugiere convertir uno de los edificios abandonados en una zona común para todos, donde poder exponer los problemas y tratar de solucionarlos por el bien de la comunidad.",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "day": 15,
+    "tags": [
+      "hint"
+    ],
+    "participants": 1,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Buena idea.",
+        "effects": [
+          {
+            "type": "unlockAbandonedBuilding",
+            "building": "sala_comun"
+          }
+        ]
+      },
+      "B": {
+        "label": "Hay cosas más importantes que hacer.",
+        "effects": [
+          {
+            "type": "moraleSurvivor",
+            "amount": -1
+          },
+          {
+            "type": "stabilityChange",
+            "amount": -1
+          }
+        ]
+      },
+      "C": {
+        "label": "El campamento es de todos. No necesitamos un sitio concreto donde expresarnos.",
+        "effects": [
+          {
+            "type": "moraleAll",
+            "amount": 2
+          }
+        ],
+        "requirement": {
+          "type": "skill",
+          "skill": "Líder"
+        }
+      }
+    }
+  },
+  {
+    "id": "event_116",
+    "name": "Zona contaminada",
+    "image": "",
+    "text": "El aire de la zona es más denso y cuesta respirar. El cansancio es evidente.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "removeFatigue",
+        "targetMode": "action",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "choice_explore_001",
+    "name": "farmacia saqueada",
+    "image": "",
+    "text": "encuentra una farmacia ya registrada, pero aún quedan estantes sin revisar. El problema es el ruido: cualquiera podría escucharlo.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "meds",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "explorer32",
+    "name": "el motero",
+    "image": "",
+    "text": "un cadaver de un motero que ya no necesita sus cosas...",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "itemId": "armor_jacket"
+      },
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "itemId": "ranged_pistol"
+      }
+    ]
+  },
+  {
+    "id": "choice_explore_002",
+    "name": "puerta atrancada",
+    "image": "",
+    "text": "Una puerta metálica bloquea el acceso a un almacén secundario, al forzarla descubre un zulo que parece estar habitado... ¿Estarán cerca?",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 1
+      },
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "randomTier": "T1"
+      }
+    ]
+  },
+  {
+    "id": "choice_explore_003",
+    "name": "humo en la avenida",
+    "image": "",
+    "text": "descubre una columna de humo con varios cadáveres. Alguien emboscó y saqueó a estos pobres desgraciados.",
+    "days": 1,
+    "weight": 4,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "moraleSurvivor",
+        "amount": -1,
+        "targetMode": "action"
+      }
+    ]
+  },
+  {
+    "id": "choice_explore_005",
+    "name": "coche patrulla",
+    "image": "",
+    "text": "Un coche patrulla volcado conserva parte del maletero sellado. El interior huele a óxido y sangre seca.",
+    "days": 1,
+    "weight": 2,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addItem",
+        "target": "base",
+        "amount": 1,
+        "randomType": "weapon"
+      },
+      {
+        "type": "addResource",
+        "resource": "fuel",
+        "amount": 1
+      },
+      {
+        "type": "addResource",
+        "resource": "meds",
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "choice_explore_006",
+    "name": "nevera industrial",
+    "image": "",
+    "text": "Una cocina industrial conserva una nevera todavía cerrada. El coste de forzarla a lo bestia no es más que otra herida para el cuerpo.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "food",
+        "amount": 4
+      },
+      {
+        "type": "injureSurvivor",
+        "targetMode": "action"
+      }
+    ]
+  },
+  {
+    "id": "test",
+    "name": "TEST",
+    "image": "",
+    "text": "TEST",
+    "days": 1,
+    "weight": 0,
+    "type": "story",
+    "day": 7,
+    "participants": 2,
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "A",
+        "effects": [
+          {
+            "type": "addSkill",
+            "skill": "Rastreador",
+            "targetMode": "actor1"
+          },
+          {
+            "type": "addSkill",
+            "skill": "Precavido",
+            "targetMode": "actor2"
+          }
+        ]
+      },
+      "B": {
+        "label": "B",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "bruno_1",
+    "name": "Bruno",
+    "image": "",
+    "text": "¿Qué necesitas?",
+    "days": 1,
+    "weight": 0,
+    "type": "quest",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "A",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "B",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "Nada",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "bruno_2",
+    "name": "Bruno",
+    "image": "",
+    "text": "¿Qué necesitas?",
+    "days": 1,
+    "weight": 0,
+    "type": "quest",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "A",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "materials",
+            "amount": 2
+          }
+        ]
+      },
+      "B": {
+        "label": "B",
+        "effects": [
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 2
+          }
+        ]
+      },
+      "C": {
+        "label": "Nada",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "bruno_0",
+    "name": "Bruno",
+    "image": "",
+    "text": "¿Qué necesitas?",
+    "days": 1,
+    "weight": 0,
+    "type": "quest",
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Dar comida para que se alegre",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 1
+          },
+          {
+            "type": "modifyNpcTrust",
+            "npcId": "npc_bruno",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Nada",
+        "effects": []
+      }
+    }
+  },
+  {
+    "id": "Quest_npc_bruno",
+    "name": "bruno",
+    "image": "https://i.ibb.co/tphSh3r7/bruno.jpg",
+    "text": "Bruno",
+    "days": 1,
+    "weight": 60,
+    "type": "city",
+    "condition": {
+      "type": "building",
+      "id": "taller"
+    },
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Al garaje",
+        "effects": [
+          {
+            "type": "setNpcState",
+            "npcId": "npc_bruno",
+            "state": "available"
+          },
+          {
+            "type": "assignNpcToBuilding",
+            "npcId": "npc_bruno",
+            "buildingId": "taller"
+          },
+          {
+            "type": "modifyNpcTrust",
+            "npcId": "npc_bruno",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Rechazar",
+        "effects": [
+          {
+            "type": "setNpcState",
+            "npcId": "npc_bruno",
+            "state": "gone"
+          }
+        ]
+      },
+      "C": {
+        "label": "Que vuelva más adelante",
+        "effects": [
+          {
+            "type": "setNpcState",
+            "npcId": "npc_bruno",
+            "state": "known"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "combustible_olvidado",
+    "name": "Bidones olvidados",
+    "image": "",
+    "text": "encuentra dos garrafas todavía selladas bajo una lona mugrienta. Huelen fatal, pero el combustible sigue siendo útil.",
+    "days": 1,
+    "weight": 5,
+    "type": "explore",
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addResource",
+        "resource": "fuel",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "id": "explorar_lobos",
+    "name": "bestias salvajes",
+    "image": "https://i.ibb.co/Y4cS5PGR/grupo-caza.jpg",
+    "text": "¡Lobos!",
+    "days": 1,
+    "weight": 6,
+    "type": "explore",
+    "skipWhenAttackActive": true,
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": []
+  },
+  {
+    "id": "survivor_en_la_carretera",
+    "name": "En la carretera",
+    "image": "",
+    "text": "Alguien te avisa en mitad de la carretera. Le persiguen unos mercenarios y está buscando dónde esconderse. Seguramente el grupo no ande lejos.",
+    "days": 1,
+    "weight": 3,
+    "type": "explore",
+    "repeatable": true,
+    "choiceMode": "direct",
+    "effects": [
+      {
+        "type": "addSurvivorByRarity",
+        "rarity": 3
+      }
+    ]
+  },
+  {
+    "id": "Quest_npc_lorna",
+    "name": "Lorna",
+    "image": "",
+    "text": "Lorna",
+    "days": 1,
+    "weight": 60,
+    "type": "city",
+    "condition": {
+      "type": "building_level",
+      "id": "barracones",
+      "minLevel": 2
+    },
+    "tags": [
+      "quest",
+      "npc"
+    ],
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Reclutar",
+        "effects": [
+          {
+            "type": "setNpcState",
+            "npcId": "npc_lorna",
+            "state": "recruited"
+          },
+          {
+            "type": "modifyNpcTrust",
+            "npcId": "npc_lorna",
+            "amount": 1
+          },
+          {
+            "type": "assignNpcToBuilding",
+            "npcId": "npc_lorna",
+            "buildingId": "barracones"
+          }
+        ]
+      },
+      "B": {
+        "label": "No reclutar",
+        "effects": [
+          {
+            "type": "setNpcState",
+            "npcId": "npc_lorna",
+            "state": "known"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "lorna_0",
+    "name": "Confort",
+    "image": "",
+    "text": "Lorna",
+    "days": 1,
+    "weight": 0,
+    "type": "quest",
+    "condition": {
+      "type": "building_level",
+      "id": "barracones",
+      "minLevel": 2
+    },
+    "tags": [
+      "quest",
+      "npc"
+    ],
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "A dormir",
+        "effects": [
+          {
+            "type": "fatigueAll",
+            "amount": 1
+          }
+        ]
+      },
+      "B": {
+        "label": "Ponche para la borrachera",
+        "effects": [
+          {
+            "type": "removeDrunk",
+            "amount": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "bob_trade_0",
+    "name": "Bob",
+    "image": "",
+    "text": "Un hombre vestido con demasiadas capas, pañuelos chillones y abalorios imposibles te recibe con una reverencia exagerada. \"Bienvenid@ a la caseta de Bob, la joya comercial del páramo. Tengo estilo, tengo encanto y, por casualidad, también tengo mercancía.\"",
+    "days": 1,
+    "weight": 0,
+    "type": "quest",
+    "tags": [
+      "npc",
+      "merchant",
+      "exterior"
+    ],
+    "choiceMode": "choice",
+    "options": {
+      "A": {
+        "label": "Comprar herramientas (-3 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 3
+          },
+          {
+            "type": "addItem",
+            "target": "base",
+            "amount": 1,
+            "itemId": "worker_toolkit"
+          }
+        ]
+      },
+      "B": {
+        "label": "Comprar medicamentos (-2 comida)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "food",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "meds",
+            "amount": 1
+          }
+        ]
+      },
+      "C": {
+        "label": "Comprar combustible (-2 materiales)",
+        "effects": [
+          {
+            "type": "removeResource",
+            "resource": "materials",
+            "amount": 2
+          },
+          {
+            "type": "addResource",
+            "resource": "fuel",
+            "amount": 1
+          }
+        ]
+      },
+      "D": {
+        "label": "No comerciar",
+        "effects": []
+      }
+    }
   }
 ]

@@ -16,9 +16,11 @@
     "skill": "ninguna",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "moralCurrent": 2,
-    "moralMax": 4,
-    "rarity": 4
+    "rarity": 4,
+    "moraleTable": "C",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
   },
   {
     "id": "survivor_kirk",
@@ -37,9 +39,11 @@
     "skill": "ninguna",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "moralCurrent": 2,
-    "moralMax": 2,
-    "rarity": 4
+    "rarity": 4,
+    "moraleTable": "A",
+    "moralCurrent": 6,
+    "moraleStart": 6,
+    "maxMorale": 10
   },
   {
     "id": "survivor_e34fokvp",
@@ -58,9 +62,11 @@
     "skill": "ninguna",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "moralCurrent": 2,
-    "moralMax": 2,
-    "rarity": 4
+    "rarity": 4,
+    "moraleTable": "C",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
   },
   {
     "id": "survivor_8d56p6ec",
@@ -78,10 +84,12 @@
     },
     "skill": "chatarrero",
     "skill2": "ninguna",
-    "negativeSkill": "glotón",
-    "moralCurrent": 2,
-    "moralMax": 2,
-    "rarity": 3
+    "negativeSkill": "ninguna",
+    "rarity": 3,
+    "moraleTable": "C",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
   },
   {
     "id": "survivor_j7kvxd2z",
@@ -100,9 +108,11 @@
     "skill": "precavido",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "moralCurrent": 1,
-    "moralMax": 2,
-    "rarity": 3
+    "rarity": 3,
+    "moraleTable": "B",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
   },
   {
     "id": "survivor_aiebwrdw",
@@ -121,9 +131,11 @@
     "skill": "cazador",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "moralCurrent": 2,
-    "moralMax": 2,
-    "rarity": 3
+    "rarity": 3,
+    "moraleTable": "A",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
   },
   {
     "id": "survivor_5xlsvhiv",
@@ -142,9 +154,11 @@
     "skill": "ingeniero",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "moralCurrent": 2,
-    "moralMax": 3,
-    "rarity": 2
+    "rarity": 2,
+    "moraleTable": "C",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
   },
   {
     "id": "survivor_y4o6r2gz",
@@ -162,10 +176,12 @@
     },
     "skill": "explorador",
     "skill2": "ninguna",
-    "negativeSkill": "miedoso",
-    "moralCurrent": 2,
-    "moralMax": 4,
-    "rarity": 2
+    "negativeSkill": "torpe",
+    "rarity": 2,
+    "moraleTable": "C",
+    "moralCurrent": 4,
+    "moraleStart": 4,
+    "maxMorale": 10
   },
   {
     "id": "survivor_lucia",
@@ -173,8 +189,6 @@
     "fatigueCurrent": 1,
     "fatigueMax": 3,
     "story": "El asentamiento de Lucía fue atacado por Fanáticos y pudo escapar de milagro gracias al sacrificio de su hermano. La pérdida de sus seres queridos le ha dejado muy tocada y melancólica.",
-    "moralCurrent": 1,
-    "moralMax": 3,
     "image": {
       "url": "https://i.ibb.co/MxqJtnj9/C010.jpg",
       "deleteUrl": ""
@@ -186,7 +200,11 @@
     "skill": "rastreador",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "rarity": 3
+    "rarity": 3,
+    "moraleTable": "A",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
   },
   {
     "id": "survivor_nitro",
@@ -194,8 +212,6 @@
     "fatigueCurrent": 3,
     "fatigueMax": 5,
     "story": "Nitro fanfarronea sobre lo buen luchador que es y lo apto que está para sobrevivir en el yermo por su cuenta. Excusa su sedentarismo a la debilidad de los demás... alguien tiene que defender los muros.",
-    "moralCurrent": 2,
-    "moralMax": 3,
     "image": {
       "url": "https://i.ibb.co/NdpRTLL8/C011.jpg",
       "deleteUrl": ""
@@ -207,7 +223,11 @@
     "skill": "combatiente",
     "skill2": "ninguna",
     "negativeSkill": "ninguna",
-    "rarity": 3
+    "rarity": 3,
+    "moraleTable": "C",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
   },
   {
     "id": "survivor_alba",
@@ -215,8 +235,6 @@
     "fatigueCurrent": 3,
     "fatigueMax": 3,
     "story": "Vivir en las calles era más fácil que esto.",
-    "moralCurrent": 2,
-    "moralMax": 2,
     "image": {
       "url": "https://i.ibb.co/4R6xzKBk/C009.jpg",
       "deleteUrl": ""
@@ -228,6 +246,171 @@
     "skill": "precavido",
     "skill2": "explorador",
     "negativeSkill": "ninguna",
+    "rarity": 2,
+    "moraleTable": "A",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10
+  },
+  {
+    "id": "survivor_sven",
+    "name": "Sven",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "Black Metal",
+    "image": {
+      "url": "https://i.ibb.co/Lzmhndjq/C012.jpg",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/5gx0V3Tv/ef209857bcfa.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "rastreador",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "rarity": 3,
+    "moraleTable": "B",
+    "moralCurrent": 7,
+    "moraleStart": 7,
+    "maxMorale": 10
+  },
+  {
+    "id": "survivor_nestor",
+    "name": "Nestor",
+    "fatigueCurrent": 1,
+    "fatigueMax": 4,
+    "story": "Bricomat",
+    "image": {
+      "url": "https://i.ibb.co/PstpjhmZ/C13.jpg",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/0RmYwTmw/46d240061a29.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "chatarrero",
+    "skill2": "ingeniero",
+    "negativeSkill": "ninguna",
+    "rarity": 2,
+    "moraleTable": "A",
+    "moralCurrent": 6,
+    "moraleStart": 6,
+    "maxMorale": 10
+  },
+  {
+    "id": "survivor_Donna",
+    "name": "Donna Bernard",
+    "fatigueCurrent": 2,
+    "fatigueMax": 2,
+    "story": "Donna era una condecorada agente de policía hasta que en una persecución tuvo un accidente de coche que le ocasionó daños motrices permanentes en la pierna izquierda.",
+    "moraleTable": "C",
+    "moralCurrent": 4,
+    "moraleStart": 4,
+    "maxMorale": 10,
+    "image": {
+      "url": "https://i.ibb.co/DHzRP5yx/C14.jpg",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/NdN2TFG4/c63aab1e0d61.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "combatiente",
+    "skill2": "ninguna",
+    "negativeSkill": "torpe",
     "rarity": 2
+  },
+  {
+    "id": "survivor_riya",
+    "name": "Riya Pradesh",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "Conocida niña actriz de la televisión que parece haberse negado al nuevo rumbo de la humanidad. No podría sobrevivir ni un solo día sola, pero siempre consigue rodearse de gente...",
+    "moraleTable": "C",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10,
+    "image": {
+      "url": "https://i.ibb.co/0VzS7hzy/C15.jpg",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/fV830nKB/a56d70f39f30.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "ninguna",
+    "skill2": "ninguna",
+    "negativeSkill": "ninguna",
+    "rarity": 3
+  },
+  {
+    "id": "survivor_nabila",
+    "name": "Nabila Sabah",
+    "fatigueCurrent": 3,
+    "fatigueMax": 5,
+    "story": "Prep",
+    "moraleTable": "B",
+    "moralCurrent": 3,
+    "moraleStart": 3,
+    "maxMorale": 10,
+    "image": {
+      "url": "https://i.ibb.co/2YNN9b0p/C16.jpg",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/dsShb5Qh/14bfec3772e0.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "explorador",
+    "skill2": "rastreador",
+    "negativeSkill": "ninguna",
+    "rarity": 2
+  },
+  {
+    "id": "survivor_akane",
+    "name": "Lee Seo-yeon",
+    "fatigueCurrent": 3,
+    "fatigueMax": 3,
+    "story": "Conocida en el mundo de las carreras de coches ilegales.",
+    "moraleTable": "A",
+    "moralCurrent": 5,
+    "moraleStart": 5,
+    "maxMorale": 10,
+    "image": {
+      "url": "https://i.ibb.co/23SzWT11/C17.jpg",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/HDTc4h4T/ef3b935fd5ed.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "ingeniero",
+    "skill2": "chatarrero",
+    "negativeSkill": "ninguna",
+    "rarity": 2
+  },
+  {
+    "id": "survivor_luke",
+    "name": "Luke Darren",
+    "fatigueCurrent": 3,
+    "fatigueMax": 4,
+    "story": "El masca",
+    "moraleTable": "B",
+    "moralCurrent": 6,
+    "moraleStart": 6,
+    "maxMorale": 10,
+    "image": {
+      "url": "https://i.ibb.co/kV40Kjbg/C18.jpg",
+      "deleteUrl": ""
+    },
+    "imageInjured": {
+      "url": "https://i.ibb.co/8LHsWsSr/a624d806d664.jpg",
+      "deleteUrl": ""
+    },
+    "skill": "combatiente",
+    "skill2": "cazador",
+    "negativeSkill": "ninguna",
+    "rarity": 1
   }
 ]

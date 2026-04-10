@@ -34,7 +34,62 @@
       "materials": "Materiales",
       "fuel": "Combustible",
       "meds": "Medicamentos"
-    }
+    },
+    "popupPriority": {
+      "hostileBeforeEvents": true,
+      "hostilePopupIds": [
+        "combatResultPopup",
+        "ambushPopup",
+        "attackSetupPopup",
+        "threatDecisionPopup"
+      ]
+    },
+    "actionIcons": {
+      "forraje": {
+        "icon": "🌿",
+        "label": "Forrajear"
+      },
+      "reciclar": {
+        "icon": "⚙",
+        "label": "Reciclar"
+      },
+      "construir": {
+        "icon": "🔨",
+        "label": "Construir"
+      },
+      "explorar": {
+        "icon": "🧭",
+        "label": "Explorar"
+      },
+      "viajar": {
+        "icon": "🥾",
+        "label": "Viajar"
+      },
+      "vigilar": {
+        "icon": "👁",
+        "label": "Vigilar"
+      },
+      "defender": {
+        "icon": "🛡",
+        "label": "Defender"
+      },
+      "atacar": {
+        "icon": "⚔",
+        "label": "Atacar"
+      },
+      "descansar": {
+        "icon": "💤",
+        "label": "Descansar"
+      },
+      "investigar": {
+        "icon": "🔬",
+        "label": "Investigar"
+      }
+    },
+    "introLines": [
+      "War...",
+      "War never changes."
+    ]
   },
   "resources": {
     "caps": {
@@ -62,7 +117,22 @@
     "medicineImprovesOneLevel": true,
     "wellThresholdHigh": 3,
     "trackerAddsSurvivorEventWeight": 10,
-    "inventorUpgradeTimeReduction": 1
+    "inventorUpgradeTimeReduction": 1,
+    "ignoreAwaySurvivorsInCampSystems": true,
+    "singleExpeditionOnly": true,
+    "actionRiskChance": {
+      "forraje": 0.08,
+      "reciclar": 0.12,
+      "explorar": 0.18,
+      "defender": 0.1,
+      "outside": 0.1
+    },
+    "rarityWeights": {
+      "1": 1,
+      "2": 3,
+      "3": 6,
+      "4": 12
+    }
   },
   "injuries": {
     "levels": [
@@ -117,7 +187,12 @@
     },
     "attackThreats": {
       "preventNewThreatIfOneIsActive": true,
-      "respectBlockingEventFlag": true
+      "respectBlockingEventFlag": true,
+      "defaultChancePercent": 100
+    },
+    "bondEffect": {
+      "defaultOperation": "set",
+      "defaultType": "friend"
     }
   },
   "exploration": {
@@ -266,5 +341,71 @@
   ],
   "modifiers": {
     "trackerSurvivorBonus": 10
+  },
+  "skills": {
+    "leader": {
+      "groupLeaderBonusPercent": 10
+    },
+    "actionSkillMap": {
+      "forraje": [
+        "recolector",
+        "cazador"
+      ],
+      "reciclar": [
+        "chatarrero"
+      ],
+      "construir": [
+        "ingeniero",
+        "inventor"
+      ],
+      "explorar": [
+        "rastreador",
+        "explorador",
+        "precavido",
+        "combatiente"
+      ]
+    }
+  },
+  "camp": {
+    "abandonedBuildings": [
+      {
+        "id": "abandoned_1",
+        "name": "Edificio abandonado I",
+        "description": "Una estructura derruida y sin uso. En el futuro podrá convertirse o demolerse.",
+        "map": {
+          "left": "8%",
+          "top": "54%",
+          "width": "16%",
+          "height": "12%",
+          "specialStyle": "border-color:rgba(180,120,80,0.45);background:rgba(50,34,22,0.65);color:rgba(220,190,160,0.92);"
+        }
+      },
+      {
+        "id": "abandoned_2",
+        "name": "Edificio abandonado II",
+        "description": "Una ruina útil para futuros sistemas de conversión o derribo.",
+        "map": {
+          "left": "82%",
+          "top": "54%",
+          "width": "14%",
+          "height": "12%",
+          "specialStyle": "border-color:rgba(180,120,80,0.45);background:rgba(50,34,22,0.65);color:rgba(220,190,160,0.92);"
+        }
+      }
+    ]
+  },
+  "threats": {
+    "dailySpawnChance": 0.35,
+    "slotLimit": 3,
+    "cooldownOnResolve": {
+      "enabled": true,
+      "defaultMinDays": 7,
+      "defaultMaxDays": 10,
+      "fallbackToNearestExpiryWhenAllCoolingDown": true
+    }
+  },
+  "audio": {
+    "bgVolume": 0.18,
+    "combatVolume": 0.25
   }
 }

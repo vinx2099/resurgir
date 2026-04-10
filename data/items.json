@@ -2,6 +2,7 @@
   {
     "id": "melee_knife",
     "name": "Cuchillo",
+    "tier": "T1",
     "type": "weapon",
     "description": "+1 combate cuerpo a cuerpo.",
     "effects": [
@@ -15,10 +16,59 @@
     "repairable": true
   },
   {
+    "id": "melee_hatchet",
+    "name": "Hachuela",
+    "tier": "T2",
+    "type": "weapon",
+    "description": "+2 combate cuerpo a cuerpo.",
+    "effects": [
+      {
+        "kind": "melee",
+        "amount": 2
+      }
+    ],
+    "durability": 5,
+    "maxDurability": 5,
+    "repairable": true
+  },
+  {
+    "id": "melee_machete",
+    "name": "Machete",
+    "tier": "T3",
+    "type": "weapon",
+    "description": "+3 combate cuerpo a cuerpo.",
+    "effects": [
+      {
+        "kind": "melee",
+        "amount": 3
+      }
+    ],
+    "durability": 6,
+    "maxDurability": 6,
+    "repairable": true
+  },
+  {
+    "id": "ranged_bow",
+    "name": "Arco",
+    "tier": "T1",
+    "type": "weapon",
+    "description": "Añade 1d3 en combate a distancia.",
+    "effects": [
+      {
+        "kind": "ranged",
+        "amount": 3
+      }
+    ],
+    "durability": 4,
+    "maxDurability": 4,
+    "repairable": true
+  },
+  {
     "id": "ranged_pistol",
     "name": "Pistola",
+    "tier": "T2",
     "type": "weapon",
-    "description": "Añade 1d4 en combate.",
+    "description": "Añade 1d4 en combate a distancia.",
     "effects": [
       {
         "kind": "ranged",
@@ -30,8 +80,41 @@
     "repairable": true
   },
   {
+    "id": "ranged_hunting_rifle",
+    "name": "Rifle de caza",
+    "tier": "T3",
+    "type": "weapon",
+    "description": "Añade 1d6 en combate a distancia.",
+    "effects": [
+      {
+        "kind": "ranged",
+        "amount": 6
+      }
+    ],
+    "durability": 5,
+    "maxDurability": 5,
+    "repairable": true
+  },
+  {
+    "id": "ranged_sniper_rifle",
+    "name": "Rifle de francotirador",
+    "tier": "T4",
+    "type": "weapon",
+    "description": "Añade 1d8 en combate a distancia.",
+    "effects": [
+      {
+        "kind": "ranged",
+        "amount": 8
+      }
+    ],
+    "durability": 6,
+    "maxDurability": 6,
+    "repairable": true
+  },
+  {
     "id": "armor_jacket",
     "name": "Chaqueta reforzada",
+    "tier": "T2",
     "type": "equipment",
     "description": "Reduce la posibilidad y gravedad de herida.",
     "effects": [
@@ -45,8 +128,57 @@
     "repairable": true
   },
   {
+    "id": "armor_biker_vest",
+    "name": "Chaleco de motorista",
+    "tier": "T3",
+    "type": "equipment",
+    "description": "Protección sólida contra heridas.",
+    "effects": [
+      {
+        "kind": "armor",
+        "amount": 2
+      }
+    ],
+    "durability": 5,
+    "maxDurability": 5,
+    "repairable": true
+  },
+  {
+    "id": "armor_kevlar_vest",
+    "name": "Chaleco kevlar",
+    "tier": "T4",
+    "type": "equipment",
+    "description": "Protección avanzada frente a heridas.",
+    "effects": [
+      {
+        "kind": "armor",
+        "amount": 3
+      }
+    ],
+    "durability": 6,
+    "maxDurability": 6,
+    "repairable": true
+  },
+  {
+    "id": "worker_prybar",
+    "name": "Palanca",
+    "tier": "T1",
+    "type": "tool",
+    "description": "Ayuda a desmontar y preparar estructuras. Reduce 1 día de construcción.",
+    "effects": [
+      {
+        "kind": "worker",
+        "amount": 1
+      }
+    ],
+    "durability": 4,
+    "maxDurability": 4,
+    "repairable": true
+  },
+  {
     "id": "worker_toolkit",
     "name": "Herramientas de obra",
+    "tier": "T2",
     "type": "tool",
     "description": "Reduce 1 día de construcción.",
     "effects": [
@@ -57,12 +189,47 @@
     ],
     "durability": 5,
     "maxDurability": 5,
-    "repairable": true,
-    "requiredSkill": "manitas"
+    "repairable": true
+  },
+  {
+    "id": "worker_power_tools",
+    "name": "Herramientas eléctricas",
+    "tier": "T3",
+    "type": "tool",
+    "description": "Reduce 2 días de construcción.",
+    "effects": [
+      {
+        "kind": "worker",
+        "amount": 2
+      }
+    ],
+    "durability": 5,
+    "maxDurability": 5,
+    "repairable": true
+  },
+  {
+    "id": "heal_bandages",
+    "name": "Vendas limpias",
+    "tier": "T1",
+    "type": "consumable",
+    "description": "Cura un nivel de herida.",
+    "stackable": true,
+    "effects": [
+      {
+        "kind": "heal",
+        "amount": 1
+      }
+    ],
+    "use": "consume",
+    "usableIn": [
+      "base",
+      "event"
+    ]
   },
   {
     "id": "medkit",
     "name": "Botiquín",
+    "tier": "T2",
     "type": "consumable",
     "description": "Cura un nivel de herida.",
     "stackable": false,
@@ -79,8 +246,28 @@
     ]
   },
   {
-    "id": "snack_pack",
+    "id": "heal_surgical_case",
+    "name": "Maletín quirúrgico",
+    "tier": "T4",
+    "type": "consumable",
+    "description": "Cura dos niveles de herida.",
+    "stackable": false,
+    "effects": [
+      {
+        "kind": "heal",
+        "amount": 2
+      }
+    ],
+    "use": "consume",
+    "usableIn": [
+      "base",
+      "event"
+    ]
+  },
+  {
+    "id": "food_snack_pack",
     "name": "Ración energética",
+    "tier": "T1",
     "type": "consumable",
     "description": "+1 comida.",
     "stackable": true,
@@ -97,8 +284,28 @@
     ]
   },
   {
-    "id": "comic_book",
+    "id": "food_canned_meal",
+    "name": "Comida enlatada",
+    "tier": "T2",
+    "type": "consumable",
+    "description": "+2 comida.",
+    "stackable": true,
+    "effects": [
+      {
+        "kind": "food",
+        "amount": 2
+      }
+    ],
+    "use": "consume",
+    "usableIn": [
+      "base",
+      "event"
+    ]
+  },
+  {
+    "id": "fun_comic_book",
     "name": "Cómic viejo",
+    "tier": "T1",
     "type": "consumable",
     "description": "+1 moral.",
     "stackable": true,
@@ -106,6 +313,44 @@
       {
         "kind": "fun",
         "amount": 1
+      }
+    ],
+    "use": "consume",
+    "usableIn": [
+      "base",
+      "event"
+    ]
+  },
+  {
+    "id": "fun_card_deck",
+    "name": "Baraja gastada",
+    "tier": "T2",
+    "type": "consumable",
+    "description": "+1 moral.",
+    "stackable": true,
+    "effects": [
+      {
+        "kind": "fun",
+        "amount": 1
+      }
+    ],
+    "use": "consume",
+    "usableIn": [
+      "base",
+      "event"
+    ]
+  },
+  {
+    "id": "fun_harmonica",
+    "name": "Armónica",
+    "tier": "T3",
+    "type": "consumable",
+    "description": "+2 moral.",
+    "stackable": false,
+    "effects": [
+      {
+        "kind": "fun",
+        "amount": 2
       }
     ],
     "use": "consume",

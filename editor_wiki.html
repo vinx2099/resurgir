@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RESURGIR · Editor de entradas</title>
+  <style>
+    :root {
+      --bg: #0d0b09;
+      --bg-2: #16110d;
+      --panel: rgba(30, 21, 16, 0.92);
+      --panel-2: rgba(20, 14, 11, 0.96);
+      --panel-3: #241913;
+      --text: #f2e9dd;
+      --muted: #baa894;
+      --muted-2: #8c7766;
+      --accent: #d76a2b;
+      --accent-2: #ff9c52;
+      --accent-dark: #7f3711;
+      --danger: #b64536;
+      --ok: #729c4d;
+      --border: rgba(230, 165, 109, 0.18);
+      --shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(215, 106, 43, 0.11), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 156, 82, 0.08), transparent 22%),
+        linear-gradient(180deg, #1a120d 0%, #120d0a 24%, #0d0b09 100%);
+      background-attachment: fixed;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.08;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 3px 3px, 5px 5px;
+      mix-blend-mode: soft-light;
+    }
+
+    .wrap {
+      width: min(1380px, calc(100% - 28px));
+      margin: 20px auto 28px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      background:
+        linear-gradient(135deg, rgba(60, 32, 20, 0.96), rgba(24, 17, 13, 0.96)),
+        var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -80px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 156, 82, 0.18), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: rgba(215, 106, 43, 0.14);
+      border: 1px solid rgba(255, 156, 82, 0.24);
+      color: var(--accent-2);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(30px, 4vw, 42px);
+      line-height: 1;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .sub {
+      max-width: 980px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(310px, 0.8fr);
+      gap: 18px;
+    }
+
+    .panel {
+      position: relative;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(180deg, rgba(40, 28, 21, 0.94), rgba(21, 15, 12, 0.96));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      display: block;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent-dark), var(--accent), var(--accent-2));
+    }
+
+    .panel-inner {
+      padding: 18px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-title strong {
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      color: var(--accent-2);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted-2);
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #f6d8bc;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      border: 1px solid rgba(255, 156, 82, 0.12);
+      background: rgba(10, 8, 7, 0.72);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 13px 14px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .08s ease;
+    }
+
+    input[type="text"]::placeholder,
+    textarea::placeholder {
+      color: #8e7d6d;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: rgba(255, 156, 82, 0.55);
+      box-shadow: 0 0 0 3px rgba(215, 106, 43, 0.15);
+      transform: translateY(-1px);
+    }
+
+    textarea {
+      min-height: 290px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    .related-builder {
+      border: 1px solid rgba(255, 156, 82, 0.12);
+      border-radius: 16px;
+      background: rgba(8, 6, 5, 0.55);
+      padding: 14px;
+    }
+
+    .related-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 18px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 156, 82, 0.24);
+      background: rgba(215, 106, 43, 0.12);
+      color: #ffd3b1;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .chip.missing {
+      border-color: rgba(182, 69, 54, 0.45);
+      background: rgba(182, 69, 54, 0.12);
+      color: #ffc1ba;
+    }
+
+    .chip button {
+      min-height: auto;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.28);
+      color: inherit;
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .chip button:hover {
+      opacity: 1;
+      background: rgba(0,0,0,.42);
+    }
+
+    .small-note {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted-2);
+      margin-top: 8px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button, .file-label {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 15px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      background: linear-gradient(180deg, var(--accent-2), var(--accent));
+      color: #1d1009;
+      transition: transform .08s ease, opacity .15s ease, filter .15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 10px 18px rgba(0,0,0,.22);
+    }
+
+    button:hover, .file-label:hover {
+      opacity: .97;
+      filter: brightness(1.03);
+    }
+
+    button:active, .file-label:active {
+      transform: translateY(1px);
+    }
+
+    button.secondary, .file-label.secondary {
+      background: linear-gradient(180deg, #3f2c21, #261b15);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: none;
+    }
+
+    button.danger {
+      background: linear-gradient(180deg, #cf5b4d, #a83d32);
+      color: #200706;
+    }
+
+    button.ok {
+      background: linear-gradient(180deg, #98c06a, #6f9446);
+      color: #111a0b;
+    }
+
+    input[type="file"] { display: none; }
+
+    .status {
+      margin-top: 14px;
+      min-height: 22px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .status.good { color: #a6d777; }
+    .status.bad { color: #ffb4ab; }
+    .status.info { color: var(--muted); }
+
+    .meta {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 12px;
+    }
+
+    .list-tools {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .search-input {
+      width: 100%;
+    }
+
+    .entry-list {
+      display: grid;
+      gap: 10px;
+      max-height: 720px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .entry-item {
+      border: 1px solid rgba(255, 156, 82, 0.14);
+      background: linear-gradient(180deg, rgba(33, 23, 18, 0.94), rgba(18, 13, 10, 0.96));
+      border-radius: 16px;
+      padding: 13px;
+      cursor: pointer;
+      transition: border-color .15s ease, transform .08s ease, background .15s ease;
+    }
+
+    .entry-item:hover {
+      border-color: rgba(255, 156, 82, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .entry-item.active {
+      border-color: rgba(255, 156, 82, 0.7);
+      background: linear-gradient(180deg, rgba(74, 44, 24, 0.96), rgba(32, 22, 15, 0.96));
+      box-shadow: inset 0 0 0 1px rgba(255, 156, 82, 0.16);
+    }
+
+    .entry-name {
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: #ffe1c6;
+    }
+
+    .entry-preview {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.42;
+      white-space: pre-wrap;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      margin-bottom: 9px;
+    }
+
+    .entry-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: #d4b08d;
+    }
+
+    .entry-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(215, 106, 43, 0.12);
+      border: 1px solid rgba(255, 156, 82, 0.16);
+    }
+
+    .empty-box {
+      border: 1px dashed rgba(255, 156, 82, 0.2);
+      border-radius: 16px;
+      padding: 16px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1024px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .entry-list {
+        max-height: 380px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        width: min(100%, calc(100% - 16px));
+      }
+
+      .hero, .panel-inner {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .related-row {
+        grid-template-columns: 1fr;
+      }
+
+      .buttons button,
+      .buttons .file-label {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">RESURGIR · Manual interno</div>
+      <h1>Editor de entradas</h1>
+      <div class="sub">
+        Crea las entradas de ayuda del juego con un estilo más acorde al universo de <strong>RESURGIR</strong>.
+        Cada entrada puede enlazar con otras mediante botones relacionados. Esos enlaces se guardan dentro del mismo JSON.
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-inner">
+          <div class="section-title">
+            <strong>Ficha de entrada</strong>
+            <span class="hint">Nombre + texto + enlaces internos</span>
+          </div>
+
+          <div class="field-grid">
+            <div>
+              <label for="nombre">Nombre</label>
+              <input id="nombre" type="text" placeholder="Ejemplo: Forrajear">
+            </div>
+
+            <div>
+              <label for="texto">Texto</label>
+              <textarea id="texto" placeholder="Explica aquí la mecánica o concepto..."></textarea>
+            </div>
+
+            <div>
+              <label for="relatedInput">Entradas relacionadas</label>
+              <div class="related-builder">
+                <div class="related-row">
+                  <input id="relatedInput" list="entrySuggestions" type="text" placeholder="Ejemplo: Cazador">
+                  <button id="addRelatedBtn" type="button">Añadir relación</button>
+                </div>
+                <datalist id="entrySuggestions"></datalist>
+                <div id="relatedChips" class="chips"></div>
+                <div class="small-note">
+                  Escribe el nombre de otra entrada y añádelo. En la página de lectura aparecerá como un botón que abrirá directamente esa entrada.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="buttons">
+            <button id="saveEntryBtn" type="button">Añadir / actualizar entrada</button>
+            <button id="clearBtn" type="button" class="secondary">Limpiar campos</button>
+            <button id="deleteBtn" type="button" class="danger">Eliminar entrada seleccionada</button>
+          </div>
+
+          <div class="buttons">
+            <label class="file-label secondary" for="importFile">Importar JSON</label>
+            <input id="importFile" type="file" accept="application/json,.json">
+            <button id="downloadBtn" type="button" class="ok">Descargar JSON</button>
+            <button id="saveToFileBtn" type="button" class="secondary">Guardar sobre archivo JSON</button>
+          </div>
+
+          <div id="status" class="status info"></div>
+
+          <div class="meta">
+            Archivo recomendado: <strong>data/explicar_juego.json</strong><br>
+            Formato exportado por entrada: <strong>{ nombre, texto, related: [] }</strong>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-inner">
+          <div class="section-title">
+            <strong>Entradas</strong>
+            <span id="entryCount" class="count">0 entradas</span>
+          </div>
+
+          <div class="list-tools">
+            <input id="searchInput" class="search-input" type="text" placeholder="Buscar entrada...">
+          </div>
+
+          <div id="entryList" class="entry-list"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      entries: [],
+      selectedIndex: -1,
+      currentRelated: [],
+      search: ''
+    };
+
+    const nombreInput = document.getElementById('nombre');
+    const textoInput = document.getElementById('texto');
+    const relatedInput = document.getElementById('relatedInput');
+    const relatedChips = document.getElementById('relatedChips');
+    const entrySuggestions = document.getElementById('entrySuggestions');
+    const entryList = document.getElementById('entryList');
+    const entryCount = document.getElementById('entryCount');
+    const statusEl = document.getElementById('status');
+    const searchInput = document.getElementById('searchInput');
+
+    function normalizeEntry(item) {
+      const rawRelated = Array.isArray(item?.related) ? item.related : [];
+      const related = rawRelated
+        .map(rel => {
+          if (typeof rel === 'string') return rel.trim();
+          if (rel && typeof rel === 'object') return String(rel.target || rel.nombre || rel.label || '').trim();
+          return '';
+        })
+        .filter(Boolean);
+
+      return {
+        nombre: String(item?.nombre || '').trim(),
+        texto: String(item?.texto || '').trim(),
+        related: [...new Set(related)]
+      };
+    }
+
+    function normalizeData(data) {
+      const list = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : []);
+      return list
+        .filter(item => item && typeof item === 'object')
+        .map(normalizeEntry)
+        .filter(item => item.nombre);
+    }
+
+    function sortEntries(entries) {
+      return [...entries].sort((a, b) => {
+        const an = (a?.nombre || '').trim();
+        const bn = (b?.nombre || '').trim();
+        return an.localeCompare(bn, 'es', { sensitivity: 'base' });
+      });
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function setStatus(message, type = 'info') {
+      statusEl.textContent = message;
+      statusEl.className = 'status ' + type;
+    }
+
+    function clearForm() {
+      nombreInput.value = '';
+      textoInput.value = '';
+      relatedInput.value = '';
+      state.currentRelated = [];
+      state.selectedIndex = -1;
+      renderRelatedChips();
+      renderList();
+    }
+
+    function getExistingNames(excludeCurrentName = '') {
+      const exclude = String(excludeCurrentName || '').trim().toLocaleLowerCase('es');
+      return sortEntries(state.entries)
+        .map(entry => entry.nombre)
+        .filter(name => name && name.toLocaleLowerCase('es') !== exclude);
+    }
+
+    function updateSuggestions() {
+      const currentName = nombreInput.value.trim();
+      const names = getExistingNames(currentName);
+      entrySuggestions.innerHTML = names.map(name => `<option value="${escapeHtml(name)}"></option>`).join('');
+    }
+
+    function relationExists(name) {
+      return state.entries.some(entry => entry.nombre.localeCompare(name, 'es', { sensitivity: 'base' }) === 0);
+    }
+
+    function renderRelatedChips() {
+      relatedChips.innerHTML = '';
+
+      if (!state.currentRelated.length) {
+        relatedChips.innerHTML = '<div class="empty-box">Sin entradas relacionadas todavía.</div>';
+        return;
+      }
+
+      state.currentRelated.forEach((name, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (relationExists(name) ? '' : ' missing');
+        chip.innerHTML = `
+          <span>${escapeHtml(name)}</span>
+          <button type="button" aria-label="Eliminar relación">×</button>
+        `;
+        chip.querySelector('button').addEventListener('click', () => {
+          state.currentRelated.splice(index, 1);
+          renderRelatedChips();
+        });
+        relatedChips.appendChild(chip);
+      });
+    }
+
+    function addRelatedEntry() {
+      const name = relatedInput.value.trim();
+      if (!name) {
+        setStatus('Escribe el nombre de una entrada relacionada.', 'bad');
+        relatedInput.focus();
+        return;
+      }
+
+      const currentName = nombreInput.value.trim();
+      if (currentName && currentName.localeCompare(name, 'es', { sensitivity: 'base' }) === 0) {
+        setStatus('Una entrada no puede enlazarse a sí misma.', 'bad');
+        return;
+      }
+
+      const exists = state.currentRelated.some(rel => rel.localeCompare(name, 'es', { sensitivity: 'base' }) === 0);
+      if (exists) {
+        setStatus('Esa relación ya está añadida.', 'bad');
+        relatedInput.value = '';
+        return;
+      }
+
+      state.currentRelated.push(name);
+      state.currentRelated = sortEntries(state.currentRelated.map(nombre => ({ nombre }))).map(item => item.nombre);
+      relatedInput.value = '';
+      renderRelatedChips();
+      setStatus(relationExists(name) ? 'Relación añadida.' : 'Relación añadida. Esa entrada aún no existe en el listado.', relationExists(name) ? 'good' : 'info');
+    }
+
+    function getPayload() {
+      return {
+        entries: sortEntries(state.entries).map(entry => ({
+          nombre: entry.nombre.trim(),
+          texto: entry.texto.trim(),
+          related: [...new Set((entry.related || []).map(item => String(item || '').trim()).filter(Boolean))]
+        }))
+      };
+    }
+
+    function renderList() {
+      const filter = state.search.trim().toLocaleLowerCase('es');
+      const sorted = sortEntries(state.entries);
+      const filtered = filter
+        ? sorted.filter(entry => {
+            const relatedText = (entry.related || []).join(' ');
+            return `${entry.nombre} ${entry.texto} ${relatedText}`.toLocaleLowerCase('es').includes(filter);
+          })
+        : sorted;
+
+      entryList.innerHTML = '';
+      entryCount.textContent = `${filtered.length} ${filtered.length === 1 ? 'entrada' : 'entradas'}`;
+
+      if (!filtered.length) {
+        entryList.innerHTML = '<div class="empty-box">No hay entradas que coincidan con la búsqueda.</div>';
+        return;
+      }
+
+      filtered.forEach(entry => {
+        const realIndex = state.entries.findIndex(e => e === entry);
+        const relatedCount = Array.isArray(entry.related) ? entry.related.length : 0;
+        const div = document.createElement('div');
+        div.className = 'entry-item' + (state.selectedIndex === realIndex ? ' active' : '');
+        div.innerHTML = `
+          <div class="entry-name">${escapeHtml(entry.nombre || '')}</div>
+          <div class="entry-preview">${escapeHtml((entry.texto || '').trim() || 'Sin texto.')}</div>
+          <div class="entry-meta">
+            <span class="entry-tag">Enlaces: ${relatedCount}</span>
+            ${relatedCount ? `<span class="entry-tag">${escapeHtml((entry.related || []).slice(0, 2).join(' · '))}${relatedCount > 2 ? '…' : ''}</span>` : ''}
+          </div>
+        `;
+        div.addEventListener('click', () => {
+          state.selectedIndex = realIndex;
+          const selected = state.entries[realIndex];
+          nombreInput.value = selected.nombre || '';
+          textoInput.value = selected.texto || '';
+          state.currentRelated = [...(selected.related || [])];
+          updateSuggestions();
+          renderRelatedChips();
+          renderList();
+        });
+        entryList.appendChild(div);
+      });
+    }
+
+    document.getElementById('saveEntryBtn').addEventListener('click', () => {
+      const nombre = nombreInput.value.trim();
+      const texto = textoInput.value.trim();
+      const related = [...new Set(state.currentRelated.map(item => String(item || '').trim()).filter(Boolean))];
+
+      if (!nombre) {
+        setStatus('El campo "Nombre" es obligatorio.', 'bad');
+        nombreInput.focus();
+        return;
+      }
+
+      const duplicateIndex = state.entries.findIndex((entry, index) =>
+        index !== state.selectedIndex &&
+        (entry.nombre || '').trim().localeCompare(nombre, 'es', { sensitivity: 'base' }) === 0
+      );
+
+      if (duplicateIndex !== -1) {
+        setStatus('Ya existe una entrada con ese nombre. Edítala o usa otro nombre.', 'bad');
+        return;
+      }
+
+      const newEntry = { nombre, texto, related };
+
+      if (state.selectedIndex >= 0) {
+        state.entries[state.selectedIndex] = newEntry;
+        setStatus('Entrada actualizada.', 'good');
+      } else {
+        state.entries.push(newEntry);
+        setStatus('Entrada añadida.', 'good');
+      }
+
+      clearForm();
+      updateSuggestions();
+      renderList();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      clearForm();
+      updateSuggestions();
+      setStatus('Campos limpiados.', 'info');
+    });
+
+    document.getElementById('deleteBtn').addEventListener('click', () => {
+      if (state.selectedIndex < 0) {
+        setStatus('Selecciona una entrada para eliminarla.', 'bad');
+        return;
+      }
+      const removed = state.entries.splice(state.selectedIndex, 1);
+      clearForm();
+      updateSuggestions();
+      renderList();
+      setStatus(`Entrada eliminada: ${removed[0]?.nombre || ''}`, 'good');
+    });
+
+    document.getElementById('addRelatedBtn').addEventListener('click', addRelatedEntry);
+
+    relatedInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        addRelatedEntry();
+      }
+    });
+
+    nombreInput.addEventListener('input', updateSuggestions);
+
+    document.getElementById('importFile').addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const importedEntries = normalizeData(parsed);
+        state.entries = importedEntries;
+        state.selectedIndex = -1;
+        state.currentRelated = [];
+        updateSuggestions();
+        renderRelatedChips();
+        renderList();
+        setStatus(`JSON importado correctamente. ${importedEntries.length} entradas cargadas.`, 'good');
+      } catch (error) {
+        console.error(error);
+        setStatus('No se ha podido leer ese JSON.', 'bad');
+      }
+      event.target.value = '';
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const payload = getPayload();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'explicar_juego.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus('JSON descargado. Súbelo como data/explicar_juego.json.', 'good');
+    });
+
+    document.getElementById('saveToFileBtn').addEventListener('click', async () => {
+      const payload = JSON.stringify(getPayload(), null, 2);
+
+      if (!window.showSaveFilePicker) {
+        setStatus('Tu navegador no permite guardar directamente sobre un archivo. Usa “Descargar JSON”.', 'bad');
+        return;
+      }
+
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: 'explicar_juego.json',
+          types: [{
+            description: 'Archivo JSON',
+            accept: { 'application/json': ['.json'] }
+          }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(payload);
+        await writable.close();
+        setStatus('Archivo guardado correctamente.', 'good');
+      } catch (error) {
+        if (error?.name !== 'AbortError') {
+          console.error(error);
+          setStatus('No se ha podido guardar el archivo.', 'bad');
+        }
+      }
+    });
+
+    searchInput.addEventListener('input', () => {
+      state.search = searchInput.value || '';
+      renderList();
+    });
+
+    updateSuggestions();
+    renderRelatedChips();
+    renderList();
+  </script>
+</body>
+</html>

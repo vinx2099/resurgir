@@ -20,8 +20,8 @@
   {
     "id": "rastreador",
     "name": "Rastreador",
-    "label": "👁 Rastreador — mejora la probabilidad de encontrar supervivientes",
-    "description": "Aumenta la probabilidad de que al explorar aparezcan eventos de encontrar supervivientes."
+    "label": "👁 Rastreador — +5 peso al encontrar supervivientes",
+    "description": "Aumenta en 5 el peso de la categoría de encontrar supervivientes al explorar."
   },
   {
     "id": "inventor",
@@ -32,8 +32,8 @@
   {
     "id": "recolector",
     "name": "Recolector",
-    "label": "📦 Recolector — +1 recurso al explorar",
-    "description": "Cuando encuentra recursos explorando, obtiene 1 unidad adicional."
+    "label": "📦 Recolector — +1 comida al forrajear",
+    "description": "Obtiene 1 comida extra al realizar la acción de forrajear."
   },
   {
     "id": "cazador",
@@ -52,6 +52,24 @@
     "name": "Combatiente",
     "label": "⚔ Combatiente — +1 en combate",
     "description": "Aporta +1 en acciones de ataque preventivo y defensa."
+  },
+  {
+    "id": "lider",
+    "name": "Líder",
+    "label": "⭐ Líder — +10% a positivos grupales de apoyo",
+    "description": "Si actúa como líder en una acción grupal, aumenta un 10% los efectos positivos que aportan sus compañeros."
+  },
+  {
+    "id": "resolutivo",
+    "name": "Resolutivo",
+    "label": "🔥 Resolutivo — +10% frente a amenazas",
+    "description": "Aumenta en 10% la probabilidad de éxito al actuar contra amenazas activas con un superviviente asignado."
+  },
+   {
+    "id": "trader",
+    "name": "Comerciante",
+    "label": "🔥 Comerciante — Mejores opciones de negociación",
+    "description": "Mejores opciones de negociación en eventos y con NPC."
   },
   {
     "id": "ninguna",

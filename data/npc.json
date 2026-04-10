@@ -1,0 +1,11 @@
+[
+  {
+    "id": "npc_bob",
+    "name": "Bob",
+    "type": "merchant",
+    "state": "known",
+    "eventId": "bob_trade_0",
+    "image": "",
+    "description": "Un comerciante extravagante del exterior. Siempre parece tener algo que vender y una frase demasiado ensayada para presentarlo."
+  }
+]

@@ -260,5 +260,28 @@
       ]
     },
     "exhaustible": false
+  },
+  {
+    "id": "bobs_shack",
+    "name": "La caseta de Bob",
+    "adjectives": [],
+    "icon": "🛖",
+    "description": "Una caseta recargada de telas, chatarra brillante y baratijas absurdamente llamativas. Bob comercia aquí con una teatralidad casi ofensiva.",
+    "riskLevel": 0,
+    "explorable": true,
+    "exhaustible": false,
+    "resourceMode": "fixed",
+    "exploreDays": 1,
+    "resources": {},
+    "lootYield": {},
+    "hostilesChance": 0,
+    "raidersChance": 0,
+    "npcId": "npc_bob",
+    "npcAlways": true,
+    "npcPersistent": true,
+    "npcLeavesAfterTalk": false,
+    "alwaysSpawn": true,
+    "x": 74,
+    "y": 10
   }
 ]

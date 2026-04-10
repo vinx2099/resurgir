@@ -1,0 +1,1364 @@
+{
+  "threats": [
+    {
+      "id": "raiders_stalking",
+      "name": "Saqueadores al acecho",
+      "image": "",
+      "type": "hostile",
+      "tags": [
+        "raid",
+        "hostile",
+        "persistent",
+        "defense"
+      ],
+      "description": "Varias siluetas observan el asentamiento desde lejos. Aún no atacan, pero están estudiando tus rutinas.",
+      "visible": true,
+      "enabled": true,
+      "force": false,
+      "spawn": {
+        "minDay": 8,
+        "maxDay": 999,
+        "weight": 8,
+        "maxActiveInstances": 1,
+        "cooldownOnResolveMinDays": 7,
+        "cooldownOnResolveMaxDays": 10
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ],
+        "3": [
+          {
+            "type": "stability_delta",
+            "amount": -2
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "Los saqueadores se acercan más. El asentamiento empieza a inquietarse."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "Los saqueadores ya están preparados para atacar."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "trigger_attack",
+          "attackType": "raiders",
+          "hostileType": "random",
+          "hostileVariant": "random",
+          "hostilePool": "hostile",
+          "hostileNpcId": "",
+          "strength": 2,
+          "arrivalDays": 0
+        }
+      ],
+      "actions": [
+        {
+          "id": "patrol_perimeter",
+          "label": "Patrullar perímetro",
+          "description": "Enviar vigilancia para forzarles a mantener las distancias.",
+          "requirements": {
+            "survivorAvailable": true,
+            "minDefense": 1
+          },
+          "facilitators": [
+            {
+              "type": "equipped_item_tag",
+              "itemTag": "weapon",
+              "itemId": "",
+              "bonus": 15,
+              "notes": ""
+            }
+          ],
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 65,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La patrulla hace retroceder a los saqueadores."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "stability_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "La patrulla no consigue localizar bien a los hostiles."
+              }
+            ]
+          }
+        },
+        {
+          "id": "reinforce_walls",
+          "label": "Reforzar muros",
+          "description": "Gastar materiales para hacer menos atractivo el ataque.",
+          "requirements": {
+            "resource": {
+              "materiales": 3
+            }
+          },
+          "facilitators": [],
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -3
+            }
+          ],
+          "success": {
+            "chance": 100,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "El asentamiento parece más difícil de asaltar."
+              }
+            ]
+          },
+          "failure": {
+            "effects": []
+          }
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "morale_delta",
+          "amount": 1
+        },
+        {
+          "type": "log",
+          "text": "Los saqueadores abandonan la zona por ahora."
+        }
+      ]
+    },
+    {
+      "id": "joe_stalking",
+      "name": "El Señor del Acero",
+      "image": "",
+      "type": "hostile",
+      "tags": [
+        "raid",
+        "hostile",
+        "persistent",
+        "defense",
+        "npc"
+      ],
+      "description": "Alguien que se hace llamar El Señor del Acero parece interesado en arrasar el campamento.",
+      "visible": true,
+      "enabled": false,
+      "force": true,
+      "spawn": {
+        "minDay": 1,
+        "maxDay": 999,
+        "weight": 8,
+        "maxActiveInstances": 1,
+        "cooldownOnResolveMinDays": 7,
+        "cooldownOnResolveMaxDays": 10
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [],
+        "2": [
+          {
+            "type": "morale_delta",
+            "amount": -1
+          },
+          {
+            "type": "trigger_attack",
+            "attackType": "raiders",
+            "hostileType": "raiders",
+            "hostileVariant": "random",
+            "hostilePool": "hostile",
+            "hostileNpcId": "",
+            "strength": 1,
+            "arrivalDays": 0,
+            "text": ""
+          }
+        ],
+        "3": [
+          {
+            "type": "morale_delta",
+            "amount": -2
+          },
+          {
+            "type": "trigger_attack",
+            "attackType": "raiders",
+            "hostileType": "raiders",
+            "hostileVariant": "random",
+            "hostilePool": "hostile",
+            "hostileNpcId": "",
+            "strength": 1,
+            "arrivalDays": 0,
+            "text": ""
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "El Señor del Acero ha mandado una avanzadilla para tantear el terreno."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "El Señor del Acero ha mandado una avanzadilla para tantear el terreno."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "trigger_attack",
+          "attackType": "npc_joe",
+          "hostileType": "npc_joe",
+          "hostileVariant": "random",
+          "hostilePool": "hostile",
+          "hostileNpcId": "",
+          "strength": 2,
+          "arrivalDays": 0
+        }
+      ],
+      "actions": [
+        {
+          "id": "patrol_perimeter",
+          "label": "Patrullar perímetro",
+          "description": "Enviar vigilancia para forzarles a mantener las distancias.",
+          "requirements": {
+            "survivorAvailable": true,
+            "minDefense": 1
+          },
+          "facilitators": [],
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": -1
+            }
+          ],
+          "success": {
+            "chance": 50,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La patrulla hace retroceder a los asaltante."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "stability_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "La patrulla no consigue frenar a la avanzadilla."
+              }
+            ]
+          }
+        },
+        {
+          "id": "reinforce_walls",
+          "label": "Reforzar muros",
+          "description": "Gastar materiales para hacer menos atractivo el ataque.",
+          "requirements": {
+            "resource": {
+              "materiales": 2
+            }
+          },
+          "facilitators": [],
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -2
+            }
+          ],
+          "success": {
+            "chance": 100,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "El asentamiento parece más difícil de asaltar."
+              }
+            ]
+          },
+          "failure": {
+            "effects": []
+          }
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "morale_delta",
+          "amount": 1
+        },
+        {
+          "type": "log",
+          "text": "Los saqueadores abandonan la zona por ahora."
+        }
+      ]
+    },
+    {
+      "id": "shelter_infection",
+      "name": "Infección en el refugio",
+      "image": "",
+      "type": "health",
+      "tags": [
+        "medical",
+        "persistent",
+        "sickness"
+      ],
+      "description": "La suciedad y la mala ventilación están causando infecciones leves entre los supervivientes.",
+      "visible": true,
+      "enabled": true,
+      "force": false,
+      "spawn": {
+        "minDay": 15,
+        "maxDay": 999,
+        "weight": 4,
+        "maxActiveInstances": 1,
+        "cooldownOnResolveMinDays": 7,
+        "cooldownOnResolveMaxDays": 10
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          },
+          {
+            "type": "random_injury",
+            "severity": "simple",
+            "chance": 25
+          }
+        ],
+        "3": [
+          {
+            "type": "stability_delta",
+            "amount": -2
+          },
+          {
+            "type": "random_injury",
+            "severity": "simple",
+            "chance": 40
+          },
+          {
+            "type": "fatigue_all_delta",
+            "amount": 1
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "La infección se extiende por el refugio."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "La situación sanitaria es grave."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "morale_delta",
+          "amount": -1
+        },
+        {
+          "type": "random_injury",
+          "severity": "seria",
+          "chance": 50
+        }
+      ],
+      "actions": [
+        {
+          "id": "clean_refuge",
+          "label": "Limpiar refugio",
+          "description": "Dedicar tiempo y materiales a mejorar la higiene.",
+          "requirements": {
+            "survivorAvailable": true,
+            "resource": {
+              "materiales": 2
+            }
+          },
+          "facilitators": [],
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -2
+            },
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 80,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La limpieza contiene parcialmente la infección."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "morale_delta",
+                "amount": -1
+              }
+            ]
+          }
+        },
+        {
+          "id": "use_medicine",
+          "label": "Usar medicina",
+          "description": "Consumir medicina para frenar el brote.",
+          "requirements": {
+            "resource": {
+              "medicina": 1
+            }
+          },
+          "facilitators": [],
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "medicina",
+              "amount": -1
+            }
+          ],
+          "success": {
+            "chance": 100,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 2
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La medicina estabiliza la situación."
+              }
+            ]
+          },
+          "failure": {
+            "effects": []
+          }
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "stability_delta",
+          "amount": 1
+        },
+        {
+          "type": "log",
+          "text": "La infección queda bajo control."
+        },
+        {
+          "type": "threat_remove",
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "garden_plague",
+      "name": "Plaga en el huerto",
+      "image": "",
+      "type": "production",
+      "tags": [
+        "farm",
+        "production",
+        "persistent",
+        "food"
+      ],
+      "description": "Una plaga está dañando el huerto y reduciendo la producción de comida.",
+      "visible": true,
+      "enabled": true,
+      "force": false,
+      "spawn": {
+        "minDay": 6,
+        "maxDay": 999,
+        "weight": 4,
+        "maxActiveInstances": 1,
+        "requiresBuilding": "huerto",
+        "cooldownOnResolveMinDays": 7,
+        "cooldownOnResolveMaxDays": 10
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "building_output_modifier",
+            "building": "huerto",
+            "resource": "comida",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "building_output_modifier",
+            "building": "huerto",
+            "resource": "comida",
+            "amount": -2
+          }
+        ],
+        "3": [
+          {
+            "type": "building_output_modifier",
+            "building": "huerto",
+            "resource": "comida",
+            "amount": -3
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "La plaga se extiende por más cultivos."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "El huerto está casi perdido."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "disable_building",
+          "building": "huerto",
+          "days": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "treat_plague",
+          "label": "Tratar plaga",
+          "description": "Aplicar tratamiento rudimentario y retirar plantas dañadas.",
+          "requirements": {
+            "survivorAvailable": true
+          },
+          "facilitators": [],
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 60,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "Consigues salvar parte del huerto."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "building_output_modifier",
+                "building": "huerto",
+                "resource": "comida",
+                "amount": -1
+              }
+            ]
+          }
+        },
+        {
+          "id": "burn_infected_crop",
+          "label": "Quemar cultivo infectado",
+          "description": "Eliminar parte de la cosecha para frenar la expansión.",
+          "requirements": {
+            "survivorAvailable": true
+          },
+          "facilitators": [],
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            },
+            {
+              "type": "resource_delta",
+              "resource": "comida",
+              "amount": -1
+            }
+          ],
+          "success": {
+            "chance": 100,
+            "effects": [
+              {
+                "type": "threat_remove"
+              },
+              {
+                "type": "log",
+                "text": "La plaga desaparece, aunque pierdes parte de la cosecha."
+              }
+            ]
+          },
+          "failure": {
+            "effects": []
+          }
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "log",
+          "text": "El huerto vuelve a funcionar con normalidad."
+        }
+      ]
+    },
+    {
+      "id": "generator_sabotage",
+      "name": "Sabotaje del generador",
+      "image": "",
+      "type": "production",
+      "tags": [
+        "power",
+        "production",
+        "persistent",
+        "sabotage"
+      ],
+      "description": "Alguien ha manipulado el generador. La instalación funciona a trompicones y cada jornada empeora.",
+      "visible": true,
+      "enabled": true,
+      "force": false,
+      "spawn": {
+        "minDay": 12,
+        "maxDay": 999,
+        "weight": 4,
+        "maxActiveInstances": 1,
+        "requiresBuilding": "generador",
+        "cooldownOnResolveMinDays": 7,
+        "cooldownOnResolveMaxDays": 10
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ],
+        "3": [
+          {
+            "type": "stability_delta",
+            "amount": -2
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "El generador vuelve a escupir humo negro. Alguien lo ha tocado a conciencia."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "El sabotaje está a punto de dejar la base sin energía útil."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "disable_building",
+          "building": "generador",
+          "days": 2
+        },
+        {
+          "type": "log",
+          "text": "El generador queda fuera de servicio."
+        }
+      ],
+      "actions": [
+        {
+          "id": "field_repair",
+          "label": "Reparación de campaña",
+          "description": "Intentar estabilizar el sistema con lo que haya a mano.",
+          "requirements": {
+            "survivorAvailable": true,
+            "resource": {
+              "materiales": 2
+            }
+          },
+          "facilitators": [
+            {
+              "type": "survivor_skill",
+              "skill": "ingeniero",
+              "bonus": 15,
+              "notes": ""
+            },
+            {
+              "type": "building_level",
+              "buildingId": "taller",
+              "minLevel": 2,
+              "bonus": 20,
+              "notes": ""
+            }
+          ],
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -2
+            },
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 55,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La reparación improvisada devuelve algo de estabilidad al generador."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "stability_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "No logras detectar todas las piezas manipuladas."
+              }
+            ]
+          }
+        },
+        {
+          "id": "overhaul_workshop",
+          "label": "Revisión a fondo",
+          "description": "Desmontar, revisar y volver a montar el generador con el Taller preparado.",
+          "requirements": {
+            "survivorAvailable": true,
+            "requiresBuilding": {
+              "id": "taller",
+              "minLevel": 2
+            },
+            "resource": {
+              "materiales": 3
+            }
+          },
+          "facilitators": [
+            {
+              "type": "survivor_skill",
+              "skill": "inventor",
+              "bonus": 10,
+              "notes": ""
+            }
+          ],
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -3
+            },
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 85,
+            "effects": [
+              {
+                "type": "threat_remove"
+              },
+              {
+                "type": "log",
+                "text": "La revisión completa elimina el sabotaje del generador."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "morale_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "El motor sigue fallando y la base se desespera."
+              }
+            ]
+          }
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "stability_delta",
+          "amount": 1
+        },
+        {
+          "type": "log",
+          "text": "El generador vuelve a rugir con normalidad."
+        }
+      ]
+    },
+    {
+      "id": "wild_pack_circling",
+      "name": "Manada rondando la base",
+      "image": "",
+      "type": "hostile",
+      "tags": [
+        "hostile",
+        "persistent",
+        "food",
+        "defense",
+        "animals"
+      ],
+      "description": "Una manada salvaje lleva varios días rondando el perímetro. Cada noche se acercan un poco más.",
+      "visible": true,
+      "enabled": true,
+      "force": false,
+      "spawn": {
+        "minDay": 9,
+        "maxDay": 999,
+        "weight": 5,
+        "maxActiveInstances": 1,
+        "cooldownOnResolveMinDays": 7,
+        "cooldownOnResolveMaxDays": 10
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "morale_delta",
+            "amount": -1
+          },
+          {
+            "type": "stability_delta",
+            "amount": -1
+          }
+        ],
+        "3": [
+          {
+            "type": "morale_delta",
+            "amount": -2
+          },
+          {
+            "type": "stability_delta",
+            "amount": -1
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "La manada ya no teme acercarse a los muros."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "Las bestias están listas para lanzarse sobre cualquier descuido."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "trigger_attack",
+          "attackType": "raiders",
+          "hostileType": "random",
+          "hostileVariant": "random",
+          "hostilePool": "hostile",
+          "hostileNpcId": "",
+          "strength": 1,
+          "arrivalDays": 0
+        }
+      ],
+      "actions": [
+        {
+          "id": "armed_hunt",
+          "label": "Batida armada",
+          "description": "Salir a espantarlas o abatir a las más agresivas antes de que carguen.",
+          "requirements": {
+            "survivorAvailable": true
+          },
+          "facilitators": [
+            {
+              "type": "equipped_item_tag",
+              "itemTag": "weapon",
+              "itemId": "",
+              "bonus": 15,
+              "notes": ""
+            },
+            {
+              "type": "survivor_skill",
+              "skill": "cazador",
+              "bonus": 10,
+              "notes": ""
+            },
+            {
+              "type": "building_level",
+              "buildingId": "atalaya",
+              "minLevel": 2,
+              "bonus": 10,
+              "notes": ""
+            }
+          ],
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 60,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "La batida rompe la confianza de la manada y la obliga a retroceder."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "morale_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "La salida no basta para dispersarlas y vuelven al anochecer."
+              }
+            ]
+          }
+        },
+        {
+          "id": "fortify_pen",
+          "label": "Blindar corrales y accesos",
+          "description": "Asegurar la periferia con materiales y vigilancia elevada.",
+          "requirements": {
+            "requiresBuilding": {
+              "id": "muros",
+              "minLevel": 2
+            },
+            "resource": {
+              "materiales": 2
+            }
+          },
+          "facilitators": [
+            {
+              "type": "building_level",
+              "buildingId": "muros",
+              "minLevel": 2,
+              "bonus": 15,
+              "notes": ""
+            }
+          ],
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -2
+            }
+          ],
+          "success": {
+            "chance": 75,
+            "effects": [
+              {
+                "type": "threat_remove"
+              },
+              {
+                "type": "log",
+                "text": "Las bestias dejan de merodear al no encontrar un punto débil."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "stability_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "Los refuerzos no tapan todos los huecos del perímetro."
+              }
+            ]
+          }
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "morale_delta",
+          "amount": 1
+        },
+        {
+          "type": "log",
+          "text": "La base vuelve a dormir sin oír a la manada alrededor."
+        }
+      ]
+    },
+    {
+      "id": "radio_interference_net",
+      "name": "Interferencias en la radio",
+      "image": "",
+      "type": "utility",
+      "tags": [
+        "radio",
+        "persistent",
+        "utility",
+        "intel"
+      ],
+      "description": "Las comunicaciones están siendo ensuciadas por una señal irregular. Cada día es más difícil coordinarse.",
+      "visible": true,
+      "enabled": true,
+      "force": false,
+      "spawn": {
+        "minDay": 14,
+        "maxDay": 999,
+        "weight": 3,
+        "maxActiveInstances": 1,
+        "requiresBuilding": "torre_radio",
+        "cooldownOnResolveMinDays": 7,
+        "cooldownOnResolveMaxDays": 10
+      },
+      "instance": {
+        "initialSeverity": 1,
+        "maxSeverity": 3,
+        "daysToEscalate": 2
+      },
+      "passiveEffectsBySeverity": {
+        "1": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          }
+        ],
+        "2": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          },
+          {
+            "type": "morale_delta",
+            "amount": -1
+          }
+        ],
+        "3": [
+          {
+            "type": "stability_delta",
+            "amount": -1
+          },
+          {
+            "type": "morale_delta",
+            "amount": -2
+          }
+        ]
+      },
+      "onEscalateBySeverity": {
+        "2": [
+          {
+            "type": "log",
+            "text": "La interferencia empieza a tapar mensajes enteros."
+          }
+        ],
+        "3": [
+          {
+            "type": "log",
+            "text": "La torre de radio apenas sirve para algo útil."
+          }
+        ]
+      },
+      "onMaxSeverity": [
+        {
+          "type": "disable_building",
+          "building": "torre_radio",
+          "days": 2
+        }
+      ],
+      "actions": [
+        {
+          "id": "trace_signal",
+          "label": "Rastrear señal",
+          "description": "Intentar triangular el origen de la interferencia antes de que sature la red.",
+          "requirements": {
+            "survivorAvailable": true
+          },
+          "facilitators": [
+            {
+              "type": "survivor_skill",
+              "skill": "rastreador",
+              "bonus": 15,
+              "notes": ""
+            },
+            {
+              "type": "building_level",
+              "buildingId": "torre_radio",
+              "minLevel": 2,
+              "bonus": 20,
+              "notes": ""
+            }
+          ],
+          "costs": [
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 60,
+            "effects": [
+              {
+                "type": "threat_reduce_severity",
+                "amount": 1
+              },
+              {
+                "type": "reset_escalation_timer"
+              },
+              {
+                "type": "log",
+                "text": "Logras limpiar parte del canal y recuperar margen de maniobra."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "morale_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "La señal se pierde otra vez entre chasquidos y ruido."
+              }
+            ]
+          }
+        },
+        {
+          "id": "hard_reset_radio",
+          "label": "Reiniciar red de emergencia",
+          "description": "Apagar, purgar y reiniciar toda la red de la torre con apoyo técnico.",
+          "requirements": {
+            "survivorAvailable": true,
+            "requiresBuilding": {
+              "id": "torre_radio",
+              "minLevel": 2
+            },
+            "resource": {
+              "materiales": 1
+            }
+          },
+          "facilitators": [
+            {
+              "type": "survivor_skill",
+              "skill": "ingeniero",
+              "bonus": 10,
+              "notes": ""
+            }
+          ],
+          "costs": [
+            {
+              "type": "resource_delta",
+              "resource": "materiales",
+              "amount": -1
+            },
+            {
+              "type": "fatigue_random_available",
+              "amount": 1
+            }
+          ],
+          "success": {
+            "chance": 80,
+            "effects": [
+              {
+                "type": "threat_remove"
+              },
+              {
+                "type": "log",
+                "text": "La red vuelve a quedar limpia y estable."
+              }
+            ]
+          },
+          "failure": {
+            "effects": [
+              {
+                "type": "stability_delta",
+                "amount": -1
+              },
+              {
+                "type": "log",
+                "text": "El reinicio consume tiempo y piezas, pero no resuelve el problema."
+              }
+            ]
+          }
+        }
+      ],
+      "onResolve": [
+        {
+          "type": "stability_delta",
+          "amount": 1
+        },
+        {
+          "type": "log",
+          "text": "Las comunicaciones de la base vuelven a ser fiables."
+        }
+      ]
+    }
+  ]
+}
