@@ -1,0 +1,47 @@
+{
+  "bajo": [
+    { "resource": "food", "amount": [0, 1], "weight": 4 },
+    { "resource": "materials", "amount": [1, 1], "weight": 3 },
+    { "resource": "meds", "amount": [0, 1], "weight": 1 },
+    { "type": "junk", "tier": "T1", "amount": [1, 1], "weight": 2 }
+  ],
+  "escaso": [
+    { "resource": "food", "amount": [1, 2], "weight": 4 },
+    { "resource": "materials", "amount": [1, 2], "weight": 4 },
+    { "resource": "fuel", "amount": [1, 1], "weight": 2 },
+    { "resource": "meds", "amount": [1, 1], "weight": 1 },
+    { "type": "junk", "tier": "T1", "amount": [1, 1], "weight": 2 },
+    { "type": "tool", "tier": "T1", "amount": [1, 1], "weight": 0.8 }
+  ],
+  "normal": [
+    { "resource": "food", "amount": [1, 3], "weight": 4 },
+    { "resource": "materials", "amount": [2, 4], "weight": 4 },
+    { "resource": "fuel", "amount": [1, 2], "weight": 2 },
+    { "resource": "meds", "amount": [1, 2], "weight": 2 },
+    { "type": "junk", "tier": "T1", "amount": [1, 1], "weight": 2 },
+    { "type": "junk", "tier": "T2", "amount": [1, 1], "weight": 0.8 },
+    { "type": "tool", "tier": "T1", "amount": [1, 1], "weight": 1 },
+    { "type": "tool", "tier": "T2", "amount": [1, 1], "weight": 0.6 },
+    { "type": "armor", "tier": "T2", "amount": [1, 1], "weight": 0.8 },
+    { "type": "weapon", "tier": "T1", "amount": [1, 1], "weight": 0.8 },
+    { "type": "weapon", "tier": "T2", "amount": [1, 1], "weight": 0.4 },
+    { "type": "consumable", "tier": "T1", "amount": [1, 1], "weight": 1 },
+    { "type": "consumable", "tier": "T2", "amount": [1, 1], "weight": 0.7 }
+  ],
+  "abundante": [
+    { "resource": "food", "amount": [2, 5], "weight": 4 },
+    { "resource": "materials", "amount": [3, 6], "weight": 4 },
+    { "resource": "fuel", "amount": [2, 3], "weight": 3 },
+    { "resource": "meds", "amount": [1, 3], "weight": 2 },
+    { "type": "junk", "tier": "T1", "amount": [1, 2], "weight": 1.4 },
+    { "type": "junk", "tier": "T2", "amount": [1, 1], "weight": 1 },
+    { "type": "tool", "tier": "T2", "amount": [1, 1], "weight": 1.2 },
+    { "type": "tool", "tier": "T3", "amount": [1, 1], "weight": 0.6 },
+    { "type": "armor", "tier": "T2", "amount": [1, 1], "weight": 0.8 },
+    { "type": "armor", "tier": "T3", "amount": [1, 1], "weight": 0.6 },
+    { "type": "weapon", "tier": "T2", "amount": [1, 1], "weight": 0.8 },
+    { "type": "weapon", "tier": "T3", "amount": [1, 1], "weight": 0.5 },
+    { "type": "consumable", "tier": "T2", "amount": [1, 2], "weight": 1 },
+    { "type": "consumable", "tier": "T3", "amount": [1, 1], "weight": 0.5 }
+  ]
+}

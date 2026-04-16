@@ -286,7 +286,7 @@
     "defenseDice": "1d6",
     "injuryChanceBonus": 0,
     "fleeChance": 0,
-    "preAttackEventId": "",
+    "preAttackEventId": "nemesis_joe",
     "variants": [],
     "weapons": [
       {

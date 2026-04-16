@@ -1,0 +1,54 @@
+[
+  {
+    "id": "electric_fence",
+    "name": "Electrificar muro",
+    "description": "Requiere electricidad activa y aporta +1 defensa.",
+    "effect": "Aporta +1 defensa mientras haya electricidad disponible.",
+    "buildingId": "muros",
+    "requiresBuildings": ["muros", "generador"],
+    "skillRequired": "inventor",
+    "cost": {
+      "materials": 4,
+      "electricity": 1
+    },
+    "devDays": 2,
+    "effects": {
+      "defenseBonus": 1,
+      "needsElectricity": true
+    }
+  },
+  {
+    "id": "auto_irrigation",
+    "name": "Riego automatico",
+    "description": "Mejora el Huerto y requiere Pozo construido.",
+    "effect": "El Huerto produce +1 comida adicional al dia.",
+    "buildingId": "huerto",
+    "requiresBuildings": ["huerto", "pozo"],
+    "skillRequired": "inventor",
+    "cost": {
+      "materials": 3,
+      "electricity": 0
+    },
+    "devDays": 2,
+    "effects": {
+      "farmFoodBonus": 1
+    }
+  },
+  {
+    "id": "biodiesel",
+    "name": "Biodiesel",
+    "description": "Mejora el Generador y prepara el uso futuro de vehiculos.",
+    "effect": "El Generador gana +1 de capacidad electrica.",
+    "buildingId": "generador",
+    "requiresBuildings": ["generador"],
+    "skillRequired": "inventor",
+    "cost": {
+      "materials": 5,
+      "electricity": 0
+    },
+    "devDays": 2,
+    "effects": {
+      "generatorCapacityBonus": 1
+    }
+  }
+]

@@ -2,151 +2,83 @@
   {
     "id": "outskirts",
     "name": "Afueras del asentamiento",
-    "description": "Las calles más cercanas al campamento. Saqueadas pero relativamente seguras. Aquí empezó todo.",
-    "flavor": "El polvo cubre las aceras. Algún cartel publicitario todavía resiste, como si el mundo no hubiera terminado.",
+    "description": "Las calles mas cercanas al campamento. Saqueadas pero relativamente seguras. Aqui empezo todo.",
+    "flavor": "El polvo cubre las aceras. Algun cartel publicitario todavia resiste, como si el mundo no hubiera terminado.",
     "unlockDay": 1,
-    "slots": [
-      {
-        "riskLevel": 0,
-        "count": 2
-      },
-      {
-        "riskLevel": 1,
-        "count": 2
-      },
-      {
-        "riskLevel": 2,
-        "count": 1
-      }
-    ],
     "startsUnlocked": true,
     "requiresVehicle": false,
     "fuelCost": 0,
-    "travelDays": 0,
     "returnFuelCost": 0,
-    "returnTravelDays": 0,
-    "temporaryCamp": true
-  },
-  {
-    "id": "industrial",
-    "name": "Zona Industrial",
-    "description": "Almacenes y fábricas abandonadas. Mucho material, pero los grupos hostiles también lo saben.",
-    "flavor": "Las chimeneas ya no humean. El silencio de las naves industriales tiene algo perturbador.",
-    "unlockDay": 7,
-    "slots": [
-      {
-        "riskLevel": 1,
-        "count": 1
-      },
-      {
-        "riskLevel": 2,
-        "count": 2
-      },
-      {
-        "riskLevel": 3,
-        "count": 2
-      },
-      {
-        "riskLevel": 0,
-        "count": 1
-      }
-    ],
-    "startsUnlocked": false,
-    "requiresVehicle": true,
-    "fuelCost": 1,
-    "travelDays": 1,
-    "returnFuelCost": 1,
-    "returnTravelDays": 1,
-    "temporaryCamp": true
-  },
-  {
-    "id": "manhunters",
-    "name": "Territorio de Cazadores",
-    "description": "Una zona controlada por grupos organizados y peligrosos. Entrar aquí requiere valentía o desesperación.",
-    "flavor": "Cráneos en los postes. Marcas en las paredes. Alguien quiere que sepas que este territorio tiene dueño.",
-    "unlockDay": 14,
-    "slots": [
-      {
-        "riskLevel": 0,
-        "count": 1
-      },
-      {
-        "riskLevel": 2,
-        "count": 2
-      },
-      {
-        "riskLevel": 3,
-        "count": 2
-      },
-      {
-        "riskLevel": 4,
-        "count": 1
-      }
-    ],
-    "startsUnlocked": false,
-    "requiresVehicle": true,
-    "fuelCost": 1,
-    "travelDays": 1,
-    "returnFuelCost": 1,
-    "returnTravelDays": 1,
-    "temporaryCamp": true
+    "minExpeditionDays": 1,
+    "maxExpeditionDays": 3,
+    "riskLevel": 1,
+    "lootLevel": "escaso",
+    "domination": ""
   },
   {
     "id": "suburbs",
     "name": "Barrio Residencial",
-    "description": "Casas y tiendas de barrio. Más comida que materiales, y a veces supervivientes escondidos.",
+    "description": "Casas y tiendas de barrio. Mas comida que materiales, y a veces supervivientes escondidos.",
     "flavor": "Juguetes en la calle. Fotos de familia tiradas. Este lugar recuerda demasiado a lo que fue.",
     "unlockDay": 5,
-    "slots": [
-      {
-        "riskLevel": 0,
-        "count": 3
-      },
-      {
-        "riskLevel": 1,
-        "count": 2
-      },
-      {
-        "riskLevel": 2,
-        "count": 1
-      }
-    ],
     "startsUnlocked": false,
     "unlockBuilding": "atalaya",
     "unlockBuildingLevel": 1,
     "requiresVehicle": false,
     "fuelCost": 0,
-    "travelDays": 0,
     "returnFuelCost": 0,
-    "returnTravelDays": 0,
-    "temporaryCamp": true
+    "minExpeditionDays": 2,
+    "maxExpeditionDays": 4,
+    "riskLevel": 2,
+    "lootLevel": "normal",
+    "domination": "dogs"
+  },
+  {
+    "id": "industrial",
+    "name": "Zona Industrial",
+    "description": "Almacenes y fabricas abandonadas. Mucho material, pero los grupos hostiles tambien lo saben.",
+    "flavor": "Las chimeneas ya no humean. El silencio de las naves industriales tiene algo perturbador.",
+    "unlockDay": 7,
+    "startsUnlocked": false,
+    "requiresVehicle": true,
+    "fuelCost": 1,
+    "returnFuelCost": 1,
+    "minExpeditionDays": 2,
+    "maxExpeditionDays": 5,
+    "riskLevel": 3,
+    "lootLevel": "abundante",
+    "domination": "raiders"
+  },
+  {
+    "id": "manhunters",
+    "name": "Territorio de Cazadores",
+    "description": "Una zona controlada por grupos organizados y peligrosos. Entrar aqui requiere valentia o desesperacion.",
+    "flavor": "Craneos en los postes. Marcas en las paredes. Alguien quiere que sepas que este territorio tiene dueno.",
+    "unlockDay": 14,
+    "startsUnlocked": false,
+    "requiresVehicle": true,
+    "fuelCost": 1,
+    "returnFuelCost": 1,
+    "minExpeditionDays": 3,
+    "maxExpeditionDays": 5,
+    "riskLevel": 4,
+    "lootLevel": "normal",
+    "domination": "raiders"
   },
   {
     "id": "deadzone",
     "name": "Zona Muerta",
-    "description": "Nadie sabe exactamente qué pasó aquí. Pocos entran. Menos vuelven.",
-    "flavor": "El cielo tiene un color extraño sobre este sector. Los pájaros no se acercan.",
+    "description": "Nadie sabe exactamente que paso aqui. Pocos entran. Menos vuelven.",
+    "flavor": "El cielo tiene un color extrano sobre este sector. Los pajaros no se acercan.",
     "unlockDay": 21,
-    "slots": [
-      {
-        "riskLevel": 2,
-        "count": 1
-      },
-      {
-        "riskLevel": 3,
-        "count": 2
-      },
-      {
-        "riskLevel": 4,
-        "count": 3
-      }
-    ],
     "startsUnlocked": false,
     "requiresVehicle": true,
     "fuelCost": 2,
-    "travelDays": 2,
     "returnFuelCost": 2,
-    "returnTravelDays": 2,
-    "temporaryCamp": true
+    "minExpeditionDays": 4,
+    "maxExpeditionDays": 7,
+    "riskLevel": 5,
+    "lootLevel": "abundante",
+    "domination": "sectarians"
   }
 ]

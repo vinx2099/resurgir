@@ -1,0 +1,14 @@
+[
+ {
+  "id": "vehiculo_base",
+  "name": "Coche destartalado",
+  "passengers": 3,
+  "cargo": 6,
+  "fuelCapacity": 4,
+  "fuelCurrent": 0,
+  "condition": 4,
+  "maxCondition": 4,
+  "mejorable": true,
+  "upgraded": false
+ }
+]

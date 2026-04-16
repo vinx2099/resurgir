@@ -2,10 +2,84 @@
   {
     "id": "npc_bob",
     "name": "Bob",
-    "type": "merchant",
+    "type": "merchant, radio",
     "state": "known",
-    "eventId": "bob_trade_0",
-    "image": "",
+    "eventId": "radio_bob_0",
     "description": "Un comerciante extravagante del exterior. Siempre parece tener algo que vender y una frase demasiado ensayada para presentarlo."
+  },
+  {
+    "id": "npc_lorna",
+    "name": "Lorna",
+    "buildingId": "barracones",
+    "trust": 0,
+    "trustLevels": {
+      "0": "lorna_0",
+      "1": "lorna_1",
+      "2": "lorna_2"
+    },
+    "continuousEffects": [
+      {
+        "type": "restMoraleBonus",
+        "buildingId": "barracones",
+        "chancePercent": 35,
+        "amount": 2
+      }
+    ],
+    "portrait": "data/pic/npcs/lorna.jpg"
+  },
+  {
+    "id": "npc_bruno",
+    "name": "Bruno",
+    "buildingId": "taller",
+    "trust": 0,
+    "trustLevels": {
+      "0": "bruno_0",
+      "1": "bruno_1",
+      "2": "bruno_2"
+    },
+    "continuousEffects": [
+      {
+        "type": "resourceInterval",
+        "buildingId": "taller",
+        "resource": "materials",
+        "amount": 2,
+        "intervalDays": 3
+      }
+    ],
+    "portrait": "data/pic/npcs/bruno.jpg"
+  },
+  {
+    "id": "npc_june",
+    "name": "June",
+    "type": "merchant, radio",
+    "state": "known",
+    "eventId": "radio_june_0",
+    "description": "Un comerciante extravagante del exterior. Siempre parece tener algo que vender y una frase demasiado ensayada para presentarlo."
+  },
+  {
+    "id": "npc_ana",
+    "name": "Ana",
+    "buildingId": "barracon_medico",
+    "trust": 0,
+    "continuousEffects": [
+      {
+        "type": "injuryRollBonus",
+        "buildingId": "barracon_medico",
+        "amount": 1
+      }
+    ],
+    "portrait": "data/pics/ana.jfif"
+  },
+  {
+    "id": "npc_bullet",
+    "name": "Bullet",
+    "state": "known",
+    "trust": 1,
+    "description": "Joven cazadora.",
+    "trustLevels": {
+      "0": "bullet_0",
+      "1": "bullet_1",
+      "2": "bullet_2"
+    }
   }
 ]

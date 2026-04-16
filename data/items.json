@@ -358,5 +358,50 @@
       "base",
       "event"
     ]
+  },
+  {
+    "id": "junk_guitar",
+    "name": "Guitarra abollada",
+    "tier": "T1",
+    "type": "junk",
+    "description": "Demasiado desafinada para alegrar una noche, demasiado humana para tirarla.",
+    "effects": [],
+    "questTag": "music"
+  },
+  {
+    "id": "junk_teddy_bear",
+    "name": "Peluche raido",
+    "tier": "T1",
+    "type": "junk",
+    "description": "Tiene una oreja cosida a mano y polvo de otra vida.",
+    "effects": [],
+    "questTag": "memory"
+  },
+  {
+    "id": "junk_rock_shirt",
+    "name": "Camiseta de rock",
+    "tier": "T1",
+    "type": "junk",
+    "description": "El logo esta agrietado, pero alguien aun reconoceria la gira.",
+    "effects": [],
+    "questTag": "music"
+  },
+  {
+    "id": "junk_classic_vinyl",
+    "name": "Vinilo clasico",
+    "tier": "T2",
+    "type": "junk",
+    "description": "La funda esta gastada. El disco conserva una promesa de ruido limpio.",
+    "effects": [],
+    "questTag": "music"
+  },
+  {
+    "id": "junk_wedding_ring",
+    "name": "Alianza sin dueno",
+    "tier": "T2",
+    "type": "junk",
+    "description": "Una fecha grabada por dentro. Nada mas hace falta.",
+    "effects": [],
+    "questTag": "memory"
   }
 ]
