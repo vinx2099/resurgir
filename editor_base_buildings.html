@@ -1,307 +1,43 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Editor de edificios base — RESURGIR</title>
-  <style>
-    :root{
-      --bg:#0a0c09; --panel:#0f120d; --panel2:#141a11; --line:#2a3525; --line2:#3a4a30;
-      --text:#c8d4b8; --muted:#6b7a5e; --ok:#4a8a35; --ok2:#72c44e; --accent:#b87c2a; --danger:#c44e4e;
-      --font: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font)}
-    .top{padding:14px 18px;border-bottom:1px solid var(--line2);background:#060807}
-    .top h1{margin:0;font-size:20px;letter-spacing:.08em;color:var(--ok2)}
-    .top p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.6}
-    .wrap{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 88px)}
-    .sidebar{border-right:1px solid var(--line2);background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:12px}
-    .main{padding:14px;background:var(--panel2)}
-    .panel{border:1px solid var(--line);background:var(--panel);padding:12px}
-    .controls{display:grid;gap:10px}
-    .row{display:grid;gap:6px}
-    label{font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
-    input[type="text"], input[type="password"], textarea, select{
-      width:100%;background:#0b0e0a;border:1px solid var(--line2);color:var(--text);padding:9px 10px;font:inherit
-    }
-    textarea{min-height:150px;resize:vertical;line-height:1.6}
-    button{
-      background:rgba(74,138,53,.1);border:1px solid var(--ok);color:var(--ok2);padding:9px 12px;cursor:pointer;font:inherit
-    }
-    button:hover{background:var(--ok);color:#fff}
-    button.secondary{border-color:var(--line2);color:var(--text);background:transparent}
-    button.secondary:hover{background:#1b2117}
-    button.accent{border-color:var(--accent);color:#f3c06b;background:rgba(184,124,42,.1)}
-    button.accent:hover{background:var(--accent);color:#fff}
-    .list{overflow:auto;border:1px solid var(--line);background:#0b0e0a}
-    .item{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
-    .item:hover{background:#151b12}
-    .item.active{background:rgba(74,138,53,.14);border-left:3px solid var(--ok2);padding-left:9px}
-    .item .name{font-size:13px;color:var(--text)}
-    .item .meta{font-size:10px;color:var(--muted);margin-top:3px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .preview{border:1px solid var(--line2);min-height:260px;background:#0b0e0a;display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .preview img{width:100%;height:100%;object-fit:contain;display:block;background:#000}
-    .hint{font-size:11px;color:var(--muted);line-height:1.7}
-    .status{font-size:12px;line-height:1.6;padding:10px 12px;border:1px solid var(--line2);background:#0b0e0a;color:var(--text)}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-    .small{font-size:11px;color:var(--muted)}
-    @media (max-width: 980px){
-      .wrap{grid-template-columns:1fr}
-      .sidebar{border-right:0;border-bottom:1px solid var(--line2)}
-      .grid{grid-template-columns:1fr}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de edificios base - RESURGIR</title>
+<style>
+:root{--bg:#090a08;--panel:#10130f;--panel2:#171b15;--panel3:#0c0f0b;--line:#30382d;--line2:#45513f;--text:#d6ddcc;--muted:#87927f;--ok:#608f45;--ok2:#91cc6d;--accent:#c99a47;--danger:#d66b65;--warn:#d4b15f;--font:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px}.top{padding:16px 20px;border-bottom:1px solid var(--line2);background:#060806}.top h1{margin:0;font-size:21px;letter-spacing:.08em;color:var(--ok2);text-transform:uppercase}.top p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.6;max-width:980px}.wrap{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - 91px)}.sidebar{border-right:1px solid var(--line2);background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:12px;min-height:0}.main{padding:14px;background:var(--panel2);min-width:0}.panel{border:1px solid var(--line);background:var(--panel);padding:12px}.row{display:grid;gap:6px}.inline,.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}label{font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}input[type=text],input[type=number],textarea,select{width:100%;background:var(--panel3);border:1px solid var(--line2);color:var(--text);padding:8px 10px;font:inherit;border-radius:4px}input[type=checkbox]{accent-color:var(--ok)}textarea{min-height:88px;resize:vertical;line-height:1.6}button{background:rgba(96,143,69,.12);border:1px solid var(--ok);color:var(--ok2);padding:8px 11px;cursor:pointer;font:inherit;border-radius:4px}button:hover{background:var(--ok);color:#fff}button.secondary{border-color:var(--line2);color:var(--text);background:transparent}button.secondary:hover{background:#20261d}button.accent{border-color:var(--accent);color:#f3c66f;background:rgba(201,154,71,.12)}button.accent:hover{background:var(--accent);color:#fff}button.danger{border-color:var(--danger);color:#ffaaa4;background:rgba(214,107,101,.1)}button.danger:hover{background:var(--danger);color:#fff}.list{overflow:auto;border:1px solid var(--line);background:var(--panel3);min-height:260px}.item{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}.item:hover{background:#171d14}.item.active{background:rgba(96,143,69,.16);border-left:3px solid var(--ok2);padding-left:9px}.item .name{font-size:13px;color:var(--text)}.item .meta{font-size:10px;color:var(--muted);margin-top:4px}.badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.badge{border:1px solid var(--line2);background:rgba(255,255,255,.03);color:var(--muted);padding:2px 5px;border-radius:4px;font-size:10px}.badge.ok{border-color:rgba(145,204,109,.5);color:var(--ok2)}.badge.warn{border-color:rgba(212,177,95,.55);color:var(--warn)}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tab{border-color:var(--line2);color:var(--muted);background:transparent}.tab.active{border-color:var(--ok);color:var(--ok2);background:rgba(96,143,69,.12)}.tabPanel{display:none}.tabPanel.active{display:block}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wide{grid-column:1/-1}.check-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.check{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:var(--panel3);padding:8px 10px;color:var(--text);border-radius:4px}.preview{border:1px solid var(--line2);min-height:240px;background:#050605;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:4px}.preview img{width:100%;height:100%;object-fit:contain;display:block;background:#000}.hint,.small{font-size:11px;color:var(--muted);line-height:1.7}.status{font-size:12px;line-height:1.6;padding:10px 12px;border:1px solid var(--line2);background:var(--panel3);color:var(--text);border-radius:4px}.section-title{font-size:12px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin:2px 0 8px}.card-list{display:grid;gap:10px}.level-card,.upgrade-card,.req-card{border:1px solid var(--line);background:var(--panel3);padding:10px;display:grid;gap:8px;border-radius:4px}.level-head,.upgrade-head,.req-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.level-title,.upgrade-title{color:var(--ok2);font-weight:700}.mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.output-grid{display:grid;grid-template-columns:minmax(130px,1fr) 120px minmax(130px,1fr) auto;gap:8px;align-items:end}.jsonbox{min-height:170px;font-size:12px}.split{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:12px}@media(max-width:1100px){.wrap{grid-template-columns:1fr}.sidebar{border-right:0;border-bottom:1px solid var(--line2)}.split,.form-grid,.mini-grid,.check-grid,.output-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <div class="top">
-    <h1>Editor de edificios base</h1>
-    <p>Carga tu <b>buildings.json</b>, edita la <b>imagen</b> y la <b>descripción</b> de cada edificio de la base y descarga el JSON actualizado.</p>
-  </div>
-
-  <div class="wrap">
-    <aside class="sidebar">
-      <div class="panel controls">
-        <div class="row">
-          <label>1. Cargar buildings.json</label>
-          <input id="jsonFile" type="file" accept="application/json,.json" />
-        </div>
-        <div class="row">
-          <label>2. API key de IMGBB</label>
-          <input id="imgbbKey" type="password" placeholder="Pega aquí tu API key" />
-        </div>
-        <div class="toolbar">
-          <button id="downloadBtn" class="accent">Descargar JSON</button>
-          <button id="saveCurrentBtn" class="secondary">Guardar edificio</button>
-        </div>
-        <div class="hint">El editor trabaja sobre el archivo que cargues. No toca el juego por sí solo: al final descarga un <b>buildings.json</b> nuevo para sustituir el anterior.</div>
-      </div>
-
-      <div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0;flex:1">
-        <div class="row">
-          <label>Edificios de la base</label>
-          <div class="small" id="countInfo">0 edificios cargados</div>
-        </div>
-        <div id="buildingList" class="list" style="flex:1"></div>
-      </div>
-    </aside>
-
-    <main class="main">
-      <div class="grid">
-        <section class="panel" style="display:grid;gap:12px;align-content:start;">
-          <div class="row">
-            <label>ID</label>
-            <input id="fieldId" type="text" readonly />
-          </div>
-          <div class="row">
-            <label>Nombre</label>
-            <input id="fieldName" type="text" readonly />
-          </div>
-          <div class="row">
-            <label>Imagen</label>
-            <input id="fieldImage" type="text" placeholder="URL o data URI" />
-          </div>
-          <div class="row">
-            <label>Subir imagen a IMGBB</label>
-            <input id="imageFile" type="file" accept="image/*" />
-            <div class="toolbar">
-              <button id="uploadBtn">Subir imagen</button>
-              <button id="refreshPreviewBtn" class="secondary">Actualizar vista previa</button>
-            </div>
-          </div>
-          <div class="row">
-            <label>Descripción breve</label>
-            <textarea id="fieldDescription" placeholder="Texto corto para mostrar al pulsar sobre el edificio en el juego"></textarea>
-          </div>
-        </section>
-
-        <section class="panel" style="display:grid;gap:12px;align-content:start;">
-          <div>
-            <label>Vista previa</label>
-            <div class="preview" id="imagePreview"><span class="small">Sin imagen</span></div>
-          </div>
-          <div>
-            <label>Resumen</label>
-            <div class="status" id="statusBox">Carga un buildings.json para empezar.</div>
-          </div>
-          <div class="hint">
-            El juego leerá estos campos si existen:
-            <br>• <b>image</b>: imagen del edificio
-            <br>• <b>description</b>: texto descriptivo corto
-          </div>
-        </section>
-      </div>
-    </main>
-  </div>
-
+<div class="top"><h1>Editor de edificios base</h1><p>Edita identidad, visibilidad, imagen local, niveles, costes, requisitos, capacidad NPC y mejoras vinculadas. El resultado se descarga como <b>buildings.json</b>.</p></div>
+<div class="wrap"><aside class="sidebar"><div class="panel" style="display:grid;gap:10px"><div class="row"><label>Cargar datos</label><div class="toolbar"><button id="loadDefaultBtn" class="secondary">Cargar data/buildings.json</button></div><input id="jsonFile" type="file" accept="application/json,.json"></div><div class="toolbar"><button id="downloadBtn" class="accent">Descargar JSON</button><button id="saveCurrentBtn" class="secondary">Guardar edificio</button><button id="addBuildingBtn" class="secondary">Nuevo</button></div><div class="hint">Las imágenes se guardan como ruta, por ejemplo <b>data/pic/bunker.jpg</b>. El navegador no copia archivos a la carpeta; solo deja escrito el nombre correcto en el JSON.</div></div><div class="panel" style="display:flex;flex-direction:column;gap:10px;min-height:0;flex:1"><div class="row"><label>Edificios</label><input id="searchBox" type="text" placeholder="Filtrar por nombre o ID"><div class="small" id="countInfo">0 edificios cargados</div></div><div id="buildingList" class="list"></div></div><div class="panel"><div class="section-title">Ideas útiles</div><div class="hint">Campos interesantes: etiquetas de rol, requisitos de construcción, coste eléctrico por nivel, días por nivel, posición del mapa, notas internas y efectos estructurados para futuras reglas.</div></div></aside><main class="main"><div class="tabs"><button class="tab active" data-tab="identity">Identidad</button><button class="tab" data-tab="levels">Niveles</button><button class="tab" data-tab="requirements">Requisitos</button><button class="tab" data-tab="upgrades">Mejoras</button><button class="tab" data-tab="advanced">Avanzado</button></div>
+<section class="tabPanel active" data-panel="identity"><div class="split"><div class="panel" style="display:grid;gap:12px;align-content:start"><div class="form-grid"><div class="row"><label>ID</label><input id="fieldId" type="text" placeholder="carcel_improvisada"></div><div class="row"><label>Nombre</label><input id="fieldName" type="text" placeholder="Cárcel improvisada"></div><div class="row"><label>Categoría</label><input id="fieldCategory" type="text" value="Base"></div><div class="row"><label>Máximo de NPC</label><input id="fieldMaxNpcs" type="number" min="0" step="1" placeholder="Vacío = sin límite"></div><div class="wide row"><label>Descripción</label><textarea id="fieldDescription"></textarea></div><div class="wide row"><label>Efecto breve</label><textarea id="fieldEffect"></textarea></div></div><div class="check-grid"><label class="check"><input id="fieldInitial" type="checkbox"> Construido al inicio</label><label class="check"><input id="fieldConstructible" type="checkbox"> Construible</label><label class="check"><input id="fieldBuildMenu" type="checkbox"> Sale en menú construir</label><label class="check"><input id="fieldHidden" type="checkbox"> Oculto hasta desbloqueo</label></div><div class="row"><label>Imagen</label><input id="fieldImage" type="text" placeholder="data/pic/edificio.jpg"><div class="inline"><input id="imageName" type="text" placeholder="nombre_archivo.jpg" style="max-width:260px"><button id="useImageNameBtn" class="secondary">Usar data/pic/</button></div><input id="imageFile" type="file" accept="image/*"><div class="toolbar"><button id="usePickedFileBtn" class="secondary">Usar nombre del archivo</button><button id="refreshPreviewBtn" class="secondary">Actualizar vista previa</button></div></div></div><div class="panel" style="display:grid;gap:12px;align-content:start"><div><label>Vista previa</label><div class="preview" id="imagePreview"><span class="small">Sin imagen</span></div></div><div><label>Resumen</label><div class="status" id="statusBox">Carga un buildings.json para empezar.</div></div><div class="status" id="summaryBox">Sin edificio seleccionado.</div></div></div></section>
+<section class="tabPanel" data-panel="levels"><div class="panel" style="display:grid;gap:12px"><div class="form-grid"><div class="row"><label>Nivel máximo</label><input id="fieldMaxLevel" type="number" min="1" max="20" step="1" value="1"></div><div class="row"><label>Coste base</label><input id="fieldCost" type="number" min="0" step="1" value="0"></div></div><div class="hint">Cada nivel puede tener coste de aplicación, días, electricidad, requisitos y lo que aporta una vez construido. Ejemplo: Huerto nivel 1: +2 alimento.</div><div id="levelList" class="card-list"></div></div></section>
+<section class="tabPanel" data-panel="requirements"><div class="panel" style="display:grid;gap:12px"><div class="section-title">Requisitos para construir el nivel 1</div><div id="buildReqList" class="card-list"></div><div><button id="addBuildReqBtn" class="secondary">Añadir requisito</button></div><div class="hint">Formato: <b>buildRequirements</b> puede contener IDs o requisitos con nivel mínimo.</div></div></section>
+<section class="tabPanel" data-panel="upgrades"><div class="panel" style="display:grid;gap:12px"><div class="section-title">Mejoras especiales del edificio</div><div class="hint">Se exportan como <b>upgrades</b>, preparadas para reglas futuras o documentación de diseño.</div><div id="upgradeList" class="card-list"></div><div><button id="addUpgradeBtn" class="secondary">Añadir mejora</button></div></div></section>
+<section class="tabPanel" data-panel="advanced"><div class="panel" style="display:grid;gap:12px"><div class="form-grid"><div class="row"><label>Mapa left</label><input id="mapLeft" type="text"></div><div class="row"><label>Mapa top</label><input id="mapTop" type="text"></div><div class="row"><label>Mapa width</label><input id="mapWidth" type="text"></div><div class="row"><label>Mapa height</label><input id="mapHeight" type="text"></div><div class="wide row"><label>Estilo especial de mapa</label><textarea id="mapStyle"></textarea></div><div class="wide row"><label>Etiquetas de diseño</label><input id="fieldTags" type="text" placeholder="defensa, prisioneros, moral"></div><div class="wide row"><label>Notas internas</label><textarea id="fieldNotes"></textarea></div><div class="wide row"><label>JSON extra</label><textarea id="fieldExtraJson" class="jsonbox" placeholder='{"customField": true}'></textarea></div></div></div></section></main></div>
 <script>
-let buildingsData = [];
-let selectedIndex = -1;
-
-const $ = sel => document.querySelector(sel);
-
-function setStatus(msg, isError=false){
-  const box = $('#statusBox');
-  box.textContent = msg;
-  box.style.borderColor = isError ? 'var(--danger)' : 'var(--line2)';
-  box.style.color = isError ? 'var(--danger)' : 'var(--text)';
-}
-
-function renderList(){
-  const list = $('#buildingList');
-  const baseBuildings = buildingsData
-    .map((b, index) => ({b, index}))
-    .filter(x => String(x.b.category || 'Base').toLowerCase() === 'base');
-  $('#countInfo').textContent = `${baseBuildings.length} edificios cargados`;
-  if(!baseBuildings.length){
-    list.innerHTML = '<div class="item"><div class="name">No hay edificios de categoría Base</div></div>';
-    return;
-  }
-  list.innerHTML = baseBuildings.map(({b, index}) => `
-    <div class="item ${index===selectedIndex?'active':''}" data-index="${index}">
-      <div class="name">${escapeHtml(b.name || b.id || 'Sin nombre')}</div>
-      <div class="meta">${escapeHtml(b.id || '')}</div>
-    </div>
-  `).join('');
-  list.querySelectorAll('.item[data-index]').forEach(el => {
-    el.addEventListener('click', () => {
-      saveCurrentFields();
-      selectedIndex = Number(el.dataset.index);
-      renderList();
-      renderEditor();
-    });
-  });
-}
-
-function renderEditor(){
-  const b = buildingsData[selectedIndex];
-  if(!b){
-    $('#fieldId').value = '';
-    $('#fieldName').value = '';
-    $('#fieldImage').value = '';
-    $('#fieldDescription').value = '';
-    $('#imagePreview').innerHTML = '<span class="small">Sin imagen</span>';
-    return;
-  }
-  $('#fieldId').value = b.id || '';
-  $('#fieldName').value = b.name || '';
-  $('#fieldImage').value = b.image || '';
-  $('#fieldDescription').value = b.description || '';
-  refreshPreview();
-  setStatus(`Editando ${b.name || b.id}. Recuerda pulsar “Guardar edificio” antes de descargar el JSON.`);
-}
-
-function saveCurrentFields(){
-  const b = buildingsData[selectedIndex];
-  if(!b) return;
-  b.image = $('#fieldImage').value.trim();
-  b.description = $('#fieldDescription').value.trim();
-}
-
-function refreshPreview(){
-  const src = $('#fieldImage').value.trim();
-  const box = $('#imagePreview');
-  if(src){
-    box.innerHTML = `<img src="${escapeAttr(src)}" alt="preview">`;
-  } else {
-    box.innerHTML = '<span class="small">Sin imagen</span>';
-  }
-}
-
-function loadJsonFromFile(file){
-  const reader = new FileReader();
-  reader.onload = () => {
-    try{
-      const parsed = JSON.parse(reader.result);
-      if(!Array.isArray(parsed)) throw new Error('El JSON debe contener un array.');
-      buildingsData = parsed;
-      selectedIndex = buildingsData.findIndex(b => String(b.category || 'Base').toLowerCase() === 'base');
-      renderList();
-      renderEditor();
-      setStatus('buildings.json cargado correctamente.');
-    }catch(err){
-      setStatus(`Error al leer el JSON: ${err.message}`, true);
-    }
-  };
-  reader.readAsText(file);
-}
-
-function downloadJson(){
-  saveCurrentFields();
-  if(!Array.isArray(buildingsData) || !buildingsData.length){
-    setStatus('No hay datos cargados para descargar.', true);
-    return;
-  }
-  const blob = new Blob([JSON.stringify(buildingsData, null, 2)], {type:'application/json;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'buildings.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-  setStatus('JSON preparado para descargar.');
-}
-
-async function uploadToImgbb(){
-  saveCurrentFields();
-  const file = $('#imageFile').files[0];
-  const key = $('#imgbbKey').value.trim();
-  if(!file){
-    setStatus('Selecciona una imagen antes de subirla.', true);
-    return;
-  }
-  if(!key){
-    setStatus('Falta la API key de IMGBB.', true);
-    return;
-  }
-  try{
-    setStatus('Subiendo imagen a IMGBB...');
-    const base64 = await fileToBase64(file);
-    const formData = new FormData();
-    formData.append('image', base64.split(',')[1]);
-    const res = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}`, {
-      method:'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if(!res.ok || !data?.success || !data?.data?.url){
-      throw new Error(data?.error?.message || 'La subida no devolvió una URL válida.');
-    }
-    $('#fieldImage').value = data.data.url;
-    refreshPreview();
-    saveCurrentFields();
-    setStatus('Imagen subida correctamente y asignada al edificio actual.');
-  }catch(err){
-    setStatus(`Error al subir la imagen: ${err.message}`, true);
-  }
-}
-
-function fileToBase64(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function escapeHtml(str=''){
-  return String(str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-}
-function escapeAttr(str=''){ return escapeHtml(str); }
-
-$('#jsonFile').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if(file) loadJsonFromFile(file);
-});
-$('#downloadBtn').addEventListener('click', downloadJson);
-$('#saveCurrentBtn').addEventListener('click', () => {
-  saveCurrentFields();
-  setStatus('Edificio guardado en memoria. Ya puedes seguir editando u obtener el JSON.');
-});
-$('#uploadBtn').addEventListener('click', uploadToImgbb);
-$('#refreshPreviewBtn').addEventListener('click', refreshPreview);
-$('#fieldImage').addEventListener('input', refreshPreview);
+let buildingsData=[],selectedIndex=-1,previewObjectUrl='';const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];function cur(){return buildingsData[selectedIndex]||null}function txt(v){return String(v||'').trim()}function num(v,f=0){const n=Number(v);return Number.isFinite(n)?Math.max(0,Math.round(n)):f}function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function slug(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'edificio'}function list(v){return Array.isArray(v)?v.map(x=>String(x).trim()).filter(Boolean):String(v||'').split(',').map(x=>x.trim()).filter(Boolean)}function status(m,e=false){const b=$('#statusBox');b.textContent=m;b.style.borderColor=e?'var(--danger)':'var(--line2)';b.style.color=e?'var(--danger)':'var(--text)'}function reqNorm(r){if(r&&typeof r==='object')return{id:txt(r.id||r.building),minLevel:Math.max(1,Number(r.minLevel||r.level||1)||1)};return{id:txt(r),minLevel:1}}function reqText(a){return(Array.isArray(a)?a:[]).map(r=>{const n=reqNorm(r);return n.id?(n.minLevel>1?`${n.id}:${n.minLevel}`:n.id):''}).filter(Boolean).join(', ')}function parseReq(s){return list(s).map(x=>{const p=x.split(':').map(txt),lv=Math.max(1,Number(p[1]||1)||1);return lv>1?{id:p[0],minLevel:lv}:p[0]}).filter(x=>typeof x==='string'?x:x.id)}function val(src,l,f=''){if(Array.isArray(src))return src[l-1]??f;if(src&&typeof src==='object')return src[String(l)]??src[l]??f;return src??f}
+function renderList(){const q=txt($('#searchBox').value).toLowerCase(),rows=buildingsData.map((b,i)=>({b,i})).filter(x=>String(x.b.category||'Base').toLowerCase()==='base').filter(x=>!q||String(x.b.id||'').toLowerCase().includes(q)||String(x.b.name||'').toLowerCase().includes(q));$('#countInfo').textContent=`${rows.length} de ${buildingsData.length} edificios`;$('#buildingList').innerHTML=rows.length?rows.map(({b,i})=>{const npc=b.maxNpcs??b.npcCapacity??b.maxNpc??'';return`<div class="item ${i===selectedIndex?'active':''}" data-i="${i}"><div class="name">${esc(b.name||b.id||'Sin nombre')}</div><div class="meta">${esc(b.id||'')}</div><div class="badges">${b.hiddenUntilUnlocked?'<span class="badge warn">oculto</span>':''}${b.initial?'<span class="badge ok">inicial</span>':''}${npc!==''?`<span class="badge">NPC ${esc(npc)}</span>`:''}${b.maxLevel?`<span class="badge">N${esc(b.maxLevel)}</span>`:''}</div></div>`}).join(''):'<div class="item"><div class="name">No hay edificios</div></div>';$$('#buildingList .item[data-i]').forEach(el=>el.onclick=()=>{save();selectedIndex=Number(el.dataset.i);renderList();renderEditor()})}
+function renderEditor(){const b=cur();if(!b){clearEditor();return}$('#fieldId').value=b.id||'';$('#fieldName').value=b.name||'';$('#fieldCategory').value=b.category||'Base';$('#fieldDescription').value=b.description||b.text||'';$('#fieldEffect').value=b.effect||b.effectDescription||'';$('#fieldImage').value=b.image||b.imageUrl||'';$('#fieldInitial').checked=!!b.initial;$('#fieldConstructible').checked=b.constructible!==false;$('#fieldBuildMenu').checked=b.showInBuildMenu!==false&&b.hideFromBuildMenu!==true;$('#fieldHidden').checked=!!(b.hiddenUntilUnlocked||b.hiddenUntilRevealed||b.mapHiddenUntilUnlocked);$('#fieldMaxNpcs').value=b.maxNpcs??b.npcCapacity??b.maxNpc??'';$('#fieldMaxLevel').value=Math.max(1,Number(b.maxLevel||1)||1);$('#fieldCost').value=Number(b.cost||0);$('#mapLeft').value=b.map?.left||'';$('#mapTop').value=b.map?.top||'';$('#mapWidth').value=b.map?.width||'';$('#mapHeight').value=b.map?.height||'';$('#mapStyle').value=b.map?.specialStyle||'';$('#fieldTags').value=list(b.tags).join(', ');$('#fieldNotes').value=b.designNotes||b.notes||'';$('#fieldExtraJson').value=b.extra?JSON.stringify(b.extra,null,2):'';renderLevels();renderReqs();renderUps();preview();summary();status(`Editando ${b.name||b.id}.`)}function clearEditor(){$$('input[type=text],input[type=number],textarea').forEach(e=>e.value='');$('#fieldConstructible').checked=true;$('#fieldBuildMenu').checked=true;$('#fieldInitial').checked=false;$('#fieldHidden').checked=false;$('#levelList').innerHTML='';$('#buildReqList').innerHTML='';$('#upgradeList').innerHTML='';$('#imagePreview').innerHTML='<span class="small">Sin imagen</span>';$('#summaryBox').textContent='Sin edificio seleccionado.'}
+function outputRows(b,l){const src=b.outputsByLevel||b.outputs||{},raw=Array.isArray(src)?src[l-1]:src[String(l)]??src[l]??[];return(Array.isArray(raw)?raw:(raw&&typeof raw==='object'?[raw]:[])).map(o=>({resource:txt(o.resource||o.type||o.id),amount:Number(o.amount??o.value??0)||0,timing:txt(o.timing||o.frequency||o.when||'daily')||'daily'})).filter(o=>o.resource)}
+function outputOptions(v){const opts=[['food','Comida'],['materials','Materiales'],['meds','Medicamentos'],['fuel','Combustible'],['electricity','Electricidad'],['chickens','Gallinas'],['stability','Estabilidad'],['defense','Defensa'],['capacity','Capacidad'],['morale','Moral']];return opts.map(([id,label])=>`<option value="${id}" ${String(v)===id?'selected':''}>${label}</option>`).join('')}
+function timingOptions(v){const opts=[['daily','Cada día'],['built','Al construirse'],['defense','Al defender'],['passive','Pasivo']];return opts.map(([id,label])=>`<option value="${id}" ${String(v||'daily')===id?'selected':''}>${label}</option>`).join('')}
+function renderOutputRows(l,rows){const body=rows.length?rows.map((o,i)=>`<div class="output-grid" data-output-row="${i}"><div class="row"><label>Recurso</label><select data-of="resource">${outputOptions(o.resource)}</select></div><div class="row"><label>Cantidad</label><input type="number" step="1" data-of="amount" value="${esc(o.amount)}"></div><div class="row"><label>Cuándo</label><select data-of="timing">${timingOptions(o.timing)}</select></div><button class="danger" type="button" data-remove-output>Quitar</button></div>`).join(''):'<div class="hint">Sin aportes estructurados para este nivel.</div>';return`<div class="row"><label>Aportes conectados</label><div class="card-list" data-output-list="${l}">${body}</div><div><button class="secondary" type="button" data-add-output="${l}">Añadir aporte</button></div><div class="hint">Estos valores se exportan en <b>outputsByLevel</b>. Ejemplo: Huerto nivel 1 -> Comida +2 cada día.</div></div>`}
+function renderLevels(){const b=cur();if(!b)return;const max=Math.max(1,Number($('#fieldMaxLevel').value||b.maxLevel||1)||1);b.maxLevel=max;let html='';for(let l=1;l<=max;l++){const req=(b.upgradeRequirements||{})[String(l)]||(b.upgradeRequirements||{})[l]||[];const eff=(b.levelEffects||{})[String(l)]||(b.levelEffects||{})[l]||'';html+=`<div class="level-card" data-level="${l}"><div class="level-head"><div class="level-title">Nivel ${l}</div></div><div class="mini-grid"><div class="row"><label>Coste</label><input type="number" min="0" data-lf="cost" value="${esc(val(b.upgradeCosts,l,l===1?(b.cost||0):''))}"></div><div class="row"><label>Días</label><input type="number" min="0" data-lf="days" value="${esc(val(b.constructionDays,l,''))}"></div><div class="row"><label>Electricidad</label><input type="number" min="0" data-lf="electricity" value="${esc(val(b.electricityCostByLevel??b.electricityCost,l,''))}"></div></div>${renderOutputRows(l,outputRows(b,l))}<div class="row"><label>Aporta construido (texto)</label><textarea data-lf="effect" placeholder="+2 alimento, +1 defensa, capacidad 4 personas...">${esc(eff)}</textarea></div><div class="row"><label>Requisitos para este nivel</label><input data-lf="requirements" value="${esc(reqText(req))}" placeholder="taller:2, pozo"></div></div>`}$('#levelList').innerHTML=html;$$('[data-add-output]').forEach(btn=>btn.onclick=()=>{saveLevels();const b=cur(),l=String(btn.dataset.addOutput);b.outputsByLevel=b.outputsByLevel&&typeof b.outputsByLevel==='object'&&!Array.isArray(b.outputsByLevel)?b.outputsByLevel:{};b.outputsByLevel[l]=Array.isArray(b.outputsByLevel[l])?b.outputsByLevel[l]:[];b.outputsByLevel[l].push({resource:'food',amount:1,timing:'daily'});renderLevels()});$$('[data-remove-output]').forEach(btn=>btn.onclick=()=>{const card=btn.closest('.level-card'),row=btn.closest('[data-output-row]'),level=card?.dataset.level;saveLevels();const b=cur(),arr=b?.outputsByLevel?.[level];if(Array.isArray(arr)){arr.splice(Number(row.dataset.outputRow),1);if(!arr.length)delete b.outputsByLevel[level]}renderLevels()})}
+function renderReqs(){const b=cur(),rs=Array.isArray(b?.buildRequirements)?b.buildRequirements:[];$('#buildReqList').innerHTML=rs.length?rs.map((r,i)=>{const n=reqNorm(r);return`<div class="req-card" data-req="${i}"><div class="req-head"><div class="level-title">Requisito ${i+1}</div><button class="danger" data-rm-req="${i}">Quitar</button></div><div class="mini-grid"><div class="row"><label>Edificio ID</label><input data-rf="id" value="${esc(n.id)}"></div><div class="row"><label>Nivel mínimo</label><input type="number" min="1" data-rf="minLevel" value="${esc(n.minLevel)}"></div></div></div>`}).join(''):'<div class="hint">Sin requisitos para construir.</div>';$$('[data-rm-req]').forEach(x=>x.onclick=()=>{saveReqs();cur().buildRequirements.splice(Number(x.dataset.rmReq),1);renderReqs();summary()})}
+function renderUps(){const b=cur(),us=Array.isArray(b?.upgrades)?b.upgrades:[];$('#upgradeList').innerHTML=us.length?us.map((u,i)=>`<div class="upgrade-card" data-up="${i}"><div class="upgrade-head"><div class="upgrade-title">${esc(u.name||u.id||'Mejora')}</div><button class="danger" data-rm-up="${i}">Quitar</button></div><div class="form-grid"><div class="row"><label>ID</label><input data-uf="id" value="${esc(u.id||'')}"></div><div class="row"><label>Nombre</label><input data-uf="name" value="${esc(u.name||'')}"></div><div class="row"><label>Coste materiales</label><input type="number" min="0" data-uf="mat" value="${esc(Number(u.cost?.materials??u.costMaterials??u.cost??0)||0)}"></div><div class="row"><label>Coste electricidad</label><input type="number" min="0" data-uf="elec" value="${esc(Number(u.cost?.electricity??u.electricityCost??0)||0)}"></div><div class="row"><label>Días</label><input type="number" min="1" data-uf="days" value="${esc(Number(u.devDays||u.days||1)||1)}"></div><div class="row"><label>Habilidad</label><input data-uf="skill" value="${esc(u.skillRequired||u.requiredSkill||'')}"></div><div class="wide row"><label>Requisitos</label><input data-uf="requires" value="${esc(reqText(u.requiresBuildings||u.requires||[]))}" placeholder="taller:2, generador"></div><div class="wide row"><label>Descripción</label><textarea data-uf="description">${esc(u.description||'')}</textarea></div><div class="wide row"><label>Efecto</label><textarea data-uf="effect">${esc(u.effect||'')}</textarea></div></div></div>`).join(''):'<div class="hint">Sin mejoras especiales.</div>';$$('[data-rm-up]').forEach(x=>x.onclick=()=>{saveUps();cur().upgrades.splice(Number(x.dataset.rmUp),1);renderUps();summary()})}
+function saveLevels(){const b=cur();if(!b)return;const max=Math.max(1,Number($('#fieldMaxLevel').value||1)||1),costs=[],days=[],elec=[],le={},ur={},outputs={};$$('#levelList .level-card').forEach(c=>{const l=Number(c.dataset.level),r=f=>c.querySelector(`[data-lf="${f}"]`)?.value||'';costs[l-1]=num(r('cost'));days[l-1]=num(r('days'));elec[l-1]=num(r('electricity'));if(txt(r('effect')))le[String(l)]=txt(r('effect'));const out=[];c.querySelectorAll('[data-output-row]').forEach(row=>{const rr=f=>row.querySelector(`[data-of="${f}"]`)?.value||'',resource=txt(rr('resource')),amount=Number(rr('amount'));if(resource&&Number.isFinite(amount)&&amount!==0)out.push({resource,amount:Math.round(amount),timing:txt(rr('timing'))||'daily'})});if(out.length)outputs[String(l)]=out;const req=parseReq(r('requirements'));if(req.length)ur[String(l)]=req});b.maxLevel=max;b.cost=num($('#fieldCost').value,costs[0]||0);if(costs.some(x=>x>0))b.upgradeCosts=costs.slice(0,max);else delete b.upgradeCosts;if(days.some(x=>x>0))b.constructionDays=days.every(x=>x===days[0])?days[0]:days.slice(0,max);else delete b.constructionDays;if(elec.some(x=>x>0))b.electricityCostByLevel=elec.slice(0,max);else delete b.electricityCostByLevel;if(Object.keys(le).length)b.levelEffects=le;else delete b.levelEffects;if(Object.keys(outputs).length)b.outputsByLevel=outputs;else delete b.outputsByLevel;if(Object.keys(ur).length)b.upgradeRequirements=ur;else delete b.upgradeRequirements}
+function saveReqs(){const b=cur();if(!b)return;const out=[];$$('#buildReqList [data-req]').forEach(c=>{const id=txt(c.querySelector('[data-rf="id"]')?.value),lv=Math.max(1,Number(c.querySelector('[data-rf="minLevel"]')?.value||1)||1);if(id)out.push(lv>1?{id,minLevel:lv}:id)});if(out.length)b.buildRequirements=out;else delete b.buildRequirements}
+function saveUps(){const b=cur();if(!b)return;const out=[];$$('#upgradeList [data-up]').forEach(c=>{const r=f=>txt(c.querySelector(`[data-uf="${f}"]`)?.value),rawId=r('id'),rawName=r('name');if(!rawId&&!rawName)return;const id=rawId||slug(rawName);const u={id,name:rawName||id,description:r('description'),effect:r('effect'),cost:{materials:num(r('mat')),electricity:num(r('elec'))},devDays:Math.max(1,num(r('days'),1)),requiresBuildings:parseReq(r('requires'))};if(r('skill'))u.skillRequired=r('skill');out.push(u)});if(out.length)b.upgrades=out;else delete b.upgrades}
+function save(){const b=cur();if(!b)return;const old=b.id;b.id=slug($('#fieldId').value||b.id);b.name=txt($('#fieldName').value)||b.id;b.category=txt($('#fieldCategory').value)||'Base';b.description=txt($('#fieldDescription').value);b.effect=txt($('#fieldEffect').value);b.image=txt($('#fieldImage').value);b.initial=$('#fieldInitial').checked;b.constructible=$('#fieldConstructible').checked;if($('#fieldBuildMenu').checked){delete b.showInBuildMenu;delete b.hideFromBuildMenu}else b.showInBuildMenu=false;if($('#fieldHidden').checked)b.hiddenUntilUnlocked=true;else delete b.hiddenUntilUnlocked;const npc=txt($('#fieldMaxNpcs').value);if(npc!=='')b.maxNpcs=num(npc);else delete b.maxNpcs;b.tags=list($('#fieldTags').value);if(!b.tags.length)delete b.tags;const notes=txt($('#fieldNotes').value);if(notes)b.designNotes=notes;else delete b.designNotes;const m={left:txt($('#mapLeft').value),top:txt($('#mapTop').value),width:txt($('#mapWidth').value),height:txt($('#mapHeight').value),specialStyle:txt($('#mapStyle').value)};if(m.left||m.top||m.width||m.height||m.specialStyle)b.map=m;else delete b.map;saveLevels();saveReqs();saveUps();const ex=txt($('#fieldExtraJson').value);if(ex){try{b.extra=JSON.parse(ex)}catch(e){status(`JSON extra no válido: ${e.message}`,true)}}else delete b.extra;if(old!==b.id)status(`ID actualizado: ${old} -> ${b.id}. Revisa eventos y requisitos.`);summary()}
+function summary(){const b=cur();if(!b){$('#summaryBox').textContent='Sin edificio seleccionado.';return}const reqs=Object.values(b.upgradeRequirements||{}).reduce((s,a)=>s+(Array.isArray(a)?a.length:0),0);const inBuildMenu=b.showInBuildMenu!==false&&b.hideFromBuildMenu!==true;$('#summaryBox').innerHTML=`<b>${esc(b.name||b.id)}</b><br>ID: ${esc(b.id||'')}<br>Nivel máximo: ${esc(b.maxLevel||1)} · Coste base: ${esc(b.cost||0)}<br>NPC: ${esc(b.maxNpcs??'sin límite')} · ${b.hiddenUntilUnlocked?'Oculto hasta desbloqueo':'Visible en catálogo'}<br>Menú construir: ${inBuildMenu?'sí':'no'} · Requisitos de nivel: ${reqs} · Mejoras especiales: ${(b.upgrades||[]).length}`}function preview(){const src=txt($('#fieldImage').value);$('#imagePreview').innerHTML=src?`<img src="${esc(src)}" alt="preview">`:'<span class="small">Sin imagen</span>'}
+function loadData(d,label='buildings.json'){if(!Array.isArray(d))throw new Error('El JSON debe contener un array.');buildingsData=d;selectedIndex=buildingsData.findIndex(b=>String(b.category||'Base').toLowerCase()==='base');renderList();renderEditor();status(`${label} cargado correctamente.`)}function loadFile(f){const r=new FileReader();r.onload=()=>{try{loadData(JSON.parse(r.result),f.name)}catch(e){status(`Error al leer JSON: ${e.message}`,true)}};r.readAsText(f)}async function loadDefault(){try{const r=await fetch('./data/buildings.json',{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);loadData(await r.json(),'data/buildings.json')}catch(e){status(`No se pudo cargar data/buildings.json. Usa un servidor local o el selector de archivo. ${e.message}`,true)}}function download(){save();if(!buildingsData.length){status('No hay datos cargados.',true);return}const blob=new Blob([JSON.stringify(buildingsData,null,2)],{type:'application/json;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='buildings.json';a.click();URL.revokeObjectURL(a.href);status('JSON preparado para descargar.');renderList()}function unique(base){const used=new Set(buildingsData.map(b=>b.id));let id=base,i=2;while(used.has(id))id=`${base}_${i++}`;return id}function addBuilding(){save();const id=unique('nuevo_edificio');buildingsData.push({id,name:'Nuevo edificio',category:'Base',initial:false,constructible:true,cost:1,maxLevel:1,constructionDays:1,effect:'',description:'',image:'',levelEffects:{'1':''}});selectedIndex=buildingsData.length-1;renderList();renderEditor()}function useImageName(n){const clean=txt(n).replace(/^data[\/\\]pic[\/\\]/i,'').replace(/\\/g,'/');if(!clean){status('Indica un nombre de archivo.',true);return}$('#fieldImage').value=`data/pic/${clean}`;preview();save()}function usePicked(){const f=$('#imageFile').files[0];if(!f){status('Selecciona una imagen primero.',true);return}useImageName(f.name);if(previewObjectUrl)URL.revokeObjectURL(previewObjectUrl);previewObjectUrl=URL.createObjectURL(f);$('#imagePreview').innerHTML=`<img src="${esc(previewObjectUrl)}" alt="preview">`}
+function bind(){$$('.tab').forEach(b=>b.onclick=()=>{save();$$('.tab').forEach(x=>x.classList.toggle('active',x===b));$$('.tabPanel').forEach(p=>p.classList.toggle('active',p.dataset.panel===b.dataset.tab));renderList()});$('#jsonFile').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0])};$('#loadDefaultBtn').onclick=loadDefault;$('#downloadBtn').onclick=download;$('#saveCurrentBtn').onclick=()=>{save();renderList();status('Edificio guardado en memoria.')};$('#addBuildingBtn').onclick=addBuilding;$('#searchBox').oninput=renderList;$('#fieldImage').oninput=preview;$('#refreshPreviewBtn').onclick=preview;$('#useImageNameBtn').onclick=()=>useImageName($('#imageName').value);$('#usePickedFileBtn').onclick=usePicked;$('#fieldMaxLevel').onchange=()=>{saveLevels();renderLevels();summary()};$('#addBuildReqBtn').onclick=()=>{saveReqs();const b=cur();if(!b)return;b.buildRequirements=Array.isArray(b.buildRequirements)?b.buildRequirements:[];b.buildRequirements.push({id:'',minLevel:1});renderReqs()};$('#addUpgradeBtn').onclick=()=>{saveUps();const b=cur();if(!b)return;b.upgrades=Array.isArray(b.upgrades)?b.upgrades:[];b.upgrades.push({id:'',name:'Nueva mejora',cost:{materials:1,electricity:0},devDays:1,requiresBuildings:[],description:'',effect:''});renderUps()};['#fieldId','#fieldName','#fieldCategory','#fieldDescription','#fieldEffect','#fieldMaxNpcs','#fieldInitial','#fieldConstructible','#fieldBuildMenu','#fieldHidden','#mapLeft','#mapTop','#mapWidth','#mapHeight','#mapStyle','#fieldTags','#fieldNotes','#fieldExtraJson'].forEach(s=>$(s).onchange=()=>{save();renderList()})}bind();
 </script>
 </body>
 </html>
+
+
+
+

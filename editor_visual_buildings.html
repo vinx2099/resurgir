@@ -75,6 +75,10 @@
   }
   .handle{position:absolute;width:12px;height:12px;right:-1px;bottom:-1px;background:#7ff57f;cursor:nwse-resize}
   .legend{font-size:12px;color:var(--muted);margin-top:8px}
+  .status{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
+  #imagePreview{margin-top:16px;border:1px solid var(--line);min-height:150px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.03);overflow:hidden;text-align:center;color:var(--muted);padding:10px}
+  #imagePreview img{max-width:100%;max-height:100%;object-fit:contain}
+  .building-item span{font-size:11px;color:var(--muted);margin-left:6px}
   .dimension-pill{
     display:inline-flex;
     align-items:center;
@@ -99,10 +103,13 @@
 
     <div class="toolbar">
       <input id="fileInput" type="file" accept=".json,application/json">
+      <input id="configInput" type="file" accept=".json,application/json">
       <button id="loadSampleBtn">Cargar ejemplo base</button>
       <button id="exportBtn">Descargar JSON</button>
       <button id="copyBtn">Copiar JSON</button>
     </div>
+
+    <div id="statusBox" class="status">Carga buildings.json y config.json para trabajar con edificios y abandonados.</div>
 
     <div class="row">
       <div class="pill">Arrastrar = mover</div>
@@ -114,7 +121,7 @@
     <div id="editor" style="display:none">
       <div class="coords">
         <label class="span2">Imagen URL
-          <input id="imageUrlInput" type="text" placeholder="https://... o data:image/...">
+          <input id="imageUrlInput" type="text" placeholder="data/pics/archivo.png o https://...">
         </label>
         <label class="span2">Cargar imagen local
           <input id="imageFileInput" type="file" accept="image/*">
@@ -138,6 +145,7 @@
           <input id="heightInput" type="number" min="1" max="100" step="0.1">
         </label>
       </div>
+      <div id="imagePreview">Selecciona un edificio para ver la imagen.</div>
     </div>
 
     <h3 style="margin:18px 0 8px;font-size:14px;">JSON actual</h3>
@@ -160,6 +168,7 @@
 <script>
 const sampleBuildings = [
   {id:"barracones",name:"Barracones",category:"Base",initial:true,map:{left:"5%",top:"20%",width:"12%",height:"42%"},image:""},
+  {id:"barracon_medico",name:"Barracón médico",category:"Base",initial:false,map:{left:"17.4%",top:"44.3%",width:"10.5%",height:"19.2%"},image:""},
   {id:"muros",name:"Muros",category:"Base",initial:true,map:{left:"20%",top:"6%",width:"40%",height:"12%"},image:""},
   {id:"atalaya",name:"Atalaya",category:"Base",initial:false,map:{left:"63%",top:"6%",width:"12%",height:"14%"},image:""},
   {id:"huerto",name:"Huerto",category:"Base",initial:true,map:{left:"76%",top:"16%",width:"20%",height:"18%"},image:""},
@@ -172,6 +181,12 @@ const sampleBuildings = [
   {id:"cementerio",name:"⛼ Cementerio",category:"Base",initial:true,map:{left:"89%",top:"50%",width:"12%",height:"12%"},image:""}
 ];
 
+const requiredBaseBuildings = [
+  {id:"barracon_medico",name:"Barracón médico",category:"Base",initial:false,constructible:true,map:{left:"17.4%",top:"44.3%",width:"10.5%",height:"19.2%",specialStyle:""},image:""}
+];
+
+let rawBuildings = [];
+let abandonedDefs = [];
 let buildings = [];
 let selectedId = null;
 let drag = null;
@@ -180,6 +195,9 @@ const map = document.getElementById('map');
 const list = document.getElementById('list');
 const jsonPreview = document.getElementById('jsonPreview');
 const editor = document.getElementById('editor');
+const statusBox = document.getElementById('statusBox');
+const imagePreview = document.getElementById('imagePreview');
+const configInput = document.getElementById('configInput');
 
 const leftInput = document.getElementById('leftInput');
 const topInput = document.getElementById('topInput');
@@ -193,18 +211,81 @@ const imageFileInput = document.getElementById('imageFileInput');
 function percentToNum(v){ return parseFloat(String(v || '0').replace('%','')) || 0; }
 function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
+function resolveImagePath(value){
+  const path = String(value || '').trim();
+  if (!path) return '';
+  if (/^(https?:|data:|\.\/|\/)/i.test(path)) return path;
+  return `data/pics/${path}`;
+}
+
+function setStatus(text){
+  statusBox.textContent = text;
+}
+
 function ensureMaps(arr){
   return arr.map((b, i) => ({
     ...b,
-    image: b.image || '',
+    image: String(b.image || '').trim(),
     category: b.category || 'Base',
     map: {
       left: b.map?.left || `${5 + i*2}%`,
       top: b.map?.top || `${10 + i*2}%`,
       width: b.map?.width || '12%',
-      height: b.map?.height || '12%'
+      height: b.map?.height || '12%',
+      specialStyle: b.map?.specialStyle || ''
     }
   }));
+}
+
+function mergeBuildingsWithAbandoned(arr){
+  const merged = Array.isArray(arr) ? [...arr] : [];
+  requiredBaseBuildings.forEach(def => {
+    if (!def || !def.id) return;
+    const id = String(def.id || '').trim();
+    if (!merged.some(b => String(b.id || '').trim() === id)) {
+      merged.push({
+        ...def,
+        map: {...def.map}
+      });
+    }
+  });
+  abandonedDefs.forEach(def => {
+    if (!def || !def.id) return;
+    const id = String(def.id || '').trim();
+    if (!merged.some(b => String(b.id || '').trim() === id)) {
+      merged.push({
+        id,
+        name: def.name || 'Edificio abandonado',
+        category: 'Base',
+        initial: true,
+        constructible: false,
+        abandonedBuilding: true,
+        description: def.description || '',
+        image: '',
+        map: {
+          left: def.map?.left || '5%',
+          top: def.map?.top || '50%',
+          width: def.map?.width || '14%',
+          height: def.map?.height || '12%',
+          specialStyle: def.map?.specialStyle || 'border-color:rgba(210,170,80,0.9);background:rgba(45,32,20,0.55);color:rgba(240,210,170,0.95);'
+        }
+      });
+    }
+  });
+  return merged;
+}
+
+function updateWorkingBuildings(){
+  setBuildings(mergeBuildingsWithAbandoned(rawBuildings));
+  if (rawBuildings.length && abandonedDefs.length) {
+    setStatus(`Cargado ${rawBuildings.length} edificios + ${abandonedDefs.length} abandonados desde config.`);
+  } else if (rawBuildings.length) {
+    setStatus(`Cargado ${rawBuildings.length} edificios. Añade config.json para incluir edificios abandonados.`);
+  } else if (abandonedDefs.length) {
+    setStatus(`Cargado ${abandonedDefs.length} edificios abandonados desde config.json.`);
+  } else {
+    setStatus('Carga buildings.json y config.json para trabajar con edificios y abandonados.');
+  }
 }
 
 function setBuildings(arr){
@@ -222,7 +303,7 @@ function renderAll(){
 
 function renderList(){
   list.innerHTML = '';
-  buildings.filter(b => String(b.category || 'Base').toLowerCase() === 'base').forEach(b => {
+  buildings.forEach(b => {
     const el = document.createElement('div');
     el.className = 'building-item' + (b.id === selectedId ? ' active' : '');
     el.textContent = `${b.name} (${b.id})`;
@@ -233,7 +314,7 @@ function renderList(){
 
 function renderMap(){
   map.querySelectorAll('.building').forEach(el => el.remove());
-  buildings.filter(b => String(b.category || 'Base').toLowerCase() === 'base').forEach(b => {
+  buildings.forEach(b => {
     const el = document.createElement('div');
     el.className = 'building' + (!b.initial ? ' not-built' : '') + (b.id === selectedId ? ' selected' : '');
     el.dataset.id = b.id;
@@ -260,7 +341,7 @@ function renderMap(){
 
 function renderEditor(){
   const b = buildings.find(x => x.id === selectedId);
-  if (!b) { editor.style.display = 'none'; return; }
+  if (!b) { editor.style.display = 'none'; imagePreview.textContent = 'Selecciona un edificio para ver la imagen.'; return; }
   editor.style.display = '';
   nameInput.value = b.name || '';
   idInput.value = b.id || '';
@@ -269,6 +350,12 @@ function renderEditor(){
   topInput.value = percentToNum(b.map.top);
   widthInput.value = percentToNum(b.map.width);
   heightInput.value = percentToNum(b.map.height);
+  const imagePath = resolveImagePath(b.image);
+  if (imagePath) {
+    imagePreview.innerHTML = `<img src="${String(imagePath).replace(/"/g, '&quot;')}" alt="${String(b.name || 'Imagen de edificio').replace(/"/g, '&quot;')}">`;
+  } else {
+    imagePreview.textContent = b.abandonedBuilding ? 'Edificio abandonado sin imagen. Puedes usar data/pics/archivo.png' : 'Sin imagen. Escribe un nombre de archivo o URL.';
+  }
 }
 
 function updateSelectedFromInputs(){
@@ -341,9 +428,27 @@ document.getElementById('copyBtn').onclick = async () => {
 document.getElementById('fileInput').addEventListener('change', async e => {
   const file = e.target.files?.[0];
   if (!file) return;
-  const txt = await file.text();
-  const data = JSON.parse(txt);
-  setBuildings(Array.isArray(data) ? data : []);
+  try {
+    const txt = await file.text();
+    const data = JSON.parse(txt);
+    rawBuildings = Array.isArray(data) ? data : [];
+    updateWorkingBuildings();
+  } catch (err) {
+    setStatus('Error leyendo buildings.json. Comprueba el formato JSON.');
+  }
+});
+
+configInput.addEventListener('change', async e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const txt = await file.text();
+    const data = JSON.parse(txt);
+    abandonedDefs = Array.isArray(data?.camp?.abandonedBuildings) ? data.camp.abandonedBuildings : [];
+    updateWorkingBuildings();
+  } catch (err) {
+    setStatus('Error leyendo config.json. Comprueba el formato JSON.');
+  }
 });
 
 setBuildings(sampleBuildings);

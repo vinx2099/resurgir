@@ -85,7 +85,7 @@
  border-bottom: 1px solid var(--line2);
  background: #060807;
  position: sticky;
- top: 0;
+ top: 30px;
  z-index: 10;
  box-shadow: 0 2px 20px rgba(0,0,0,0.8);
  }
@@ -133,6 +133,51 @@
 
  .stat.locked { opacity: 0.35; }
  .stat.locked .value { color: var(--muted); text-shadow: none; }
+
+ .music-player {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ gap: 6px;
+ min-height: 30px;
+ padding: 4px 10px;
+ border-bottom: 1px solid var(--line);
+ background: #050705;
+ position: sticky;
+ top: 0;
+ z-index: 12;
+ }
+
+ .music-player-label {
+ max-width: 220px;
+ overflow: hidden;
+ white-space: nowrap;
+ text-overflow: ellipsis;
+ color: var(--muted);
+ font-size: 10px;
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+ }
+
+ .music-player button {
+ width: 26px;
+ height: 22px;
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ border: 1px solid var(--line2);
+ background: var(--panel);
+ color: var(--ok-bright);
+ cursor: pointer;
+ padding: 0;
+ font-size: 13px;
+ line-height: 1;
+ }
+
+ .music-player button:hover {
+ border-color: var(--ok);
+ background: rgba(74,138,53,0.12);
+ }
 
  /* LAYOUT */
  .layout {
@@ -517,8 +562,9 @@
  .log-entry:last-child { border-bottom: 0; }
  .log-entry.log-herido { color: var(--warn-bright) !important; }
  .log-entry.log-muerto { color: var(--danger-bright) !important; }
- .log-entry.log-explore { color: var(--accent-bright) !important; }
- .log-entry.log-explore .log-action, .log-entry.log-explore .log-positive, .log-entry.log-explore .log-negative { color: inherit !important; }
+ .log-entry.log-explore, .log-entry.log-explorar { color: #6bb6ff !important; }
+ .log-entry.log-explore .log-action, .log-entry.log-explore .log-positive, .log-entry.log-explore .log-negative,
+ .log-entry.log-explorar .log-action, .log-entry.log-explorar .log-positive, .log-entry.log-explorar .log-negative { color: inherit !important; }
  .log-entry.log-skill { color: var(--amber-bright) !important; letter-spacing:0.03em; }
  .log-entry.log-threat-success { color: #7fdcff !important; font-weight: 700; text-shadow: 0 0 10px rgba(127,220,255,0.18); }
  .log-entry.log-threat-failure { color: #ff8acb !important; font-weight: 700; text-shadow: 0 0 10px rgba(255,138,203,0.16); }
@@ -824,7 +870,7 @@
  display: none;
  align-items: center;
  justify-content: center;
- z-index: 40;
+ z-index: 1500;
  padding: 16px;
  backdrop-filter: blur(3px);
  }
@@ -1213,6 +1259,7 @@
 .log-negative{color:var(--danger-bright);font-weight:700;}
 .log-action{color:var(--amber-bright);font-weight:700;}
 .log-item{color:#9ad8ff;font-weight:700;}
+.log-facilitator{color:var(--amber-bright) !important;font-weight:700;}
 
 
 .badge.herido{background:rgba(138,53,53,0.18)!important;border-color:rgba(255,96,96,0.55)!important;color:var(--danger-bright)!important;}
@@ -1442,10 +1489,18 @@
  border-color:var(--line2);
  box-shadow:0 0 0 1px rgba(114,196,78,0.05) inset;
 }
-#survivorList > .survivor-wide-banner,
-#survivorList > [data-exterior-camp-actions]{
+#survivorList > .survivor-wide-banner{
  flex:0 0 100%;
  min-width:100%;
+}
+#survivorList > [data-vehicle-card]{
+ width:193px !important;
+ min-width:193px !important;
+ max-width:193px !important;
+ height:329px !important;
+ min-height:329px !important;
+ max-height:329px !important;
+ flex:0 0 193px !important;
 }
 #survivorList .avatar{
  width:104px;
@@ -1591,6 +1646,49 @@
  letter-spacing:0.08em;
  color:var(--muted);
 }
+.event-popup-resource-strip{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ gap:5px;
+ flex:1 1 auto;
+ min-width:220px;
+ max-width:380px;
+ flex-wrap:wrap;
+ padding:0 4px;
+}
+.event-popup-resource-chip{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:3px;
+ min-width:0;
+ padding:3px 7px;
+ border:1px solid rgba(184,124,42,0.38);
+ background:rgba(0,0,0,0.18);
+ color:var(--muted);
+ font-family:var(--font-mono);
+ font-size:12px;
+ line-height:1;
+ letter-spacing:0;
+ text-transform:uppercase;
+ white-space:nowrap;
+}
+.event-popup-resource-icon{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ width:14px;
+ min-width:14px;
+ line-height:1;
+ filter:saturate(0.8) contrast(1.05);
+}
+.event-popup-resource-chip b{
+ color:var(--amber-bright);
+ font-weight:700;
+ font-size:11px;
+ line-height:1;
+}
 #storyEventPopup .modal-body{
  overflow:auto;
  padding:0;
@@ -1688,6 +1786,16 @@ body.event-lock{
  min-height:240px;
  border-right:none;
  border-bottom:1px solid rgba(74,138,53,0.28);
+ }
+ #storyEventPopup .modal-header{
+ flex-wrap:wrap;
+ }
+ .event-popup-resource-strip{
+ order:3;
+ flex-basis:100%;
+ justify-content:flex-start;
+ max-width:none;
+ padding:2px 0 0;
  }
 }
 
@@ -1942,6 +2050,8 @@ body.event-lock{
 #homeLink:hover{color:#72c44e !important;border-color:#72c44e !important;}
 #introContinueBtn:hover{border-color:rgba(200,184,154,0.9) !important;color:rgba(200,184,154,1) !important;}
 
+#buildingDetailPanel.open { display: flex; }
+
 </style>
 </head>
 <body>
@@ -1952,6 +2062,11 @@ body.event-lock{
  </div>
  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#3d4a33;" id="headerStatus">SISTEMA ACTIVO ■ ■ ■</span><a id="homeLink" href="index.html" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#3d4a33;text-decoration:none;border:1px solid #2a3525;padding:3px 10px;letter-spacing:0.08em;transition:color 0.15s,border-color 0.15s;">← INICIO</a>
 </div>
+ <div class="music-player" id="musicPlayer">
+ <button id="musicBtn" title="Silenciar música" aria-label="Silenciar música">🔊</button>
+ <button id="musicNextBtn" title="Siguiente canción aleatoria" aria-label="Siguiente canción aleatoria">↬</button>
+ <div class="music-player-label" id="musicTrackLabel">Música</div>
+ </div>
  <div class="topbar" id="topbar"></div>
  <div id="dataErrorBanner" style="display:none;background:rgba(90,16,16,0.92);border-bottom:1px solid rgba(196,78,78,0.45);color:#f0c1c1;padding:10px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.04em;line-height:1.6;"></div>
  
@@ -1971,7 +2086,6 @@ body.event-lock{
  <span>Mapa</span>
  <div class="map-tabs">
  <button class="map-tab active" data-map-tab="base">⬡ Base</button>
- <button class="map-tab" id="exteriorTabBtn" data-map-tab="exterior">◎ Exterior</button>
  </div>
  </div>
  <div class="panel-body" style="padding-top:8px;">
@@ -1983,6 +2097,7 @@ body.event-lock{
  <button id="resetAssignmentsBtn">↺ Limpiar asignaciones</button>
  <button id="groupActionBtn">🤝 Acción grupal</button>
  <button id="activateAllBuildingsBtn" title="Pruebas: construir y activar todos los edificios">🧪 ACTIVAR EDIFICIOS</button>
+ <button class="btn secondary" id="survivorReorderToggleBtn" title="Recolocar supervivientes en la lista">Ordenar supervivientes</button>
  <button class="primary" id="endDayBtn">▶ FINALIZAR DÍA</button>
  </div>
  </div>
@@ -2063,6 +2178,7 @@ body.event-lock{
  <div id="storyEventPopupHeader">Evento</div>
  <small id="storyEventPopupSubheader">Hasta que no decidas, la partida queda en pausa.</small>
  </div>
+ <div class="event-popup-resource-strip" id="eventPopupResources" aria-label="Recursos actuales del campamento"></div>
  <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">RESURGIR // EVENTO</div>
  </div>
  <div class="modal-body" id="storyEventPopupBody"></div>
@@ -2185,9 +2301,25 @@ body.event-lock{
  </div>
  </div>
 
+ <!-- Log popup -->
+ <div class="overlay" id="logPopup">
+ <div class="modal" style="width:min(520px,100%);background:var(--panel);">
+ <div class="modal-header" style="color:var(--amber-bright);background:#0c0c08;border-bottom:1px solid #3a3010;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+ <span>📝 Consejo de Supervivencia</span>
+ <button id="logPopupClose" class="btn secondary" style="border-color:var(--amber-bright);color:var(--amber-bright);background:rgba(196,124,45,0.08);padding:5px 14px;font-size:10px;letter-spacing:0.12em;">Cerrar</button>
+ </div>
+ <div class="modal-body" style="padding:14px;">
+ <div style="display:grid;grid-template-columns:minmax(112px,136px) minmax(0,1fr);gap:10px;align-items:stretch;">
+ <div id="logPopupImg" style="width:100%;height:152px;box-sizing:border-box;overflow:hidden;background:var(--panel2);display:flex;align-items:flex-start;justify-content:center;color:var(--muted);font-size:34px;padding:8px;">📝</div>
+ <div id="logPopupText" style="min-height:152px;padding:14px 18px;font-size:12px;color:var(--text);line-height:1.7;text-align:center;display:flex;align-items:flex-start;justify-content:center;"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+
  <!-- Combat result popup -->
  <div class="overlay" id="combatResultPopup">
- <div class="modal" style="width:min(560px,100%);background:var(--panel);">
+ <div class="modal" style="width:min(720px,100%);background:var(--panel);">
  <div class="modal-header" id="combatResultTitle" style="color:var(--danger-bright);background:#0f0808;border-bottom:1px solid #3a1010;">
  ⚔ Resultado de combate
  </div>
@@ -2345,12 +2477,11 @@ body.event-lock{
 
  <!-- Music -->
  <audio id="bgMusic" loop preload="auto">
- <source src="./data/music/concrete.mp3" type="audio/mpeg">
+ <source src="./data/music/concreteBAK.mp3" type="audio/mpeg">
  </audio>
  <audio id="combatMusic" loop preload="auto">
  <source src="./data/music/wasteland.mp3" type="audio/mpeg">
  </audio>
- <button id="musicBtn" title="Música">🔊</button>
 
  <!-- Intro screen -->
  <div id="introOverlay" style="
@@ -2568,15 +2699,16 @@ body.event-lock{
 
 <script src="./assets/js/core.js" defer></script>
 <script src="./assets/js/inventory.js" defer></script>
-<script src="./assets/js/ui.js" defer></script>
-<script src="./assets/js/effects.js" defer></script>
-<script src="./assets/js/events.js" defer></script>
-<script src="./assets/js/threats.js" defer></script>
-<script src="./assets/js/buildings.js" defer></script>
+<script src="./assets/js/ui.js?v=survivor-order-2" defer></script>
+<script src="./assets/js/effects.js?v=event-actor-morale-1" defer></script>
+<script src="./assets/js/events.js?v=event-actor-morale-1" defer></script>
+<script src="./assets/js/threats.js?v=combat-report-1" defer></script>
+<script src="./assets/js/buildings.js?v=encoding-fix-1" defer></script>
 <script src="./assets/js/exterior.js" defer></script>
- <script src="./assets/js/survivors.js" defer></script>
-<script src="./assets/js/legacy-app.js" defer></script>
-<script src="./assets/js/vehicles.js" defer></script>
+ <script src="./assets/js/survivors.js?v=grave-worsen-death-1" defer></script>
+<script src="./assets/js/legacy-app.js?v=event-actor-morale-1" defer></script>
+<script src="./assets/js/vehicles.js?v=abandoned-recycle-1" defer></script>
+<script src="./assets/js/expeditions.js?v=abstract-expeditions-1" defer></script>
 <script src="./assets/js/data-loader.js" defer></script>
-<script src="./assets/js/app.js" defer></script>
+<script src="./assets/js/app.js?v=combat-report-1" defer></script>
 </body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -914,6 +914,7 @@
               <option value="weekly">Semanal fijo (cada 7 días)</option>
               <option value="story">Historia — día exacto</option>
               <option value="quest">QUEST — solo se activa por efecto</option>
+              <option value="scout">Scout — expediciones abstractas</option>
               <option value="explore">Exploración (se activa al explorar)</option>
               <option value="ambush">Emboscada (combate inmediato)</option>
               <option value="personal">Personal (superviviente activo)</option>
@@ -934,6 +935,17 @@
           <div class="field" id="dayMaxField">
             <label>Día máximo <span style="color:var(--muted)">(opcional)</span></label>
             <input type="number" id="f-dayMax" value="" min="1" max="999" placeholder="ej: 17" />
+          </div>
+          <div class="field" id="scoutRiskField" style="display:none;">
+            <label>Riesgo scout <span style="color:var(--muted)">(risk / riskLevel)</span></label>
+            <input type="number" id="f-scoutRisk" value="" min="0" max="99" placeholder="ej: 2" />
+          </div>
+          <div class="field" id="scoutCombatField" style="display:none;">
+            <label>Combate scout</label>
+            <select id="f-scoutCombat" onchange="updatePreview()">
+              <option value="">Sin combate automático</option>
+              <option value="true">Genera combate automático</option>
+            </select>
           </div>
           <div class="field" id="relatedActionField">
             <label>Acción relacionada <span style="color:var(--muted)">(opcional — aumenta probabilidad si se usa)</span></label>
@@ -1106,6 +1118,7 @@ Variables: {item}, {location}, {food}
               <option value="building">🏗 Edificio construido</option>
               <option value="building_level">📈 Edificio en nivel mínimo</option>
               <option value="not_building">🚫 Edificio NO construido</option>
+              <option value="resource">📦 Recurso</option>
               <option value="stability_min">🏛 Estabilidad mínima</option>
               <option value="stability_max">🏛 Estabilidad máxima</option>
               <option value="day_min">📅 Día mínimo</option>
@@ -1123,6 +1136,24 @@ Variables: {item}, {location}, {food}
             <input type="text" id="f-condId" placeholder="ej: survivor_8d56p6ec" />
             <div style="font-size:9px;color:var(--dim);margin-top:3px;">Puedes ver los IDs en el editor de supervivientes.</div>
           </div>
+          <div class="field" id="condResourceField" style="display:none;">
+            <label id="condResourceLabel">Recurso</label>
+            <select id="f-condResource">
+              <option value="food">Comida</option>
+              <option value="fuel">Combustible</option>
+              <option value="medicine">Medicamento</option>
+              <option value="chickens">Gallinas</option>
+              <option value="materials">Materiales</option>
+            </select>
+          </div>
+          <div class="field" id="condOpField" style="display:none;">
+            <label>Operador</label>
+            <select id="f-condOp">
+              <option value=">=">Más que</option>
+              <option value="<=">Menos que</option>
+              <option value="=">Igual</option>
+            </select>
+          </div>
           <div class="field" id="condValueField" style="display:none;">
             <label id="condValueLabel">Valor</label>
             <input type="number" id="f-condValue" value="1" min="0" max="999" />
@@ -1138,7 +1169,7 @@ Variables: {item}, {location}, {food}
           <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Añade subcondiciones usando el mismo sistema del editor. Se unirán con AND u OR según el tipo elegido arriba.</div>
           <div id="condCompoundRows" class="compound-condition-rows"></div>
           <button class="add-effect-btn" type="button" onclick="addCompoundConditionRow()">+ Añadir subcondición</button>
-          <div style="font-size:9px;color:var(--dim);margin-top:3px;">Subcondiciones disponibles: superviviente, edificio, nivel de edificio, estabilidad y rango de día.</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:3px;">Subcondiciones disponibles: superviviente, edificio, nivel de edificio, recurso, estabilidad y rango de día.</div>
         </div>
 
         <!-- Priority toggle -->
@@ -1196,6 +1227,14 @@ Variables: {item}, {location}, {food}
                 <option value="morale">Valor de moral</option>
                 <option value="skill">Habilidad</option>
                 <option value="stability">Valor de estabilidad</option>
+                <option value="resource">Cantidad de recurso</option>
+              </select>
+              <select id="f-reqResourceA" class="choice-req-" onchange="updatePreview();">
+                <option value="food">Comida</option>
+                <option value="fuel">Combustible</option>
+                <option value="medicine">Medicamento</option>
+                <option value="chickens">Gallinas</option>
+                <option value="materials">Materiales</option>
               </select>
               <select id="f-reqOpA" class="choice-req-" onchange="updatePreview();">
                 <option value=">=">≥</option>
@@ -1224,6 +1263,14 @@ Variables: {item}, {location}, {food}
                 <option value="morale">Valor de moral</option>
                 <option value="skill">Habilidad</option>
                 <option value="stability">Valor de estabilidad</option>
+                <option value="resource">Cantidad de recurso</option>
+              </select>
+              <select id="f-reqResourceB" class="choice-req-" onchange="updatePreview();">
+                <option value="food">Comida</option>
+                <option value="fuel">Combustible</option>
+                <option value="medicine">Medicamento</option>
+                <option value="chickens">Gallinas</option>
+                <option value="materials">Materiales</option>
               </select>
               <select id="f-reqOpB" class="choice-req-" onchange="updatePreview();">
                 <option value=">=">≥</option>
@@ -1252,6 +1299,14 @@ Variables: {item}, {location}, {food}
                 <option value="morale">Valor de moral</option>
                 <option value="skill">Habilidad</option>
                 <option value="stability">Valor de estabilidad</option>
+                <option value="resource">Cantidad de recurso</option>
+              </select>
+              <select id="f-reqResourceC" class="choice-req-" onchange="updatePreview();">
+                <option value="food">Comida</option>
+                <option value="fuel">Combustible</option>
+                <option value="medicine">Medicamento</option>
+                <option value="chickens">Gallinas</option>
+                <option value="materials">Materiales</option>
               </select>
               <select id="f-reqOpC" class="choice-req-" onchange="updatePreview();">
                 <option value=">=">≥</option>
@@ -1280,6 +1335,14 @@ Variables: {item}, {location}, {food}
                 <option value="morale">Valor de moral</option>
                 <option value="skill">Habilidad</option>
                 <option value="stability">Valor de estabilidad</option>
+                <option value="resource">Cantidad de recurso</option>
+              </select>
+              <select id="f-reqResourceD" class="choice-req-" onchange="updatePreview();">
+                <option value="food">Comida</option>
+                <option value="fuel">Combustible</option>
+                <option value="medicine">Medicamento</option>
+                <option value="chickens">Gallinas</option>
+                <option value="materials">Materiales</option>
               </select>
               <select id="f-reqOpD" class="choice-req-" onchange="updatePreview();">
                 <option value=">=">≥</option>
@@ -1369,7 +1432,7 @@ Variables: {item}, {location}, {food}
         </div>
 
         <div class="btn-row">
-          <button class="btn primary" onclick="addEvent()">✓ Añadir evento a la lista</button>
+          <button type="button" class="btn primary" id="editorAddEventBtn" onclick="addEvent()">✓ Añadir evento a la lista</button>
           <button class="btn" onclick="clearForm()">↺ Limpiar formulario</button>
         </div>
 
@@ -1472,13 +1535,14 @@ Variables: {item}, {location}, {food}
 
 
 
-<script src="./assets/js/event-editor/editor-main.js"></script>
+<script src="./assets/js/event-editor/editor-main.js?v=icons-utf8-1"></script>
 <script src="./assets/js/event-editor/patch-bond-threat.js"></script>
 <script src="./assets/js/event-editor/patch-drunk-abandoned.js"></script>
 <script src="./assets/js/event-editor/patch-effects-extension.js"></script>
 <script src="./assets/js/event-editor/patch-attack-unified.js"></script>
-<script src="./assets/js/event-editor/patch-action-skill.js"></script>
+<script src="./assets/js/event-editor/patch-action-skill.js?v=skill-chance-1"></script>
 <script src="./assets/js/event-editor/patch-kidnap-effects.js"></script>
+<script src="./assets/js/event-editor/patch-zone-discovery.js"></script>
 <script src="./assets/js/event-editor/patch-ux-export.js"></script>
 
 </body>

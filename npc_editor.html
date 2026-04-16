@@ -1,0 +1,1234 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor de NPC â€” Resurgir</title>
+  <style>
+    :root {
+      --bg: #161311;
+      --panel: #211c18;
+      --panel-2: #2b241f;
+      --line: #4d4035;
+      --text: #efe3d2;
+      --muted: #baa58d;
+      --accent: #d3a05a;
+      --accent-2: #8f6431;
+      --danger: #b85d5d;
+      --ok: #6aa36a;
+      --shadow: 0 12px 30px rgba(0,0,0,.28);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #120f0d 0%, #1a1512 100%);
+      color: var(--text);
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: rgba(20,16,14,.6);
+      padding: 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+    .main {
+      padding: 18px;
+      overflow: auto;
+    }
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    h1, h2, h3 { margin: 0; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; margin-bottom: 10px; }
+    h3 { font-size: 14px; color: var(--muted); }
+    .muted { color: var(--muted); }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .toolbar, .toolbar-wrap {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar-wrap { margin-bottom: 14px; }
+    button, .btn, select, input[type="text"], input[type="number"], textarea {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      font: inherit;
+    }
+    button, .btn {
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    button:hover, .btn:hover { filter: brightness(1.08); }
+    button.primary { background: linear-gradient(180deg, var(--accent), var(--accent-2)); color: #1b130d; border-color: #7e5a2d; font-weight: 700; }
+    button.danger { background: rgba(184,93,93,.14); border-color: rgba(184,93,93,.45); }
+    button.ghost { background: transparent; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      outline: none;
+    }
+    textarea { min-height: 96px; resize: vertical; }
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .grid-3 {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .npc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: calc(100vh - 260px);
+      overflow: auto;
+      padding-right: 2px;
+    }
+    .npc-item {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.02);
+      cursor: pointer;
+    }
+    .npc-item.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(211,160,90,.3) inset;
+      background: rgba(211,160,90,.08);
+    }
+    .thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #120f0d;
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+    .thumb img, .portrait-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .npc-meta {
+      min-width: 0;
+    }
+    .npc-name {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .npc-sub {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 3px;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 14px;
+    }
+    .portrait-preview {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #120f0d;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      padding: 10px;
+    }
+    .trust-row {
+      display: grid;
+      grid-template-columns: 90px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .continuous-effect-row {
+      display: grid;
+      grid-template-columns: 150px minmax(120px, 1fr) minmax(120px, 1fr) 90px 100px auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .continuous-effect-row .hint {
+      grid-column: 1 / -1;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .status {
+      min-height: 24px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .search { margin-bottom: 12px; }
+    code.inline {
+      background: rgba(255,255,255,.06);
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+    }
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; }
+      .split { grid-template-columns: 1fr; }
+      .grid, .grid-3 { grid-template-columns: 1fr; }
+      .npc-list { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="title">
+        <div>
+          <h1>Editor de NPC</h1>
+          <h3>Resurgir</h3>
+        </div>
+        <span class="badge" id="countBadge">0 NPC</span>
+      </div>
+
+      <div class="card">
+        <div class="toolbar-wrap">
+          <button id="loadJsonBtn" class="primary">Cargar npc.json</button>
+          <button id="selectProjectBtn">Seleccionar carpeta proyecto</button>
+          <button id="saveProjectBtn">Guardar en proyecto</button>
+          <button id="exportBtn">Exportar JSON</button>
+        </div>
+        <div class="status" id="statusMsg"></div>
+        <div class="hint">
+          La subida de imagen copia el archivo a la ruta configurada. Por defecto usarÃ¡ <code class="inline">data/pics/</code>, tal como has pedido. Si prefieres otra, puedes cambiarla abajo.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field search">
+          <label for="searchInput">Buscar NPC</label>
+          <input id="searchInput" type="text" placeholder="ID, nombre, edificio..." />
+        </div>
+        <div class="toolbar" style="margin-bottom:12px;">
+          <button id="newNpcBtn" class="primary">Nuevo NPC</button>
+          <button id="duplicateNpcBtn">Duplicar</button>
+          <button id="deleteNpcBtn" class="danger">Eliminar</button>
+        </div>
+        <div class="npc-list" id="npcList"></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="top-actions">
+        <div>
+          <h2 id="editorTitle">Sin NPC seleccionado</h2>
+          <div class="muted">Soporta los dos formatos que aparecen en tu JSON actual.</div>
+        </div>
+        <span class="badge" id="currentFormatBadge">Formato: â€”</span>
+      </div>
+
+      <div class="split">
+        <div>
+          <section class="card">
+            <div class="section-title">
+              <h2>Datos principales</h2>
+            </div>
+            <div class="grid">
+              <div class="field">
+                <label for="npcId">ID</label>
+                <input id="npcId" type="text" placeholder="npc_bruno" />
+              </div>
+              <div class="field">
+                <label for="npcName">Nombre</label>
+                <input id="npcName" type="text" placeholder="Bruno" />
+              </div>
+              <div class="field">
+                <label for="npcType">Tipo</label>
+                <input id="npcType" type="text" placeholder="merchant" />
+              </div>
+              <div class="field">
+                <label for="npcState">Estado</label>
+                <select id="npcState">
+                  <option value="">â€”</option>
+                  <option value="known">known</option>
+                  <option value="known">conocido</option>
+                  <option value="available">available</option>
+                  <option value="available">disponible</option>
+                  <option value="recruited">recruited</option>
+                  <option value="reclutado">reclutado</option>
+                  <option value="gone">gone</option>
+                  <option value="se_ha_ido">se_ha_ido</option>
+                  <option value="hostile">hostile</option>
+                  <option value="hostil">hostil</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="npcBuildingId">Building ID</label>
+                <input id="npcBuildingId" type="text" placeholder="taller" />
+              </div>
+              <div class="field">
+                <label for="npcTrust">Trust actual</label>
+                <input id="npcTrust" type="number" step="1" min="0" placeholder="0" />
+              </div>
+              <div class="field">
+                <label for="npcEventId">Event ID</label>
+                <input id="npcEventId" type="text" placeholder="bob_trade_0" />
+              </div>
+              <div class="field">
+                <label for="imageFieldMode">Campo de imagen</label>
+                <select id="imageFieldMode">
+                  <option value="auto">auto</option>
+                  <option value="portrait">portrait</option>
+                  <option value="image">image</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="npcDescription">DescripciÃ³n</label>
+              <textarea id="npcDescription" placeholder="DescripciÃ³n del NPC"></textarea>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-title">
+              <h2>Trust levels</h2>
+              <button id="addTrustLevelBtn">AÃ±adir nivel</button>
+            </div>
+            <div id="trustLevelsContainer"></div>
+            <div class="hint">Solo se guardan si hay datos. Sirve para el formato de NPC con confianza y eventos por nivel.</div>
+          </section>
+
+          <section class="card">
+            <div class="section-title">
+              <h2>Efectos al estar asignado</h2>
+              <button id="addContinuousEffectBtn">Anadir efecto</button>
+            </div>
+            <div id="continuousEffectsContainer"></div>
+            <div class="hint">
+              Se guardan como <code class="inline">continuousEffects</code>. Por ahora el juego procesa <code class="inline">resourceInterval</code>: mientras el NPC este asignado al edificio indicado, aporta o resta el recurso cada X dias.
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-title">
+              <h2>Opciones de imagen</h2>
+            </div>
+            <div class="grid">
+              <div class="field">
+                <label for="imageFolder">Carpeta destino</label>
+                <input id="imageFolder" type="text" value="data/pics/" />
+              </div>
+              <div class="field">
+                <label for="currentImagePath">Ruta guardada</label>
+                <input id="currentImagePath" type="text" placeholder="data/pics/bruno.jpg" />
+              </div>
+            </div>
+            <div class="toolbar-wrap">
+              <input id="imageUpload" type="file" accept="image/*" />
+              <button id="copyImageBtn" class="primary">Copiar imagen al proyecto</button>
+              <button id="applyImagePathBtn">Aplicar ruta actual</button>
+              <button id="clearImageBtn" class="danger">Quitar imagen</button>
+            </div>
+            <div class="hint">
+              Si has seleccionado la carpeta del proyecto, el editor intentarÃ¡ copiar la imagen a la ruta indicada y actualizarÃ¡ automÃ¡ticamente el campo <code class="inline">portrait</code> o <code class="inline">image</code>.
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-title">
+              <h2>Campos extra</h2>
+            </div>
+            <div class="field">
+              <label for="extraJson">JSON de campos no estÃ¡ndar</label>
+              <textarea id="extraJson" placeholder='{"rarity":"special"}'></textarea>
+            </div>
+            <div class="hint">AquÃ­ puedes meter cualquier campo adicional sin tocar el editor.</div>
+          </section>
+        </div>
+
+        <div>
+          <section class="card">
+            <h2>Retrato</h2>
+            <div class="portrait-preview" id="portraitPreview">Sin imagen</div>
+            <div class="hint" style="margin-top:10px;">
+              Vista previa de la imagen elegida o de la ruta guardada si se puede resolver en el navegador.
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>Resumen del NPC</h2>
+            <div id="summaryBox" class="hint">Selecciona o crea un NPC.</div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      npcs: [],
+      selectedIndex: -1,
+      jsonFileHandle: null,
+      projectDirHandle: null,
+      pendingImageFile: null,
+      objectUrl: null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      npcList: $('npcList'),
+      countBadge: $('countBadge'),
+      editorTitle: $('editorTitle'),
+      currentFormatBadge: $('currentFormatBadge'),
+      statusMsg: $('statusMsg'),
+      searchInput: $('searchInput'),
+      npcId: $('npcId'),
+      npcName: $('npcName'),
+      npcType: $('npcType'),
+      npcState: $('npcState'),
+      npcBuildingId: $('npcBuildingId'),
+      npcTrust: $('npcTrust'),
+      npcEventId: $('npcEventId'),
+      npcDescription: $('npcDescription'),
+      imageFieldMode: $('imageFieldMode'),
+      trustLevelsContainer: $('trustLevelsContainer'),
+      continuousEffectsContainer: $('continuousEffectsContainer'),
+      imageFolder: $('imageFolder'),
+      currentImagePath: $('currentImagePath'),
+      imageUpload: $('imageUpload'),
+      portraitPreview: $('portraitPreview'),
+      extraJson: $('extraJson'),
+      summaryBox: $('summaryBox'),
+    };
+
+    function setStatus(msg, isError = false) {
+      els.statusMsg.textContent = msg;
+      els.statusMsg.style.color = isError ? 'var(--danger)' : 'var(--muted)';
+    }
+
+    function inferFormat(npc) {
+      if (!npc) return 'â€”';
+      const hasTrust = typeof npc.trust !== 'undefined' || npc.trustLevels;
+      const hasMerchant = typeof npc.type !== 'undefined' || typeof npc.eventId !== 'undefined' || typeof npc.description !== 'undefined';
+      if (hasTrust && hasMerchant) return 'mixto';
+      if (hasTrust) return 'confianza';
+      if (hasMerchant) return 'simple';
+      return 'genÃ©rico';
+    }
+
+    function selectedNpc() {
+      return state.npcs[state.selectedIndex] || null;
+    }
+
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function normalizeEntry(raw) {
+      return clone(raw);
+    }
+
+    function renderNpcList() {
+      const q = els.searchInput.value.trim().toLowerCase();
+      els.npcList.innerHTML = '';
+      let visibleCount = 0;
+
+      state.npcs.forEach((npc, index) => {
+        const haystack = [npc.id, npc.name, npc.type, npc.state, npc.buildingId, npc.eventId].filter(Boolean).join(' ').toLowerCase();
+        if (q && !haystack.includes(q)) return;
+        visibleCount++;
+
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'npc-item' + (index === state.selectedIndex ? ' active' : '');
+
+        const imagePath = npc.portrait || npc.image || '';
+        const thumbHtml = imagePath
+          ? `<img src="${escapeHtml(imagePath)}" alt="${escapeHtml(npc.name || npc.id || 'NPC')}" onerror="this.parentNode.textContent='Sin imagen';">`
+          : 'Sin imagen';
+
+        item.innerHTML = `
+          <div class="thumb">${thumbHtml}</div>
+          <div class="npc-meta">
+            <div class="npc-name">${escapeHtml(npc.name || npc.id || 'NPC sin nombre')}</div>
+            <div class="npc-sub">${escapeHtml(npc.id || '')}</div>
+          </div>
+        `;
+        item.addEventListener('click', () => {
+          persistCurrentForm();
+          state.selectedIndex = index;
+          fillForm();
+          renderNpcList();
+        });
+        els.npcList.appendChild(item);
+      });
+
+      els.countBadge.textContent = `${state.npcs.length} NPC`;
+      if (!visibleCount) {
+        const empty = document.createElement('div');
+        empty.className = 'hint';
+        empty.textContent = 'No hay NPC que coincidan con la bÃºsqueda.';
+        els.npcList.appendChild(empty);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function clearObjectUrl() {
+      if (state.objectUrl) {
+        URL.revokeObjectURL(state.objectUrl);
+        state.objectUrl = null;
+      }
+    }
+
+    function renderPreview() {
+      const npc = selectedNpc();
+      clearObjectUrl();
+      if (!npc) {
+        els.portraitPreview.textContent = 'Sin imagen';
+        return;
+      }
+
+      if (state.pendingImageFile) {
+        state.objectUrl = URL.createObjectURL(state.pendingImageFile);
+        els.portraitPreview.innerHTML = `<img src="${state.objectUrl}" alt="Vista previa">`;
+        return;
+      }
+
+      const path = npc.portrait || npc.image || '';
+      if (path) {
+        els.portraitPreview.innerHTML = `<img src="${escapeHtml(path)}" alt="Vista previa" onerror="this.parentNode.textContent='No se puede resolver la ruta en el navegador';">`;
+      } else {
+        els.portraitPreview.textContent = 'Sin imagen';
+      }
+    }
+
+    function renderSummary() {
+      const npc = selectedNpc();
+      if (!npc) {
+        els.summaryBox.textContent = 'Selecciona o crea un NPC.';
+        return;
+      }
+      const imgField = npc.portrait ? 'portrait' : npc.image ? 'image' : 'â€”';
+      const trustKeys = npc.trustLevels ? Object.keys(npc.trustLevels).join(', ') : 'â€”';
+      els.summaryBox.innerHTML = `
+        <div><strong>ID:</strong> ${escapeHtml(npc.id || 'â€”')}</div>
+        <div><strong>Nombre:</strong> ${escapeHtml(npc.name || 'â€”')}</div>
+        <div><strong>Formato:</strong> ${escapeHtml(inferFormat(npc))}</div>
+        <div><strong>Estado:</strong> ${escapeHtml(npc.state || 'â€”')}</div>
+        <div><strong>Building ID:</strong> ${escapeHtml(npc.buildingId || 'â€”')}</div>
+        <div><strong>Event ID:</strong> ${escapeHtml(npc.eventId || 'â€”')}</div>
+        <div><strong>Campo imagen:</strong> ${escapeHtml(imgField)}</div>
+        <div><strong>Ruta imagen:</strong> ${escapeHtml(npc.portrait || npc.image || 'â€”')}</div>
+        <div><strong>Trust:</strong> ${escapeHtml(typeof npc.trust !== 'undefined' ? npc.trust : 'â€”')}</div>
+        <div><strong>Trust levels:</strong> ${escapeHtml(trustKeys)}</div>
+      `;
+    }
+
+    function renderTrustLevels(npc) {
+      els.trustLevelsContainer.innerHTML = '';
+      const trustLevels = npc?.trustLevels && typeof npc.trustLevels === 'object' ? npc.trustLevels : {};
+      const entries = Object.entries(trustLevels);
+
+      if (!entries.length) {
+        const empty = document.createElement('div');
+        empty.className = 'hint';
+        empty.textContent = 'Este NPC no tiene niveles de confianza definidos.';
+        els.trustLevelsContainer.appendChild(empty);
+        return;
+      }
+
+      entries.sort((a, b) => Number(a[0]) - Number(b[0]));
+      entries.forEach(([key, value]) => {
+        const row = document.createElement('div');
+        row.className = 'trust-row';
+        row.innerHTML = `
+          <input type="number" class="trust-key" value="${escapeHtml(key)}" min="0" step="1">
+          <input type="text" class="trust-value" value="${escapeHtml(value)}" placeholder="evento_nivel">
+          <button type="button" class="danger">Quitar</button>
+        `;
+        row.querySelector('button').addEventListener('click', () => {
+          row.remove();
+        });
+        els.trustLevelsContainer.appendChild(row);
+      });
+    }
+
+    function createContinuousEffectRow(effect = {}) {
+      const row = document.createElement('div');
+      row.className = 'continuous-effect-row';
+      row.innerHTML = `
+        <select class="continuous-type">
+          <option value="resourceInterval">Recurso cada X dias</option>
+          <option value="restMoraleBonus">% de recuperar moral al descansar</option>
+          <option value="injuryRollBonus">Bonus tirada heridas</option>
+          <option value="itemChance">% de conseguir item</option>
+        </select>
+        <input type="text" class="continuous-building" placeholder="taller">
+        <select class="continuous-resource">
+          <option value="materials">Materiales</option>
+          <option value="food">Comida</option>
+          <option value="fuel">Combustible</option>
+          <option value="meds">Medicamentos</option>
+          <option value="electricity">Electricidad</option>
+          <option value="chickens">Gallinas</option>
+        </select>
+        <select class="continuous-tier">
+          <option value="any">Item aleatorio</option>
+          <option value="T1">Item T1</option>
+          <option value="T2">Item T2</option>
+          <option value="T3">Item T3</option>
+        </select>
+        <input type="number" class="continuous-amount" step="1" placeholder="2">
+        <input type="number" class="continuous-interval" min="1" step="1" placeholder="3">
+        <button type="button" class="danger">Quitar</button>
+        <div class="hint continuous-help"></div>
+      `;
+      const typeSel = row.querySelector('.continuous-type');
+      const resourceSel = row.querySelector('.continuous-resource');
+      const tierSel = row.querySelector('.continuous-tier');
+      const amountInput = row.querySelector('.continuous-amount');
+      const intervalInput = row.querySelector('.continuous-interval');
+      typeSel.value = effect.type || 'resourceInterval';
+      row.querySelector('.continuous-building').value = effect.buildingId || effect.building || els.npcBuildingId.value.trim() || 'taller';
+      resourceSel.value = effect.resource || 'materials';
+      tierSel.value = effect.randomTier || effect.tier || 'any';
+      if (typeSel.value === 'restMoraleBonus') {
+        amountInput.value = Number.isFinite(Number(effect.chancePercent)) ? Number(effect.chancePercent) : 25;
+        intervalInput.value = Number(effect.amount || 1) || 1;
+      } else if (typeSel.value === 'injuryRollBonus') {
+        amountInput.value = Number.isFinite(Number(effect.amount ?? effect.bonus)) ? Number(effect.amount ?? effect.bonus) : 1;
+        intervalInput.value = 1;
+      } else if (typeSel.value === 'itemChance') {
+        amountInput.value = Number.isFinite(Number(effect.chancePercent ?? effect.chance)) ? Number(effect.chancePercent ?? effect.chance) : 25;
+        intervalInput.value = Number(effect.intervalDays || effect.days || 1) || 1;
+      } else {
+        amountInput.value = Number.isFinite(Number(effect.amount)) ? Number(effect.amount) : 2;
+        intervalInput.value = Number(effect.intervalDays || effect.days || 3) || 3;
+      }
+      const refreshRow = () => {
+        const type = typeSel.value;
+        resourceSel.style.display = type === 'resourceInterval' ? '' : 'none';
+        tierSel.style.display = type === 'itemChance' ? '' : 'none';
+        intervalInput.style.display = ['resourceInterval','restMoraleBonus','itemChance'].includes(type) ? '' : 'none';
+        amountInput.min = type === 'resourceInterval' ? '-99' : type === 'injuryRollBonus' ? '-6' : '0';
+        amountInput.max = ['restMoraleBonus','itemChance'].includes(type) ? '100' : '';
+        amountInput.placeholder = type === 'resourceInterval' ? 'Cantidad' : type === 'restMoraleBonus' ? '% prob.' : type === 'injuryRollBonus' ? 'Bonus' : '% prob.';
+        intervalInput.placeholder = type === 'restMoraleBonus' ? 'Moral' : type === 'itemChance' ? 'Cada X dias' : 'Intervalo';
+        row.querySelector('.continuous-help').textContent =
+          type === 'resourceInterval' ? 'Aporta o resta el recurso cada X dias.' :
+          type === 'restMoraleBonus' ? 'Mientras este asignado, da % de recuperar X moral al descansar.' :
+          type === 'injuryRollBonus' ? 'Mientras este asignado, suma este valor a la tirada de heridas.' :
+          'Mientras este asignado, puede encontrar un item del tier elegido cada X dias.';
+      };
+      row.querySelector('button').addEventListener('click', () => {
+        row.remove();
+        persistCurrentForm();
+        renderSummary();
+      });
+      row.querySelectorAll('input,select').forEach((el) => {
+        el.addEventListener('input', () => { refreshRow(); persistCurrentForm(); renderSummary(); });
+        el.addEventListener('change', () => { refreshRow(); persistCurrentForm(); renderSummary(); });
+      });
+      refreshRow();
+      return row;
+    }
+
+    function renderContinuousEffects(npc) {
+      els.continuousEffectsContainer.innerHTML = '';
+      const effects = Array.isArray(npc?.continuousEffects) ? npc.continuousEffects : [];
+      const supportedTypes = new Set(['resourceInterval','restMoraleBonus','injuryRollBonus','itemChance']);
+      const supported = effects.filter((effect) => !effect.type || supportedTypes.has(effect.type));
+      if (!supported.length) {
+        const empty = document.createElement('div');
+        empty.className = 'hint empty-continuous-effects';
+        empty.textContent = 'Este NPC no tiene efectos continuos definidos.';
+        els.continuousEffectsContainer.appendChild(empty);
+        return;
+      }
+      supported.forEach((effect) => els.continuousEffectsContainer.appendChild(createContinuousEffectRow(effect)));
+    }
+
+    function collectContinuousEffectsFromUi() {
+      const rows = [...els.continuousEffectsContainer.querySelectorAll('.continuous-effect-row')];
+      const preservedUnsupported = (Array.isArray(selectedNpc()?.continuousEffects) ? selectedNpc().continuousEffects : [])
+        .filter((effect) => effect && effect.type && !['resourceInterval','restMoraleBonus','injuryRollBonus','itemChance'].includes(effect.type));
+      const uiEffects = rows.map((row) => {
+        const type = row.querySelector('.continuous-type').value || 'resourceInterval';
+        const buildingId = row.querySelector('.continuous-building').value.trim();
+        const resource = row.querySelector('.continuous-resource').value;
+        const amount = Number(row.querySelector('.continuous-amount').value);
+        const intervalDays = Number(row.querySelector('.continuous-interval').value);
+        const base = { type, buildingId };
+        if (!buildingId || !Number.isFinite(amount)) return null;
+        if (type === 'resourceInterval') {
+          if (!resource || !Number.isFinite(intervalDays)) return null;
+          return { ...base, resource, amount, intervalDays: Math.max(1, Math.round(intervalDays)) };
+        }
+        if (type === 'restMoraleBonus') return { ...base, chancePercent: Math.max(0, Math.min(100, amount)), amount: Math.max(1, Math.round(intervalDays || 1)) };
+        if (type === 'injuryRollBonus') return { ...base, amount };
+        if (type === 'itemChance') {
+          if (!Number.isFinite(intervalDays)) return null;
+          const tier = row.querySelector('.continuous-tier').value;
+          const effect = { ...base, chancePercent: Math.max(0, Math.min(100, amount)), intervalDays: Math.max(1, Math.round(intervalDays)) };
+          if (tier && tier !== 'any') effect.randomTier = tier;
+          return effect;
+        }
+        return null;
+      }).filter(Boolean);
+      return [...preservedUnsupported, ...uiEffects];
+    }
+
+    function fillForm() {
+      const npc = selectedNpc();
+      state.pendingImageFile = null;
+      if (!npc) {
+        els.editorTitle.textContent = 'Sin NPC seleccionado';
+        els.currentFormatBadge.textContent = 'Formato: â€”';
+        [
+          'npcId','npcName','npcType','npcState','npcBuildingId','npcTrust','npcEventId','npcDescription','currentImagePath','extraJson'
+        ].forEach((id) => { $(id).value = ''; });
+        els.imageFieldMode.value = 'auto';
+        els.imageUpload.value = '';
+        renderTrustLevels(null);
+        renderContinuousEffects(null);
+        renderPreview();
+        renderSummary();
+        return;
+      }
+
+      els.editorTitle.textContent = npc.name || npc.id || 'NPC sin nombre';
+      els.currentFormatBadge.textContent = `Formato: ${inferFormat(npc)}`;
+      els.npcId.value = npc.id || '';
+      els.npcName.value = npc.name || '';
+      els.npcType.value = npc.type || '';
+      els.npcState.value = npc.state || '';
+      els.npcBuildingId.value = npc.buildingId || '';
+      els.npcTrust.value = typeof npc.trust !== 'undefined' ? npc.trust : '';
+      els.npcEventId.value = npc.eventId || '';
+      els.npcDescription.value = npc.description || '';
+      els.currentImagePath.value = npc.portrait || npc.image || '';
+      els.imageFieldMode.value = npc.portrait ? 'portrait' : npc.image ? 'image' : 'auto';
+      renderTrustLevels(npc);
+      renderContinuousEffects(npc);
+
+      const extra = {};
+      for (const [k, v] of Object.entries(npc)) {
+        if (!['id','name','type','state','buildingId','trust','eventId','description','portrait','image','trustLevels','continuousEffects'].includes(k)) {
+          extra[k] = v;
+        }
+      }
+      els.extraJson.value = Object.keys(extra).length ? JSON.stringify(extra, null, 2) : '';
+      renderPreview();
+      renderSummary();
+    }
+
+    function collectTrustLevelsFromUi() {
+      const rows = [...els.trustLevelsContainer.querySelectorAll('.trust-row')];
+      const result = {};
+      rows.forEach((row) => {
+        const key = row.querySelector('.trust-key').value.trim();
+        const value = row.querySelector('.trust-value').value.trim();
+        if (key !== '' && value !== '') result[key] = value;
+      });
+      return result;
+    }
+
+    function resolveImageFieldMode(npc) {
+      const mode = els.imageFieldMode.value;
+      if (mode !== 'auto') return mode;
+      if ('portrait' in npc) return 'portrait';
+      if ('image' in npc) return 'image';
+      if (npc.trustLevels || typeof npc.trust !== 'undefined' || npc.buildingId) return 'portrait';
+      return 'image';
+    }
+
+    function persistCurrentForm() {
+      const npc = selectedNpc();
+      if (!npc) return;
+
+      const next = clone(npc);
+      const setOrDelete = (obj, key, value) => {
+        if (value === '' || value === null || typeof value === 'undefined') delete obj[key];
+        else obj[key] = value;
+      };
+
+      setOrDelete(next, 'id', els.npcId.value.trim());
+      setOrDelete(next, 'name', els.npcName.value.trim());
+      setOrDelete(next, 'type', els.npcType.value.trim());
+      setOrDelete(next, 'state', els.npcState.value.trim());
+      setOrDelete(next, 'buildingId', els.npcBuildingId.value.trim());
+      const trustValue = els.npcTrust.value.trim();
+      if (trustValue === '') delete next.trust;
+      else next.trust = Number(trustValue);
+      setOrDelete(next, 'eventId', els.npcEventId.value.trim());
+      setOrDelete(next, 'description', els.npcDescription.value.trim());
+
+      const imagePath = els.currentImagePath.value.trim();
+      delete next.image;
+      delete next.portrait;
+      if (imagePath) {
+        next[resolveImageFieldMode(next)] = imagePath;
+      }
+
+      const trustLevels = collectTrustLevelsFromUi();
+      if (Object.keys(trustLevels).length) next.trustLevels = trustLevels;
+      else delete next.trustLevels;
+
+      const continuousEffects = collectContinuousEffectsFromUi();
+      if (continuousEffects.length) next.continuousEffects = continuousEffects;
+      else delete next.continuousEffects;
+
+      const extraText = els.extraJson.value.trim();
+      for (const key of Object.keys(next)) {
+        if (!['id','name','type','state','buildingId','trust','eventId','description','portrait','image','trustLevels','continuousEffects'].includes(key)) {
+          delete next[key];
+        }
+      }
+      if (extraText) {
+        try {
+          const extraObj = JSON.parse(extraText);
+          if (extraObj && typeof extraObj === 'object' && !Array.isArray(extraObj)) {
+            ['id','name','type','state','buildingId','trust','eventId','description','portrait','image','trustLevels','continuousEffects'].forEach((key) => delete extraObj[key]);
+            Object.assign(next, extraObj);
+          }
+        } catch (err) {
+          setStatus('Campos extra: JSON invÃ¡lido. CorrÃ­gelo antes de guardar.', true);
+          return;
+        }
+      }
+
+      state.npcs[state.selectedIndex] = next;
+      renderNpcList();
+      renderSummary();
+      els.editorTitle.textContent = next.name || next.id || 'NPC sin nombre';
+      els.currentFormatBadge.textContent = `Formato: ${inferFormat(next)}`;
+    }
+
+    function addNewNpc() {
+      persistCurrentForm();
+      const base = {
+        id: `npc_nuevo_${state.npcs.length + 1}`,
+        name: 'Nuevo NPC',
+        state: 'known',
+        image: '',
+        description: ''
+      };
+      state.npcs.push(base);
+      state.selectedIndex = state.npcs.length - 1;
+      renderNpcList();
+      fillForm();
+    }
+
+    function duplicateNpc() {
+      const npc = selectedNpc();
+      if (!npc) return;
+      persistCurrentForm();
+      const copy = clone(selectedNpc());
+      copy.id = `${copy.id || 'npc'}_copy`;
+      copy.name = `${copy.name || 'NPC'} copia`;
+      state.npcs.push(copy);
+      state.selectedIndex = state.npcs.length - 1;
+      renderNpcList();
+      fillForm();
+    }
+
+    function deleteNpc() {
+      if (state.selectedIndex < 0) return;
+      state.npcs.splice(state.selectedIndex, 1);
+      state.selectedIndex = Math.min(state.selectedIndex, state.npcs.length - 1);
+      renderNpcList();
+      fillForm();
+    }
+
+    async function loadJsonFile() {
+      try {
+        if ('showOpenFilePicker' in window) {
+          const [handle] = await window.showOpenFilePicker({
+            multiple: false,
+            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+          });
+          state.jsonFileHandle = handle;
+          const file = await handle.getFile();
+          const text = await file.text();
+          loadJsonText(text);
+          setStatus(`Cargado: ${file.name}`);
+          return;
+        }
+      } catch (err) {
+        if (err?.name !== 'AbortError') setStatus(`No se pudo abrir el archivo: ${err.message}`, true);
+        return;
+      }
+
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,application/json';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        loadJsonText(text);
+        setStatus(`Cargado: ${file.name}`);
+      };
+      input.click();
+    }
+
+    function loadJsonText(text) {
+      try {
+        const data = JSON.parse(text);
+        if (!Array.isArray(data)) throw new Error('El JSON debe ser un array de NPC.');
+        state.npcs = data.map(normalizeEntry);
+        state.selectedIndex = state.npcs.length ? 0 : -1;
+        renderNpcList();
+        fillForm();
+      } catch (err) {
+        setStatus(`JSON invÃ¡lido: ${err.message}`, true);
+      }
+    }
+
+    function serializeJson() {
+      persistCurrentForm();
+      return JSON.stringify(state.npcs, null, 2) + '\n';
+    }
+
+    async function exportJson() {
+      try {
+        const content = serializeJson();
+        const blob = new Blob([content], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'npc.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        setStatus('JSON exportado.');
+      } catch (err) {
+        setStatus(`No se pudo exportar: ${err.message}`, true);
+      }
+    }
+
+    async function selectProjectFolder() {
+      if (!('showDirectoryPicker' in window)) {
+        setStatus('Tu navegador no soporta selecciÃ³n de carpeta. Usa Chrome/Edge en local o HTTPS.', true);
+        return;
+      }
+      try {
+        state.projectDirHandle = await window.showDirectoryPicker();
+        setStatus('Carpeta del proyecto seleccionada.');
+      } catch (err) {
+        if (err?.name !== 'AbortError') setStatus(`No se pudo seleccionar la carpeta: ${err.message}`, true);
+      }
+    }
+
+    async function getOrCreateSubdir(rootHandle, relativePath) {
+      const clean = relativePath.replace(/^\/+|\/+$/g, '');
+      if (!clean) return rootHandle;
+      const parts = clean.split('/').filter(Boolean);
+      let current = rootHandle;
+      for (const part of parts) {
+        current = await current.getDirectoryHandle(part, { create: true });
+      }
+      return current;
+    }
+
+    function sanitizeFilename(name) {
+      const dotIndex = name.lastIndexOf('.');
+      const base = dotIndex >= 0 ? name.slice(0, dotIndex) : name;
+      const ext = dotIndex >= 0 ? name.slice(dotIndex) : '';
+      const cleanBase = base
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'npc';
+      return `${cleanBase}${ext.toLowerCase()}`;
+    }
+
+    async function copyImageToProject() {
+      const npc = selectedNpc();
+      if (!npc) {
+        setStatus('Selecciona un NPC antes de copiar la imagen.', true);
+        return;
+      }
+      const file = els.imageUpload.files?.[0] || state.pendingImageFile;
+      if (!file) {
+        setStatus('Elige una imagen primero.', true);
+        return;
+      }
+      if (!state.projectDirHandle) {
+        setStatus('Primero selecciona la carpeta del proyecto.', true);
+        return;
+      }
+      try {
+        const folder = els.imageFolder.value.trim() || 'data/pics/';
+        const safeFolder = folder.endsWith('/') ? folder : `${folder}/`;
+        const relativeFolder = safeFolder.replace(/^\/+/, '').replace(/\/$/, '');
+        const targetDir = await getOrCreateSubdir(state.projectDirHandle, relativeFolder);
+        const filename = sanitizeFilename(file.name);
+        const handle = await targetDir.getFileHandle(filename, { create: true });
+        const writable = await handle.createWritable();
+        await writable.write(await file.arrayBuffer());
+        await writable.close();
+        const finalPath = `${safeFolder}${filename}`;
+        els.currentImagePath.value = finalPath;
+        persistCurrentForm();
+        renderPreview();
+        renderSummary();
+        renderNpcList();
+        setStatus(`Imagen copiada a ${finalPath}`);
+      } catch (err) {
+        setStatus(`No se pudo copiar la imagen: ${err.message}`, true);
+      }
+    }
+
+    async function saveProjectJson() {
+      if (!state.projectDirHandle) {
+        setStatus('Primero selecciona la carpeta del proyecto.', true);
+        return;
+      }
+      try {
+        const dataDir = await getOrCreateSubdir(state.projectDirHandle, 'data');
+        const fileHandle = await dataDir.getFileHandle('npc.json', { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(serializeJson());
+        await writable.close();
+        setStatus('Guardado en data/npc.json');
+      } catch (err) {
+        setStatus(`No se pudo guardar npc.json: ${err.message}`, true);
+      }
+    }
+
+    function applyImagePath() {
+      persistCurrentForm();
+      renderPreview();
+      renderSummary();
+      renderNpcList();
+      setStatus('Ruta de imagen aplicada al NPC.');
+    }
+
+    function clearImage() {
+      els.currentImagePath.value = '';
+      els.imageUpload.value = '';
+      state.pendingImageFile = null;
+      persistCurrentForm();
+      renderPreview();
+      renderSummary();
+      renderNpcList();
+      setStatus('Imagen eliminada del NPC.');
+    }
+
+    function addTrustLevel() {
+      const row = document.createElement('div');
+      row.className = 'trust-row';
+      row.innerHTML = `
+        <input type="number" class="trust-key" min="0" step="1" placeholder="0">
+        <input type="text" class="trust-value" placeholder="evento_nivel">
+        <button type="button" class="danger">Quitar</button>
+      `;
+      row.querySelector('button').addEventListener('click', () => row.remove());
+      const emptyHint = els.trustLevelsContainer.querySelector('.hint');
+      if (emptyHint) emptyHint.remove();
+      els.trustLevelsContainer.appendChild(row);
+    }
+
+    function addContinuousEffect() {
+      const emptyHint = els.continuousEffectsContainer.querySelector('.empty-continuous-effects');
+      if (emptyHint) emptyHint.remove();
+      els.continuousEffectsContainer.appendChild(createContinuousEffectRow({
+        type: 'resourceInterval',
+        buildingId: els.npcBuildingId.value.trim() || 'taller',
+        resource: 'materials',
+        amount: 2,
+        intervalDays: 3
+      }));
+      persistCurrentForm();
+      renderSummary();
+    }
+
+    function bindInputs() {
+      [
+        els.npcId, els.npcName, els.npcType, els.npcState, els.npcBuildingId,
+        els.npcTrust, els.npcEventId, els.npcDescription, els.imageFieldMode,
+        els.currentImagePath, els.extraJson
+      ].forEach((el) => {
+        el.addEventListener('input', () => {
+          persistCurrentForm();
+          renderSummary();
+        });
+        el.addEventListener('change', () => {
+          persistCurrentForm();
+          renderSummary();
+        });
+      });
+
+      els.imageUpload.addEventListener('change', () => {
+        state.pendingImageFile = els.imageUpload.files?.[0] || null;
+        renderPreview();
+      });
+
+      els.searchInput.addEventListener('input', renderNpcList);
+      els.trustLevelsContainer.addEventListener('input', () => {
+        persistCurrentForm();
+        renderSummary();
+      });
+      els.trustLevelsContainer.addEventListener('change', () => {
+        persistCurrentForm();
+        renderSummary();
+      });
+      els.continuousEffectsContainer.addEventListener('input', () => {
+        persistCurrentForm();
+        renderSummary();
+      });
+      els.continuousEffectsContainer.addEventListener('change', () => {
+        persistCurrentForm();
+        renderSummary();
+      });
+    }
+
+    $('loadJsonBtn').addEventListener('click', loadJsonFile);
+    $('selectProjectBtn').addEventListener('click', selectProjectFolder);
+    $('saveProjectBtn').addEventListener('click', saveProjectJson);
+    $('exportBtn').addEventListener('click', exportJson);
+    $('newNpcBtn').addEventListener('click', addNewNpc);
+    $('duplicateNpcBtn').addEventListener('click', duplicateNpc);
+    $('deleteNpcBtn').addEventListener('click', deleteNpc);
+    $('copyImageBtn').addEventListener('click', copyImageToProject);
+    $('applyImagePathBtn').addEventListener('click', applyImagePath);
+    $('clearImageBtn').addEventListener('click', clearImage);
+    $('addTrustLevelBtn').addEventListener('click', addTrustLevel);
+    $('addContinuousEffectBtn').addEventListener('click', addContinuousEffect);
+
+    bindInputs();
+
+    // Precarga con el npc.json aportado, para dejarlo listo nada mÃ¡s abrir.
+    loadJsonText(`[
+  {
+    "id": "npc_bob",
+    "name": "Bob",
+    "type": "merchant",
+    "state": "known",
+    "eventId": "bob_trade_0",
+    "image": "",
+    "description": "Un comerciante extravagante del exterior. Siempre parece tener algo que vender y una frase demasiado ensayada para presentarlo."
+  },
+  {
+    "id": "npc_lorna",
+    "name": "Lorna",
+    "portrait": "data/pic/npcs/lorna.jpg",
+    "buildingId": "barracones",
+    "trust": 0,
+    "trustLevels": {
+      "0": "lorna_0",
+      "1": "lorna_1",
+      "2": "lorna_2"
+    }
+  },
+  {
+    "id": "npc_bruno",
+    "name": "Bruno",
+    "portrait": "data/pic/npcs/bruno.jpg",
+    "buildingId": "taller",
+    "trust": 0,
+    "trustLevels": {
+      "0": "bruno_0",
+      "1": "bruno_1",
+      "2": "bruno_2"
+    },
+    "continuousEffects": [
+      {
+        "type": "resourceInterval",
+        "buildingId": "taller",
+        "resource": "materials",
+        "amount": 2,
+        "intervalDays": 3
+      }
+    ]
+  }
+]`);
+    setStatus('Editor listo. Puedes cargar tu npc.json o trabajar sobre el ejemplo ya cargado.');
+  </script>
+</body>
+</html>

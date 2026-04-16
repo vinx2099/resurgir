@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RESURGIR · Guía de juego</title>
+  <style>
+    :root {
+      --bg: #0d0b09;
+      --bg-2: #16110d;
+      --panel: rgba(29, 21, 17, 0.94);
+      --panel-2: rgba(18, 13, 10, 0.96);
+      --text: #f0e6d8;
+      --muted: #bba48d;
+      --muted-2: #8b7767;
+      --accent: #d76a2b;
+      --accent-2: #ffab67;
+      --border: rgba(255, 171, 103, 0.18);
+      --shadow: 0 18px 44px rgba(0,0,0,.42);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(215, 106, 43, 0.11), transparent 28%),
+        linear-gradient(180deg, #18120d 0%, #100d0a 32%, #0d0b09 100%);
+      background-attachment: fixed;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.07;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 3px 3px, 5px 5px;
+      mix-blend-mode: soft-light;
+    }
+
+    .wrap {
+      width: min(1400px, calc(100% - 28px));
+      margin: 20px auto 28px;
+    }
+
+    .hero {
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(61, 37, 24, 0.96), rgba(22, 15, 12, 0.96));
+      box-shadow: var(--shadow);
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -90px;
+      bottom: -120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 171, 103, 0.18), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: rgba(215, 106, 43, 0.15);
+      border: 1px solid rgba(255, 171, 103, 0.24);
+      color: var(--accent-2);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(30px, 4vw, 42px);
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .sub {
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 900px;
+      font-size: 15px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .panel {
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(38, 28, 22, 0.95), rgba(18, 13, 10, 0.97));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      display: block;
+      height: 4px;
+      background: linear-gradient(90deg, #8b4618, var(--accent), var(--accent-2));
+    }
+
+    .panel-inner {
+      padding: 18px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-title strong {
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      color: var(--accent-2);
+    }
+
+    .count {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input[type="search"] {
+      width: 100%;
+      border: 1px solid rgba(255, 171, 103, 0.14);
+      background: rgba(10, 8, 7, 0.74);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 14px;
+    }
+
+    input[type="search"]:focus {
+      border-color: rgba(255, 171, 103, 0.55);
+      box-shadow: 0 0 0 3px rgba(215, 106, 43, 0.14);
+    }
+
+    .entry-list {
+      display: grid;
+      gap: 10px;
+      max-height: 760px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .entry-button {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(255, 171, 103, 0.14);
+      background: linear-gradient(180deg, rgba(33, 23, 18, 0.94), rgba(16, 11, 9, 0.97));
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 13px;
+      cursor: pointer;
+      transition: transform .08s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .entry-button:hover {
+      border-color: rgba(255, 171, 103, 0.52);
+      transform: translateY(-1px);
+    }
+
+    .entry-button.active {
+      border-color: rgba(255, 171, 103, 0.72);
+      background: linear-gradient(180deg, rgba(76, 48, 28, 0.98), rgba(30, 21, 16, 0.98));
+      box-shadow: inset 0 0 0 1px rgba(255, 171, 103, 0.16);
+    }
+
+    .entry-button .name {
+      display: block;
+      font-weight: 800;
+      color: #ffe3c7;
+      margin-bottom: 4px;
+    }
+
+    .entry-button .snippet {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .article-title {
+      font-size: clamp(26px, 3.5vw, 38px);
+      line-height: 1;
+      margin: 0 0 12px;
+      color: #fff0dd;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .article-body {
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+      white-space: pre-wrap;
+      margin-bottom: 20px;
+    }
+
+    .related-block {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 18px;
+    }
+
+    .related-title {
+      text-transform: uppercase;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      color: var(--accent-2);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .related-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .related-btn {
+      border: 1px solid rgba(255, 171, 103, 0.18);
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, rgba(215, 106, 43, 0.22), rgba(100, 50, 23, 0.34));
+      color: #ffe3c7;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .08s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .related-btn:hover {
+      border-color: rgba(255, 171, 103, 0.62);
+      transform: translateY(-1px);
+    }
+
+    .empty,
+    .error-box {
+      border-radius: 18px;
+      border: 1px dashed rgba(255, 171, 103, 0.2);
+      padding: 18px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.02);
+      line-height: 1.6;
+    }
+
+    .error-box {
+      border-color: rgba(212, 97, 80, 0.28);
+      color: #ffbeb4;
+      background: rgba(140, 36, 21, 0.08);
+    }
+
+    .status-row {
+      margin-top: 12px;
+      color: var(--muted-2);
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .entry-list {
+        max-height: 300px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        width: min(100%, calc(100% - 16px));
+      }
+
+      .hero, .panel-inner {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">RESURGIR · Archivo de supervivencia</div>
+      <h1>GUÍA DE AYUDA</h1>
+      <div class="sub">
+        Consulta las entradas del sistema, busca conceptos y navega entre ellos mediante enlaces internos.
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="panel">
+        <div class="panel-inner">
+          <div class="section-title">
+            <strong>Índice</strong>
+            <span id="entryCount" class="count">0 entradas</span>
+          </div>
+          <input id="searchInput" type="search" placeholder="Buscar término...">
+          <div id="entryList" class="entry-list"></div>
+        </div>
+      </aside>
+
+      <main class="panel">
+        <div class="panel-inner">
+          <div id="content"></div>
+          <div id="statusRow" class="status-row"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      entries: [],
+      filtered: [],
+      selectedName: '',
+      search: ''
+    };
+
+    const entryListEl = document.getElementById('entryList');
+    const entryCountEl = document.getElementById('entryCount');
+    const contentEl = document.getElementById('content');
+    const searchInput = document.getElementById('searchInput');
+    const statusRow = document.getElementById('statusRow');
+
+    function normalizeEntry(item) {
+      const rawRelated = Array.isArray(item?.related) ? item.related : [];
+      return {
+        nombre: String(item?.nombre || '').trim(),
+        texto: String(item?.texto || '').trim(),
+        related: rawRelated
+          .map(rel => {
+            if (typeof rel === 'string') return rel.trim();
+            if (rel && typeof rel === 'object') return String(rel.target || rel.nombre || rel.label || '').trim();
+            return '';
+          })
+          .filter(Boolean)
+      };
+    }
+
+    function sortEntries(entries) {
+      return [...entries].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function findEntryByName(name) {
+      return state.entries.find(entry => entry.nombre.localeCompare(name, 'es', { sensitivity: 'base' }) === 0) || null;
+    }
+
+    function updateHash(name) {
+      const value = encodeURIComponent(name || '');
+      const nextHash = value ? `#${value}` : '';
+      if (location.hash !== nextHash) {
+        history.replaceState(null, '', nextHash || location.pathname);
+      }
+    }
+
+    function setSelected(name) {
+      const entry = findEntryByName(name);
+      if (!entry) return false;
+      state.selectedName = entry.nombre;
+      updateHash(entry.nombre);
+      renderList();
+      renderContent();
+      return true;
+    }
+
+    function applyFilter() {
+      const term = state.search.trim().toLocaleLowerCase('es');
+      state.filtered = term
+        ? state.entries.filter(entry => {
+            const blob = `${entry.nombre} ${entry.texto} ${(entry.related || []).join(' ')}`.toLocaleLowerCase('es');
+            return blob.includes(term);
+          })
+        : [...state.entries];
+      entryCountEl.textContent = `${state.filtered.length} ${state.filtered.length === 1 ? 'entrada' : 'entradas'}`;
+    }
+
+    function renderList() {
+      applyFilter();
+      entryListEl.innerHTML = '';
+
+      if (!state.filtered.length) {
+        entryListEl.innerHTML = '<div class="empty">No hay entradas que coincidan con tu búsqueda.</div>';
+        return;
+      }
+
+      state.filtered.forEach(entry => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'entry-button' + (state.selectedName && state.selectedName.localeCompare(entry.nombre, 'es', { sensitivity: 'base' }) === 0 ? ' active' : '');
+        btn.innerHTML = `
+          <span class="name">${escapeHtml(entry.nombre)}</span>
+          <span class="snippet">${escapeHtml((entry.texto || '').slice(0, 110) || 'Sin texto.')}${(entry.texto || '').length > 110 ? '…' : ''}</span>
+        `;
+        btn.addEventListener('click', () => setSelected(entry.nombre));
+        entryListEl.appendChild(btn);
+      });
+    }
+
+    function renderContent() {
+      const entry = findEntryByName(state.selectedName);
+      if (!entry) {
+        contentEl.innerHTML = '<div class="empty">Selecciona una entrada del índice para leer su contenido.</div>';
+        statusRow.textContent = '';
+        return;
+      }
+
+      const validRelated = (entry.related || []).filter(name => findEntryByName(name));
+      const missingRelated = (entry.related || []).filter(name => !findEntryByName(name));
+
+      contentEl.innerHTML = `
+        <article>
+          <h2 class="article-title">${escapeHtml(entry.nombre)}</h2>
+          <div class="article-body">${escapeHtml(entry.texto || 'Sin contenido todavía.')}</div>
+          <div class="related-block">
+            <div class="related-title">Relacionados</div>
+            <div id="relatedButtons" class="related-buttons"></div>
+          </div>
+        </article>
+      `;
+
+      const relatedButtonsEl = document.getElementById('relatedButtons');
+
+      if (!validRelated.length && !missingRelated.length) {
+        relatedButtonsEl.innerHTML = '<div class="empty">Esta entrada no tiene enlaces relacionados.</div>';
+      } else {
+        validRelated.forEach(name => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'related-btn';
+          btn.textContent = name;
+          btn.addEventListener('click', () => setSelected(name));
+          relatedButtonsEl.appendChild(btn);
+        });
+
+        missingRelated.forEach(name => {
+          const ghost = document.createElement('div');
+          ghost.className = 'empty';
+          ghost.style.padding = '10px 12px';
+          ghost.style.borderRadius = '999px';
+          ghost.style.fontSize = '13px';
+          ghost.textContent = `${name} (sin entrada)`;
+          relatedButtonsEl.appendChild(ghost);
+        });
+      }
+
+      statusRow.textContent = missingRelated.length
+        ? `Hay ${missingRelated.length} enlace(s) relacionado(s) que todavía no apuntan a ninguna entrada existente.`
+        : 'Navegación interna activa.';
+    }
+
+    async function loadEntries() {
+      try {
+        const response = await fetch('data/explicar_juego.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('No se pudo cargar el archivo JSON.');
+        const data = await response.json();
+        const rawEntries = Array.isArray(data) ? data : (Array.isArray(data?.entries) ? data.entries : []);
+        state.entries = sortEntries(rawEntries.map(normalizeEntry).filter(entry => entry.nombre));
+
+        const hashName = decodeURIComponent(location.hash.replace(/^#/, '')).trim();
+        const first = state.entries[0]?.nombre || '';
+        state.selectedName = hashName && findEntryByName(hashName) ? findEntryByName(hashName).nombre : first;
+
+        renderList();
+        renderContent();
+      } catch (error) {
+        console.error(error);
+        entryListEl.innerHTML = '<div class="error-box">No se ha podido cargar <strong>data/explicar_juego.json</strong>.</div>';
+        contentEl.innerHTML = '<div class="error-box">Comprueba que el JSON existe, que está bien formado y que la página se está ejecutando desde una ruta válida.</div>';
+        statusRow.textContent = 'Carga fallida.';
+      }
+    }
+
+    searchInput.addEventListener('input', () => {
+      state.search = searchInput.value || '';
+      renderList();
+    });
+
+    window.addEventListener('hashchange', () => {
+      const hashName = decodeURIComponent(location.hash.replace(/^#/, '')).trim();
+      if (hashName) setSelected(hashName);
+    });
+
+    loadEntries();
+  </script>
+</body>
+</html>
