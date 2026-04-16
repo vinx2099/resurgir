@@ -1,4 +1,4 @@
-// Extracted survivor systems
+﻿// Extracted survivor systems
 
 function getMoraleTables(){
  return gameData?.config?.morale?.tables||DEFAULT_MORALE_TABLES;
@@ -121,6 +121,24 @@ function tryGainMoraleWithChance(s, baseChance, logText=''){
  }
  return false;
 }
+function tryGainMoraleAmountWithChance(s, baseChance, amount=1, logText=''){
+ if(!s||s.status==='muerto') return false;
+ const times=Math.max(1, Number(amount||1)||1);
+ const finalChance=Math.max(0, Math.min(1, Number(baseChance||0) * getMoraleGainConditionModifier(s)));
+ if(finalChance<=0 || Math.random()>=finalChance) return false;
+ const before=Number(s.morale||0);
+ const gained=Math.min(times, Math.max(0, getMoraleMax(s)-before));
+ if(gained>0){
+  s.morale=clampMoraleValue(before+gained, getMoraleMax(s));
+  s._moraleGainedToday=Number(s._moraleGainedToday||0)+gained;
+  notePositiveMoraleDay(s);
+ }
+ if(gained>0){
+  addLog(logText || `😊 ${s.name} recupera ${gained} moral.`);
+  return true;
+ }
+ return false;
+}
 
 function applyStartOfDayHungerAndMorale(){
  aliveSurvivors().forEach(s=>{
@@ -162,9 +180,9 @@ function getMoraleStateKey(s){
 
 function getMoraleStateInfo(s){
  const key=getMoraleStateKey(s);
- if(key==='high') return {key,label:'Moral: Alta',short:'Alta',color:'var(--ok-bright)',emoji:'😊'};
- if(key==='normal') return {key,label:'Moral: Normal',short:'Normal',color:'var(--warn-bright)',emoji:'😐'};
- return {key,label:'Moral: Baja',short:'Baja',color:'var(--danger-bright)',emoji:'😞'};
+ if(key==='high') return {key,label:'Moral: Alta',short:'Alta',color:'var(--ok-bright)',emoji:'\u{1F60A}'};
+ if(key==='normal') return {key,label:'Moral: Normal',short:'Normal',color:'var(--warn-bright)',emoji:'\u{1F610}'};
+ return {key,label:'Moral: Baja',short:'Baja',color:'var(--danger-bright)',emoji:'\u{1F61E}'};
 }
 
 function getMoraleLabel(s, includePrefix=true){
@@ -455,25 +473,67 @@ function getSurvivorSkills(survivor){
 
 function getSurvivorSkillLabel(s){
  const builtInLabels={
- 'ingeniero':'⚙ Ingeniero — edificios -1 recurso',
- 'explorador':'🗺 Explorador — +10% eventos positivos',
- 'precavido':'🛡 Precavido — -10% eventos negativos',
- 'rastreador':'👁 Rastreador — +5 peso al encontrar supervivientes',
- 'inventor':'💡 Inventor — desarrollo de mejoras -1 día',
- 'recolector':'📦 Recolector — +1 comida al forrajear',
- 'cazador':'🏹 Cazador — +1 comida al explorar',
- 'combatiente':'⚔ Combatiente — +1 en combate',
- 'chatarrero':'🧰 Chatarrero — +1 material al reciclar',
- 'lider':'⭐ Líder — +10% a positivos grupales de apoyo',
- 'resolutivo':'🔥 Resolutivo — +10% frente a amenazas',
- 'trader':'🔥 Comerciante — Mejores opciones de negociación',
- 'ninguna':'—',
+ 'ingeniero':'\u2699 Ingeniero - edificios -1 recurso',
+ 'explorador':'\u{1F5FA} Explorador - +10% eventos positivos',
+ 'precavido':'\u{1F6E1} Precavido - -10% eventos negativos',
+ 'rastreador':'\u{1F441} Rastreador - +5 peso al encontrar supervivientes',
+ 'inventor':'\u{1F4A1} Inventor - desarrollo de mejoras -1 dia',
+ 'recolector':'\u{1F4E6} Recolector - +1 comida al forrajear',
+ 'cazador':'\u{1F3F9} Cazador - +1 comida al explorar',
+ 'combatiente':'\u2694 Combatiente - +1 en combate',
+ 'chatarrero':'\u{1F9F0} Chatarrero - +1 material al reciclar',
+ 'lider':'\u2B50 Lider - +10% a positivos grupales de apoyo',
+ 'resolutivo':'\u{1F525} Resolutivo - +10% frente a amenazas',
+ 'trader':'\u{1F525} Comerciante - mejores opciones de negociacion',
+ 'ninguna':'\u2014',
  };
  const raw=((Array.isArray(s?.skills)&&s.skills[0]) || s?.skill || 'ninguna');
  const key=canonicalizeSkillId(raw) || 'ninguna';
  const fromJson=getSkillCatalog().find(sk => canonicalizeSkillId(sk?.id||sk?.name||'')===key);
- return fromJson?.label || fromJson?.name || builtInLabels[key] || String(raw||'—');
+ return builtInLabels[key] || fromJson?.name || fromJson?.label || String(raw||'---');
 }
+function getSurvivorSkillName(skill){
+ const key=canonicalizeSkillId(skill) || 'ninguna';
+ const builtInNames={
+  ingeniero:'Ingeniero',
+  explorador:'Explorador',
+  precavido:'Precavido',
+  rastreador:'Rastreador',
+  inventor:'Inventor',
+  recolector:'Recolector',
+  cazador:'Cazador',
+  combatiente:'Combatiente',
+  chatarrero:'Chatarrero',
+  lider:'Lider',
+  resolutivo:'Resolutivo',
+  trader:'Comerciante',
+  ninguna:'Ninguna'
+ };
+ const fromJson=getSkillCatalog().find(sk => canonicalizeSkillId(sk?.id||sk?.name||'')===key);
+ return builtInNames[key] || fromJson?.name || String(skill||'Ninguna');
+}
+function getSurvivorSkillDescription(skill){
+ const key=canonicalizeSkillId(skill) || 'ninguna';
+ const builtInDescriptions={
+  ingeniero:'Reduce en 1 el coste de materiales al construir o mejorar edificios.',
+  explorador:'Reduce ligeramente la probabilidad de sucesos negativos al explorar.',
+  precavido:'Reduce el riesgo de encontrarse problemas al explorar.',
+  rastreador:'Aumenta el peso de encontrar supervivientes al explorar.',
+  inventor:'Reduce en 1 dia el tiempo de desarrollo de una mejora de base.',
+  recolector:'Obtiene 1 comida extra al forrajear.',
+  cazador:'Cuando obtiene comida explorando, suma 1 adicional.',
+  combatiente:'Aporta +1 en acciones de ataque preventivo y defensa.',
+  chatarrero:'Obtiene 1 material extra al reciclar.',
+  lider:'Aumenta los efectos positivos de apoyo en acciones grupales.',
+  resolutivo:'Aumenta la probabilidad de exito al actuar contra amenazas.',
+  trader:'Mejores opciones de negociacion en eventos y con NPC.',
+  ninguna:'Sin habilidad especial.'
+ };
+ const fromJson=getSkillCatalog().find(sk => canonicalizeSkillId(sk?.id||sk?.name||'')===key);
+ return builtInDescriptions[key] || fromJson?.description || '';
+}
+window.getSurvivorSkillName=getSurvivorSkillName;
+window.getSurvivorSkillDescription=getSurvivorSkillDescription;
 
 function hasLowMoraleRestRestriction(s){
  return !!(s&&s.status!=='muerto'&&s._lowMoraleRestOnly&&Number(s.morale||0)<=0);
@@ -494,7 +554,11 @@ function applyUntreatedInjuryOutcome(s, opts={}){
  if(!s||!hasActiveInjury(s)) return;
  ensureInjuryState(s);
  const level=String(s.injuryLevel||'').toLowerCase();
- const roll=clamp(Number(opts.roll||0)||Math.floor(Math.random()*6)+1,1,6);
+ const restEffects=(state.restEffects&&typeof state.restEffects==='object') ? state.restEffects : {};
+ const npcRestEffects=typeof getAssignedNpcRestEffectTotals==='function' ? getAssignedNpcRestEffectTotals() : {};
+ const bonus=Number(opts.rollBonus ?? ((Number(restEffects.injuryRollBonus||0)||0)+(Number(npcRestEffects.injuryRollBonus||0)||0)))||0;
+ const baseRoll=Number(opts.roll||0)||Math.floor(Math.random()*6)+1;
+ const roll=clamp(baseRoll+bonus,1,6);
  const outcome=getUntreatedInjuryTable()[roll]||'same';
  const prev=level;
  const rollLabel=getInjuryRollLabel();
@@ -508,7 +572,7 @@ function applyUntreatedInjuryOutcome(s, opts={}){
  roll,
  injuryLevel:level
  });
- killSurvivor(s,`💀 ${s.name} no sobrevive a la herida grave sin tratamiento.`);
+ killSurvivor(s,`[MUERTE] ${s.name} no sobrevive a la herida grave sin tratamiento.`);
  return;
  }
  s.injuryLevel = level==='simple' ? 'seria' : 'grave';
@@ -528,7 +592,7 @@ function applyUntreatedInjuryOutcome(s, opts={}){
 }
 
 function nextInjuryLevel(level){
- return level==='simple'?'seria':level==='seria'?'grave':'grave';
+ return level==='simple'?'seria':level==='seria'?'grave':'muerte';
 }
 
 function hasActiveInjury(s){
@@ -567,18 +631,27 @@ function getMoraleEmoji(s){
  return getMoraleStateInfo(s).emoji;
 }
 
-function aliveSurvivors(){return state.survivors.filter(s=>s.status!=='muerto')}
+function aliveSurvivors(){
+ return state.survivors.filter(s=>s && s.status!=='muerto' && !isTemporarilyAwaySurvivor(s));
+}
 
-function getAliveSurvivorById(id){ return aliveSurvivors().find(s=>s.id===id)||null; }
+function getAliveSurvivorById(id){
+ return aliveSurvivors().find(s=>s.id===id)||null;
+}
 
 function injureSurvivor(s,msg,opts={}){
- if(s.status==='muerto') return;
+ if(!s || s.status==='muerto' || isTemporarilyAwaySurvivor(s)) return;
  if(hasActiveInjury(s)){
  ensureInjuryState(s);
  const prev=s.injuryLevel;
- s.injuryLevel=nextInjuryLevel(s.injuryLevel);
+ const next=nextInjuryLevel(s.injuryLevel);
+ if(next==='muerte'){
+ killSurvivor(s, `[MUERTE] La herida grave de ${s.name} empeora y no sobrevive.`);
+ return;
+ }
+ s.injuryLevel=next;
  s.injuryRestDays=0;
- addLog(`⚠ La herida de ${s.name} empeora: ${injuryDisplayName(prev)} → ${injuryDisplayName(s.injuryLevel)}.`);
+ addLog(`[ALERTA] La herida de ${s.name} empeora: ${injuryDisplayName(prev)} -> ${injuryDisplayName(s.injuryLevel)}.`);
  } else {
  s.injuryLevel=rollInjuryLevel(opts.source||'generic', opts.level);
  s.injuryRestDays=0;
@@ -626,6 +699,23 @@ function survivorHasSkill(survivor, skill){
  return getSurvivorSkills(survivor).includes(canonicalizeSkillId(skill));
 }
 
+function ensureDrunkArrays(s){
+ if(!s || typeof s!=='object') return s;
+ s.drunk=Math.max(0, Number(s.drunk||0)||0);
+ if(!Array.isArray(s.states)) s.states=[];
+ if(!Array.isArray(s.traitsExtra)) s.traitsExtra=[];
+ return s;
+}
+
+function syncBorrachoState(s){
+ ensureDrunkArrays(s);
+ const until=Number(s.borrachoUntilDay||0)||0;
+ if(until>0 && Number(state?.day||0)>until){
+  s.borrachoUntilDay=0;
+  if(Array.isArray(s?.states)) s.states=s.states.filter(x=>x!=='borracho');
+ }
+}
+
 function hasSurvivorAlertStatus(s){
   ensureDrunkArrays(s); syncBorrachoState(s);
   return hasActiveInjury(s) || s.drunk>0 || (Array.isArray(s.states)&&s.states.length>0) || Number(s.maxFatigueMod||0)!==0 || Number(s.maxMoraleMod||0)!==0;
@@ -667,7 +757,7 @@ function addSkillToSurvivor(survivor, skillId, delayed){
   }
   survivor.skills=[...new Set(survivor.skills.map(canonicalizeSkillId).concat([clean]).filter(Boolean))];
   if(!survivor.skill || !canonicalizeSkillId(survivor.skill)) survivor.skill=clean;
-  addLog(`${delayed?'[Retrasado] ':''}🎓 ${survivor.name} aprende la habilidad ${getSurvivorSkillLabel({skill:clean})}.`);
+  addLog(`${delayed?'[Retrasado] ':''}\u{1F393} ${survivor.name} aprende la habilidad ${getSurvivorSkillLabel({skill:clean})}.`);
   return true;
  }
 
@@ -702,4 +792,3 @@ function markSurvivorTemporaryAway(target, effect, delayed=false){
   return true;
  }
 //test
-

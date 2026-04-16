@@ -1,6 +1,8 @@
-// ── STATE ──
+﻿// ── STATE ──
 let mode = 'direct';
 let events = [];
+/** ID del evento que se está editando (misma entrada en `events` hasta guardar). null = evento nuevo. */
+let editingEventId = null;
 let activeEventTab = 'all';
 let activeEventTag = 'all';
 let eventSearchQuery = '';
@@ -10,6 +12,7 @@ const EVENT_TABS = [
   { key:'weekly', label:'Semanal' },
   { key:'story', label:'Historia' },
   { key:'quest', label:'Quest' },
+  { key:'scout', label:'Scout' },
   { key:'explore', label:'Exploración' },
   { key:'ambush', label:'Emboscada' },
   { key:'personal', label:'Personal' }
@@ -22,6 +25,7 @@ let itemDefs = [];
 let threatDefs = [];
 let survivorDefs = [];
 let skillDefs = [];
+let baseUpgradeDefs = [];
 const dataLoadWarnings = new Map();
 function renderDataWarnings(){
   const el = document.getElementById('dataWarningBanner');
@@ -47,6 +51,7 @@ function getEventTypeLabel(type){
   if(key==='weekly') return '📅 Semanal';
   if(key==='story') return '📖 Historia';
   if(key==='quest') return '📜 Quest';
+  if(key==='scout') return '🧭 Scout';
   if(key==='explore') return '🧭 Exploración';
   if(key==='ambush') return '🚨 Emboscada';
   if(key==='personal') return '🗣 Personal';
@@ -120,6 +125,11 @@ function matchesEventSearch(ev){
   if(!q) return true;
   const hay = `${ev?.name || ''} ${ev?.id || ''}`.toLowerCase();
   return hay.includes(q);
+}
+function syncEditorAddButtonLabel(){
+  const btn = document.getElementById('editorAddEventBtn');
+  if(!btn) return;
+  btn.textContent = editingEventId ? '✓ Guardar cambios' : '✓ Añadir evento a la lista';
 }
 function getListFilteredEvents(){
   return events.filter(ev => matchesActiveEventTab(ev) && matchesActiveEventTag(ev) && matchesEventSearch(ev));
@@ -255,6 +265,7 @@ const DEFAULT_BUILDINGS = [
   { id:'pozo', name:'Pozo de Agua', category:'Base' },
   { id:'gallinero', name:'Gallinero', category:'Base' },
   { id:'almacen', name:'Almacén', category:'Base' },
+  { id:'carcel_improvisada', name:'C\u00e1rcel improvisada', category:'Base' },
   { id:'cementerio', name:'⛼ Cementerio', category:'Base' }
 ];
 
@@ -298,6 +309,48 @@ function appendBuildingOptions(selectEl){
     selectEl.appendChild(opt);
   });
   if([...selectEl.options].some(o => o.value === current)) selectEl.value = current;
+}
+
+function populateResourceSelect(selectEl){
+  if(!selectEl) return;
+  const current = selectEl.value;
+  selectEl.innerHTML = '';
+  RESOURCES.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r;
+    opt.textContent = RESOURCE_LABELS[r] || r;
+    selectEl.appendChild(opt);
+  });
+  if([...selectEl.options].some(o => o.value === current)) selectEl.value = current;
+}
+
+function getBaseUpgradeDefsForEditor(){
+  return Array.isArray(baseUpgradeDefs) ? baseUpgradeDefs.filter(up => up && up.id) : [];
+}
+function appendBaseUpgradeOptions(selectEl){
+  if(!selectEl) return;
+  const current = selectEl.value;
+  const defs = getBaseUpgradeDefsForEditor();
+  selectEl.innerHTML = '';
+  if(defs.length){
+    defs.forEach(up => {
+      const opt = document.createElement('option');
+      opt.value = up.id;
+      opt.textContent = `${up.name || up.id} · ${up.id}`;
+      selectEl.appendChild(opt);
+    });
+  } else {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '— Sin mejoras cargadas —';
+    selectEl.appendChild(opt);
+  }
+  const manual = document.createElement('option');
+  manual.value = '__manual_base_upgrade__';
+  manual.textContent = selectEl.dataset.manualBaseUpgradeLabel || '✍ ID manual...';
+  selectEl.appendChild(manual);
+  if([...selectEl.options].some(o => o.value === current)) selectEl.value = current;
+  else if(selectEl.dataset.manualBaseUpgradeId) selectEl.value = '__manual_base_upgrade__';
 }
 
 
@@ -543,6 +596,8 @@ function populateHostileSelect(){
 
 const EFFECT_TYPES = [
   { group: '📦 Recursos', value: 'modifyResource',     label: '📦 Recurso (+/-)' },
+  { group: 'Descanso', value: 'setRestMoraleBonus', label: '% de recuperar X moral al descansar' },
+  { group: 'Descanso', value: 'setInjuryRollBonus', label: 'Añadir X a la tirada del dado de heridas' },
   { group: '🙂 Estado del grupo', value: 'fatigueAll', label: '⚡ Fatiga a todos (+/-)' },
   { group: '🙂 Estado del grupo', value: 'fatigueAllPermanent', label: '🧬 Fatiga máxima permanente a todos (+/-)' },
   { group: '🙂 Estado del grupo', value: 'fatigueSurvivorPermanent', label: '🧬 Fatiga máxima permanente de un superviviente (+/- · por ID)' },
@@ -566,11 +621,15 @@ const EFFECT_TYPES = [
   { group: '🎒 Equipo', value: 'damageItem', label: '🛠 Dañar equipo' },
   { group: '🎒 Equipo', value: 'removeItem', label: '📦 Perder equipo' },
   { group: '⚔ Riesgo y restricciones', value: 'setAttackThreat', label: '⚔ Activar amenaza de ataque' },
+  { group: '⚔ Riesgo y restricciones', value: 'modifyRisk', label: '🧭 Modificar riesgo scout (+/-)' },
   { group: '⚔ Riesgo y restricciones', value: 'createThreat', label: '🧨 Activar amenaza persistente' },
   { group: '⚔ Riesgo y restricciones', value: 'limitAction', label: '🚫 Inhabilitar acción (X días)' },
   { group: '🎭 Narrativa', value: 'decide', label: '🎭 DECIDIR — el jugador elige entre opciones personalizadas' },
+  { group: '🎭 Narrativa', value: 'log', label: '📝 Log — mostrar texto en pop-up' },
   { group: '🎭 Narrativa', value: 'activateQuest', label: '📜 Activar quest futura' },
   { group: '🎭 Narrativa', value: 'unlockBuilding', label: '🏗 Desbloquear edificio' },
+  { group: 'Narrativa', value: 'unlockBaseUpgrade', label: 'Desbloquear mejora del Taller' },
+  { group: '🎭 Narrativa', value: 'valueID', label: 'ValueID (flag narrativo 0/1)' },
 ];
 
 // ── MODE ──
@@ -583,14 +642,20 @@ function updateConditionUI(){
   const idField=document.getElementById('condIdField');
   const valueField=document.getElementById('condValueField');
   const buildingField=document.getElementById('condBuildingField');
+  const opField=document.getElementById('condOpField');
+  const resourceField=document.getElementById('condResourceField');
   const idLabel=document.getElementById('condIdLabel');
   const valueLabel=document.getElementById('condValueLabel');
+  const valueInput=document.getElementById('f-condValue');
 
   simple.style.display='none';
   compound.style.display='none';
   idField.style.display='none';
   valueField.style.display='none';
   buildingField.style.display='none';
+  opField.style.display='none';
+  resourceField.style.display='none';
+  if(valueInput){ valueInput.min=0; valueInput.max=999; valueInput.step=1; }
 
   if(!type) return;
 
@@ -599,9 +664,9 @@ function updateConditionUI(){
     refreshCompoundConditionLogicLabels();
   } else {
     simple.style.display='block';
-    if(type==='survivor'||type==='not_survivor'){
+    if(type==='survivor'||type==='not_survivor'||type==='valueID'){
       idField.style.display='';
-      idLabel.textContent=type==='survivor'?'ID del superviviente (debe estar vivo)':'ID del superviviente (debe estar ausente/muerto)';
+      idLabel.textContent=type==='valueID'?'ID del ValueID':(type==='survivor'?'ID del superviviente (debe estar vivo)':'ID del superviviente (debe estar ausente/muerto)');
     }
     if(type==='building'||type==='not_building'||type==='building_level'){
       buildingField.style.display='';
@@ -617,6 +682,18 @@ function updateConditionUI(){
     if(type==='day_min'||type==='day_max'){
       valueField.style.display='';
       valueLabel.textContent=type==='day_min'?'Día mínimo':'Día máximo';
+    }
+    if(type==='valueID'){
+      valueField.style.display='';
+      valueLabel.textContent='Valor (0/1)';
+      if(valueInput){ valueInput.min=0; valueInput.max=1; valueInput.step=1; }
+    }
+    if(type==='resource'){
+      resourceField.style.display='';
+      opField.style.display='';
+      valueField.style.display='';
+      valueLabel.textContent='Cantidad';
+      populateResourceSelect(document.getElementById('f-condResource'));
     }
   }
 }
@@ -705,10 +782,12 @@ function createCompoundConditionTypeOptions(){
     <option value="building">🏗 Edificio construido</option>
     <option value="building_level">📈 Edificio en nivel mínimo</option>
     <option value="not_building">🚫 Edificio NO construido</option>
+    <option value="resource">📦 Recurso</option>
     <option value="stability_min">🏛 Estabilidad mínima</option>
     <option value="stability_max">🏛 Estabilidad máxima</option>
     <option value="day_min">📅 Día mínimo</option>
     <option value="day_max">📅 Día máximo</option>
+    <option value="valueID">ValueID</option>
   `;
 }
 function addCompoundConditionRow(cond){
@@ -724,6 +803,12 @@ function addCompoundConditionRow(cond){
     <div class="compound-condition-grid">
       <select class="compound-cond-type">${createCompoundConditionTypeOptions()}</select>
       <select class="compound-cond-building" style="display:none;"></select>
+      <select class="compound-cond-resource" style="display:none;"></select>
+      <select class="compound-cond-op" style="display:none;">
+        <option value=">=">≥</option>
+        <option value="<=">≤</option>
+        <option value="=">=</option>
+      </select>
       <input type="text" class="compound-cond-id" placeholder="ID del superviviente" style="display:none;" />
       <input type="number" class="compound-cond-value" placeholder="Valor" style="display:none;" />
       <button type="button" class="btn" style="padding:6px 10px;font-size:10px;">Actualizar</button>
@@ -755,14 +840,26 @@ function updateCompoundConditionRow(row, cond){
   const valueInput = row.querySelector('.compound-cond-value');
   if(cond?.type) typeSel.value = cond.type;
   const type = typeSel.value;
+  const resourceSel = row.querySelector('.compound-cond-resource');
+  const opSel = row.querySelector('.compound-cond-op');
   buildingSel.style.display = ['building','building_level','not_building'].includes(type) ? '' : 'none';
-  idInput.style.display = ['survivor','not_survivor'].includes(type) ? '' : 'none';
-  valueInput.style.display = ['building_level','stability_min','stability_max','day_min','day_max'].includes(type) ? '' : 'none';
-  idInput.placeholder = type === 'not_survivor' ? 'ID ausente o muerto' : 'ID del superviviente';
-  valueInput.placeholder = type === 'building_level' ? 'Nivel mínimo' : (type.includes('day') ? 'Día' : 'Valor');
+  idInput.style.display = ['survivor','not_survivor','valueID'].includes(type) ? '' : 'none';
+  resourceSel.style.display = type === 'resource' ? '' : 'none';
+  opSel.style.display = type === 'resource' ? '' : 'none';
+  valueInput.style.display = ['building_level','stability_min','stability_max','day_min','day_max','resource','valueID'].includes(type) ? '' : 'none';
+  idInput.placeholder = type === 'valueID' ? 'ID del ValueID' : (type === 'not_survivor' ? 'ID ausente o muerto' : 'ID del superviviente');
+  valueInput.placeholder = type === 'valueID' ? '0 o 1' : (type === 'building_level' ? 'Nivel mínimo' : (type.includes('day') ? 'Día' : 'Valor'));
+  if(type === 'resource'){
+    valueInput.placeholder = 'Cantidad';
+    populateResourceSelect(resourceSel);
+  }
   if(cond){
     if(typeof cond.id !== 'undefined') idInput.value = cond.id;
     if(typeof cond.id !== 'undefined' && ['building','building_level','not_building'].includes(type)) buildingSel.value = cond.id;
+    if(type === 'resource'){
+      resourceSel.value = cond.resource || resourceSel.value;
+      opSel.value = cond.operator || '>=';
+    }
     const value = cond.minLevel ?? cond.value ?? '';
     valueInput.value = value;
   }
@@ -783,6 +880,20 @@ function readCompoundConditionRows(){
       if(!id) return;
       cond.id = id;
       if(type === 'building_level') cond.minLevel = Number(row.querySelector('.compound-cond-value')?.value) || 1;
+    } else if(type === 'resource'){
+      const resource = row.querySelector('.compound-cond-resource')?.value;
+      const operator = row.querySelector('.compound-cond-op')?.value || '>=';
+      const value = Number(row.querySelector('.compound-cond-value')?.value);
+      if(!resource || !Number.isFinite(value)) return;
+      cond.resource = resource;
+      cond.operator = operator;
+      cond.value = value;
+    } else if(type === 'valueID'){
+      const id = row.querySelector('.compound-cond-id')?.value?.trim();
+      const value = Number(row.querySelector('.compound-cond-value')?.value);
+      if(!id || !Number.isFinite(value)) return;
+      cond.id = id;
+      cond.value = value === 1 ? 1 : 0;
     } else if(['stability_min','stability_max','day_min','day_max'].includes(type)){
       cond.value = Number(row.querySelector('.compound-cond-value')?.value) || 0;
     }
@@ -805,7 +916,7 @@ function readCondition(){
     return subs.length ? {type, conditions:subs} : undefined;
   }
   const cond={type};
-  if(type==='survivor'||type==='not_survivor'){
+  if(type==='survivor'||type==='not_survivor'||type==='valueID'){
     cond.id=document.getElementById('f-condId').value.trim();
     if(!cond.id) return undefined;
   }
@@ -815,8 +926,16 @@ function readCondition(){
   if(type==='building_level'){
     cond.minLevel=Number(document.getElementById('f-condValue').value)||1;
   }
+  if(type==='resource'){
+    cond.resource=document.getElementById('f-condResource').value;
+    cond.operator=document.getElementById('f-condOp').value||'>=';
+    cond.value=Number(document.getElementById('f-condValue').value)||0;
+  }
   if(type==='stability_min'||type==='stability_max'||type==='day_min'||type==='day_max'){
     cond.value=Number(document.getElementById('f-condValue').value)||0;
+  }
+  if(type==='valueID'){
+    cond.value=Number(document.getElementById('f-condValue').value)===1?1:0;
   }
   return cond;
 }
@@ -829,8 +948,12 @@ function loadConditionIntoUI(cond){
   if(type==='and'||type==='or'){
     loadCompoundConditionRows(cond.conditions || []);
   } else {
-    if(cond.id&&(type==='survivor'||type==='not_survivor')) document.getElementById('f-condId').value=cond.id;
+    if(cond.id&&(type==='survivor'||type==='not_survivor'||type==='valueID')) document.getElementById('f-condId').value=cond.id;
     if(cond.id&&(type==='building'||type==='not_building'||type==='building_level')) document.getElementById('f-condBuilding').value=cond.id;
+    if(type==='resource'){
+      document.getElementById('f-condResource').value=cond.resource||document.getElementById('f-condResource').value;
+      document.getElementById('f-condOp').value=cond.operator||'>=';
+    }
     if(cond.minLevel) document.getElementById('f-condValue').value=cond.minLevel;
     if(cond.value!==undefined) document.getElementById('f-condValue').value=cond.value;
   }
@@ -843,6 +966,12 @@ function parseTags(raw){
     .map(t => t.trim())
     .filter(Boolean)
     .filter((tag, idx, arr) => arr.indexOf(tag) === idx);
+}
+function normalizeEditorEventConditionShape(ev){
+  if(ev && !ev.condition && Array.isArray(ev.conditions)){
+    ev.condition = { type:'and', conditions:ev.conditions };
+  }
+  return ev;
 }
 
 function splitDayRangeCondition(cond){
@@ -920,6 +1049,7 @@ function readDecideOptions(row){
 }
 
 function setMode(m) {
+  if((document.getElementById('f-type')?.value || '') === 'scout' && m !== 'direct') m = 'direct';
   mode = m;
   document.getElementById('modeDirectBtn').classList.toggle('active', m === 'direct');
   document.getElementById('modeChoiceBtn').classList.toggle('active', m === 'choice');
@@ -935,13 +1065,17 @@ function updateChoiceRequirementUI(letter) {
   const opEl = document.getElementById(`f-reqOp${letter}`);
   const valueEl = document.getElementById(`f-reqValue${letter}`);
   const skillEl = document.getElementById(`f-reqSkill${letter}`);
-  if (!typeEl || !opEl || !valueEl || !skillEl) return;
+  const resourceEl = document.getElementById(`f-reqResource${letter}`);
+  if (!typeEl || !opEl || !valueEl || !skillEl || !resourceEl) return;
   const type = typeEl.value;
-  const numeric = type === 'morale' || type === 'stability';
+  const numeric = type === 'morale' || type === 'stability' || type === 'resource';
   const skill = type === 'skill';
+  const resource = type === 'resource';
+  if (resource && !resourceEl.options.length) populateResourceSelect(resourceEl);
   opEl.classList.toggle('choice-req-hidden', !numeric);
   valueEl.classList.toggle('choice-req-hidden', !numeric);
   skillEl.classList.toggle('choice-req-hidden', !skill);
+  resourceEl.classList.toggle('choice-req-hidden', !resource);
 }
 
 function readChoiceRequirement(letter) {
@@ -950,6 +1084,13 @@ function readChoiceRequirement(letter) {
   if (type === 'skill') {
     const skill = document.getElementById(`f-reqSkill${letter}`)?.value?.trim();
     return skill ? { type: 'skill', skill } : undefined;
+  }
+  if (type === 'resource') {
+    const resource = document.getElementById(`f-reqResource${letter}`)?.value;
+    const operator = document.getElementById(`f-reqOp${letter}`)?.value || '>=';
+    const value = Number(document.getElementById(`f-reqValue${letter}`)?.value);
+    if (!resource || !Number.isFinite(value)) return undefined;
+    return { type, resource, operator, value };
   }
   const valueRaw = document.getElementById(`f-reqValue${letter}`)?.value;
   const value = Number(valueRaw);
@@ -963,18 +1104,26 @@ function applyChoiceRequirementToForm(letter, requirement) {
   const opEl = document.getElementById(`f-reqOp${letter}`);
   const valueEl = document.getElementById(`f-reqValue${letter}`);
   const skillEl = document.getElementById(`f-reqSkill${letter}`);
-  if (!typeEl || !opEl || !valueEl || !skillEl) return;
+  const resourceEl = document.getElementById(`f-reqResource${letter}`);
+  if (!typeEl || !opEl || !valueEl || !skillEl || !resourceEl) return;
   typeEl.value = requirement?.type || '';
   opEl.value = requirement?.operator || '>=';
   valueEl.value = requirement && typeof requirement.value !== 'undefined' ? requirement.value : '';
   skillEl.value = requirement?.skill || '';
+  resourceEl.value = requirement?.resource || '';
   updateChoiceRequirementUI(letter);
 }
 
 function requirementToString(requirement) {
   if (!requirement || !requirement.type) return '';
   if (requirement.type === 'skill') return `[${requirement.skill || 'Habilidad'}]`;
-  const name = requirement.type === 'morale' ? 'Moral' : 'Estabilidad';
+  const name = requirement.type === 'morale'
+    ? 'Moral'
+    : requirement.type === 'stability'
+      ? 'Estabilidad'
+      : requirement.type === 'resource'
+        ? (RESOURCE_LABELS[requirement.resource] || requirement.resource || 'Recurso')
+        : requirement.type;
   const opMap = { '>=': '≥', '<=': '≤', '=': '=' };
   return `[${name} ${opMap[requirement.operator] || requirement.operator || '≥'} ${requirement.value}]`;
 }
@@ -996,8 +1145,8 @@ function choiceOptionHasContent(letter) {
 }
 
 // ── EFFECT ROWS ──
-function addEffectRow(target) {
-  // Support dynamic IDs (for legacy inline panels) as well as named targets
+function resolveEffectRowsContainer(target) {
+  if(target && typeof target.querySelectorAll === 'function') return target;
   const idMap = {
     direct: 'directEffectRows',
     optionA: 'optionAEffectRows',
@@ -1010,7 +1159,13 @@ function addEffectRow(target) {
     personalOptionB: 'personalOptionBEffectRows',
     personalOptionC: 'personalOptionCEffectRows',
   };
-  const container = document.getElementById(idMap[target] || target);
+  return document.getElementById(idMap[target] || target);
+}
+
+function addEffectRow(target) {
+  // Support dynamic IDs (for legacy inline panels) as well as named targets
+  const container = resolveEffectRowsContainer(target);
+  if(!container) return null;
   const row = document.createElement('div');
   row.className = 'effect-row';
   row.innerHTML = buildEffectRowHTML();
@@ -1028,6 +1183,7 @@ function addEffectRow(target) {
   // Listen all inputs
   row.querySelectorAll('input,select').forEach(el => el.addEventListener('input', updatePreview));
   updatePreview();
+  return row;
 }
 
 function buildEffectRowHTML() {
@@ -1058,13 +1214,18 @@ function updateEffectRowFields(row, type) {
   p2.style.display = 'none';
   amt.style.display = 'none';
   removeActivateEventPanel(row);
+  row.querySelectorAll('.value-id-input').forEach(el => el.remove());
+  row.querySelectorAll('.item-chance-input').forEach(el => el.remove());
+  row.querySelectorAll('.unlock-building-built-wrap').forEach(el => el.remove());
 
   if (type === 'modifyResource') {
     p1.style.display = '';
+    p2.style.display = '';
     amt.style.display = '';
     amt.placeholder = 'Cantidad (+/-)';
     amt.value = 1;
     amt.min = -99; amt.max = 99;
+    p2.innerHTML = Array.from({length:31}, (_,days) => `<option value="${days}">${days===0?'Instantáneo':`Tiempo ${days} día${days!==1?'s':''}`}</option>`).join('');
     RESOURCES.forEach(r => {
       const o = document.createElement('option');
       o.value = r; o.textContent = RESOURCE_LABELS[r];
@@ -1136,6 +1297,22 @@ function updateEffectRowFields(row, type) {
       });
       p2.value = 'simple';
     }
+    if (type === 'injureSurvivor') {
+      p2.style.display = '';
+      [
+        ['', 'Nivel según contexto'],
+        ['simple', 'Forzar herida simple'],
+        ['seria', 'Forzar herida seria'],
+        ['grave', 'Forzar herida grave'],
+        ['muerte', 'Muerte directa'],
+      ].forEach(([value, label]) => {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = label;
+        p2.appendChild(opt);
+      });
+      p2.value = '';
+    }
   } else if (type === 'injureExplorer') {
     // No params — always targets the survivor who triggered the explore event
   } else if (type === 'injureActionSurvivor') {
@@ -1160,6 +1337,7 @@ function updateEffectRowFields(row, type) {
       ['simple', 'Forzar herida simple'],
       ['seria', 'Forzar herida seria'],
       ['grave', 'Forzar herida grave'],
+      ['muerte', 'Muerte directa'],
     ].forEach(([value,label]) => {
       const opt = document.createElement('option');
       opt.value = value;
@@ -1186,15 +1364,82 @@ function updateEffectRowFields(row, type) {
     row.appendChild(addOptBtn);
     addDecideOption(wrapper);
     addDecideOption(wrapper);
+  } else if (type === 'log') {
+    // Text area for log message
+    const textArea = document.createElement('textarea');
+    textArea.className = 'log-text-input';
+    textArea.placeholder = 'Texto que aparecerá en el pop-up...';
+    textArea.style.cssText = 'grid-column:1/-1;width:100%;min-height:60px;padding:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-family:var(--font-mono);font-size:11px;resize:vertical;';
+    row.appendChild(textArea);
+    // Checkbox for using event image
+    const imgCheck = document.createElement('label');
+    imgCheck.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:6px;font-size:11px;margin-top:4px;';
+    imgCheck.innerHTML = '<input type="checkbox" class="log-use-image" style="margin:0;"> Usar imagen del evento en el pop-up';
+    row.appendChild(imgCheck);
+    const imgInput = document.createElement('input');
+    imgInput.type = 'text';
+    imgInput.className = 'log-image-input';
+    imgInput.placeholder = 'Imagen personalizada (ej: radio, radio.jpg o ./data/pic/radio.jpg)';
+    imgInput.style.cssText = 'grid-column:1/-1;width:100%;padding:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-family:var(--font-mono);font-size:11px;';
+    row.appendChild(imgInput);
   } else if (type === 'activateQuest' || type === 'activateEvent') {
     ensureActivateEventPanel(row);
+  } else if (type === 'setRestMoraleBonus') {
+    amt.style.display = '';
+    amt.placeholder = '% probabilidad';
+    amt.value = 25;
+    amt.min = 0;
+    amt.max = 100;
+    p2.style.display = '';
+    p2.innerHTML = '<option value="1">Recuperar 1 moral</option><option value="2">Recuperar 2 moral</option><option value="3">Recuperar 3 moral</option><option value="4">Recuperar 4 moral</option><option value="5">Recuperar 5 moral</option>';
+  } else if (type === 'setInjuryRollBonus') {
+    amt.style.display = '';
+    amt.placeholder = 'Bonus a la tirada';
+    amt.value = 1;
+    amt.min = -6;
+    amt.max = 6;
+  } else if (type === 'modifyRisk') {
+    amt.style.display = '';
+    amt.placeholder = 'Riesgo +/- (ej: 1 o -1)';
+    amt.value = 1;
+    amt.min = -99;
+    amt.max = 99;
+  } else if (type === 'valueID') {
+    const idInput = document.createElement('input');
+    idInput.type = 'text';
+    idInput.className = 'value-id-input';
+    idInput.placeholder = 'id libre, ej: enfado';
+    idInput.style.display = '';
+    row.insertBefore(idInput, p2);
+    p2.style.display = '';
+    p2.innerHTML = '<option value="0">0 / false</option><option value="1">1 / true</option>';
+    p2.value = '1';
+    idInput.addEventListener('input', updatePreview);
+    p2.addEventListener('change', updatePreview);
   } else if (type === 'unlockBuilding') {
     p1.style.display = '';
     appendBuildingOptions(p1);
+    const builtWrap = document.createElement('label');
+    builtWrap.className = 'unlock-building-built-wrap';
+    builtWrap.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);white-space:nowrap;';
+    builtWrap.innerHTML = '<input type="checkbox" class="unlock-building-built-check"> Aparece ya construido';
+    row.insertBefore(builtWrap, row.querySelector('.remove-effect-btn'));
+    builtWrap.querySelector('input')?.addEventListener('change', updatePreview);
+  } else if (type === 'unlockBaseUpgrade') {
+    p1.style.display = '';
+    appendBaseUpgradeOptions(p1);
   } else if (type === 'addItem') {
     p1.style.display = '';
     p2.style.display = '';
     amt.style.display = '';
+    const chanceInput = document.createElement('input');
+    chanceInput.type = 'number';
+    chanceInput.className = 'item-chance-input';
+    chanceInput.placeholder = '% encontrar';
+    chanceInput.min = '0';
+    chanceInput.max = '100';
+    chanceInput.value = '100';
+    row.insertBefore(chanceInput, row.querySelector('.remove-effect-btn'));
     [
       ['__random__','🎲 Aleatorio total'],
       ['__type__','🗂 Aleatorio por tipo…'],
@@ -1208,6 +1453,8 @@ function updateEffectRowFields(row, type) {
     amt.placeholder = 'Cantidad';
     amt.value = 1;
     amt.min = 1; amt.max = 99;
+    chanceInput.addEventListener('input', updatePreview);
+    chanceInput.addEventListener('change', updatePreview);
   } else if (type === 'damageItem' || type === 'removeItem') {
     p1.style.display = '';
     p2.style.display = '';
@@ -1238,6 +1485,11 @@ function updateEffectRowFields(row, type) {
   } else if (type === 'createThreat') {
     p1.style.display = '';
     p2.style.display = '';
+    amt.style.display = '';
+    amt.placeholder = '% probabilidad de activación';
+    amt.value = 100;
+    amt.min = 0;
+    amt.max = 100;
     appendThreatOptions(p1);
     p2.innerHTML = '';
     [
@@ -1309,7 +1561,7 @@ function updateEffectRowFields(row, type) {
       p1.appendChild(o);
     });
   }
-  if (['modifyFatigue','fatigueSurvivorPermanent','moraleSurvivor','moraleSurvivorPermanent','healSurvivor','injureSurvivor','disableSurvivor','awaySurvivor','removeSurvivor','addItem','createThreat'].includes(type)) {
+  if (['modifyFatigue','fatigueSurvivorPermanent','moraleSurvivor','moraleSurvivorPermanent','healSurvivor','injureSurvivor','disableSurvivor','awaySurvivor','removeSurvivor','addItem','createThreat','unlockBaseUpgrade'].includes(type)) {
     attachManualTargetIdPrompt(row);
   }
 }
@@ -1335,6 +1587,25 @@ function attachManualTargetIdPrompt(row){
         p1.value = '__manual_threat__';
       } else if (previous) {
         p1.value = '__manual_threat__';
+      } else if (p1.options.length) {
+        p1.value = p1.options[0].value;
+      }
+      safeUpdatePreview();
+      return;
+    }
+    if (p1.value === '__manual_base_upgrade__') {
+      const previous = row.dataset.customBaseUpgradeId || '';
+      const entered = window.prompt('ID de la mejora:', previous);
+      const clean = String(entered || '').trim();
+      if (clean) {
+        row.dataset.customBaseUpgradeId = clean;
+        p1.dataset.manualBaseUpgradeId = clean;
+        p1.dataset.manualBaseUpgradeLabel = `✍ ${clean}`;
+        const manualOpt = [...p1.options].find(o => o.value === '__manual_base_upgrade__');
+        if (manualOpt) manualOpt.textContent = `✍ ${clean}`;
+        p1.value = '__manual_base_upgrade__';
+      } else if (previous) {
+        p1.value = '__manual_base_upgrade__';
       } else if (p1.options.length) {
         p1.value = p1.options[0].value;
       }
@@ -1418,7 +1689,9 @@ function attachManualTargetIdPrompt(row){
 }
 
 function readEffectRows(containerId) {
-  const rows = document.getElementById(containerId).querySelectorAll('.effect-row');
+  const container = resolveEffectRowsContainer(containerId);
+  if(!container) return [];
+  const rows = Array.from(container.children || []).filter(child => child.classList?.contains('effect-row'));
   const effects = [];
   rows.forEach(row => {
     const type = row.querySelector('.effect-type-select').value;
@@ -1432,6 +1705,8 @@ function readEffectRows(containerId) {
       const finalAmount = Number.isFinite(signedAmount) && signedAmount !== 0 ? signedAmount : 1;
       effect.type = finalAmount >= 0 ? 'addResource' : 'removeResource';
       effect.amount = Math.abs(finalAmount);
+      const delayDays = Number(p2.value || 0) || 0;
+      if(delayDays > 0) effect.delayDays = delayDays;
     } else if (type === 'modifyFatigue') {
       if (p1.value === '__by_id__' && row.dataset.customTargetId) effect.targetId = row.dataset.customTargetId;
       else if (p1.value === '__action__') effect.targetMode = 'action';
@@ -1467,6 +1742,7 @@ function readEffectRows(containerId) {
       else if (p1.value === '__action__') effect.targetMode = 'action';
       else if (/^actor\d$/.test(p1.value) || p1.value === 'allActors') effect.targetMode = p1.value;
       if (type === 'healSurvivor') effect.injuryLevel = p2.value || 'simple';
+      if (type === 'injureSurvivor' && p2.value) effect.injuryLevel = p2.value;
       if (type === 'disableSurvivor') effect.days = Number(amt.value) || 1;
       if (type === 'awaySurvivor') {
         effect.days = Number(amt.value) || 3;
@@ -1480,6 +1756,8 @@ function readEffectRows(containerId) {
     } else if (type === 'addItem') {
       effect.target = p2.value || 'base';
       effect.amount = Number(amt.value) || 1;
+      const itemChance = Number(row.querySelector('.item-chance-input')?.value);
+      effect.chancePercent = Number.isFinite(itemChance) ? Math.max(0, Math.min(100, itemChance)) : 100;
       if (p1.value === '__random__') {
         effect.randomType = 'any';
       } else if (p1.value === '__type__') {
@@ -1501,7 +1779,15 @@ function readEffectRows(containerId) {
       effect.amount = Number(amt.value) || 1;
     } else if (type === 'decide') {
       effect.options = readDecideOptions(row);
-    } else if (type === 'activateQuest' || type === 'activateEvent') {
+    } else if (type === 'log') {
+      const textArea = row.querySelector('.log-text-input');
+      const imgCheck = row.querySelector('.log-use-image');
+      const imgInput = row.querySelector('.log-image-input');
+      effect.text = textArea?.value?.trim() || '';
+      effect.useEventImage = imgCheck?.checked || false;
+      const customImage = imgInput?.value?.trim() || '';
+      if(customImage) effect.imageUrl = customImage;
+  } else if (type === 'activateQuest' || type === 'activateEvent') {
       const panel = row._activateEventPanel;
       if (panel) {
         const eventSelect = panel.querySelector('.activate-event-target');
@@ -1525,11 +1811,27 @@ function readEffectRows(containerId) {
         }
         effect.priority = true;
       }
+    } else if (type === 'valueID') {
+      effect.id = row.querySelector('.value-id-input')?.value?.trim() || '';
+      effect.value = Number(p2.value) === 1 ? 1 : 0;
+    } else if (type === 'setRestMoraleBonus') {
+      effect.chancePercent = Math.max(0, Math.min(100, Number(amt.value) || 0));
+      effect.amount = Math.max(1, Number(p2.value) || 1);
+    } else if (type === 'setInjuryRollBonus') {
+      effect.amount = Number(amt.value) || 0;
+    } else if (type === 'modifyRisk') {
+      const signedAmount = Number(amt.value);
+      effect.amount = Number.isFinite(signedAmount) && signedAmount !== 0 ? signedAmount : 1;
     } else if (type === 'unlockBuilding') {
       effect.building = p1.value;
+      if (row.querySelector('.unlock-building-built-check')?.checked) effect.built = true;
+    } else if (type === 'unlockBaseUpgrade') {
+      effect.upgradeId = p1.value === '__manual_base_upgrade__' ? (row.dataset.customBaseUpgradeId || '') : p1.value;
     } else if (type === 'createThreat') {
       effect.threatId = p1.value === '__manual_threat__' ? (row.dataset.customThreatId || '') : p1.value;
       if (p2.value) effect.severity = Number(p2.value) || undefined;
+      const chanceValue = Number(amt.value);
+      effect.chancePercent = Number.isFinite(chanceValue) ? Math.max(0, Math.min(100, chanceValue)) : 100;
     } else if (type === 'moraleAll' || type === 'moraleAllPermanent' || type === 'moraleSurvivorPermanent' || type === 'moraleSurvivor' || type === 'stabilityChange') {
       effect.amount = Number(amt.value) || 1;
       if ((type === 'moraleSurvivor' || type === 'moraleSurvivorPermanent') && p1.value === '__by_id__' && row.dataset.customTargetId) {
@@ -1553,8 +1855,8 @@ function readEffectRows(containerId) {
 }
 
 function effectToString(e) {
-  if (e.type === 'addResource') return `📦 +${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
-  if (e.type === 'removeResource') return `📦 -${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}`;
+  if (e.type === 'addResource') return `📦 +${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}${e.delayDays?` en ${e.delayDays}d`:''}`;
+  if (e.type === 'removeResource') return `📦 -${e.amount} ${RESOURCE_LABELS[e.resource]||e.resource}${e.delayDays?` en ${e.delayDays}d`:''}`;
   if (e.type === 'addFatigue') return `😮 +${e.amount} fatiga (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))})`;
   if (e.type === 'removeFatigue') return `😌 -${e.amount} fatiga (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))})`;
   if (e.type === 'fatigueAll') return `⚡ Fatiga todos ${e.amount>0?'+':''}${e.amount}`;
@@ -1565,7 +1867,7 @@ function effectToString(e) {
   if (e.type === 'addSurvivorRandom') return `🎲 Nuevo superviviente totalmente aleatorio`;
   if (e.type === 'addSurvivor' || e.type === 'addSurvivorByRarity') return `🧲 Nuevo superviviente (rareza ${e.rarity})`;
   if (e.type === 'healSurvivor') return `Curar herida ${(e.injuryLevel||'simple')} (${e.targetId||'aleatorio'})`;
-  if (e.type === 'injureSurvivor') return `Herir superviviente (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))})`;
+  if (e.type === 'injureSurvivor') return `Herir superviviente (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))})${e.injuryLevel?` [${e.injuryLevel}]`:''}`;
   if (e.type === 'injureExplorer') return `🩸 Herir al explorador`;
   if (e.type === 'injureActionSurvivor') return `🩸 Herir por acción (${e.action||'relacionada'})${e.injuryLevel?` [${e.injuryLevel}]`:''}`;
   if (e.type === 'addItem') {
@@ -1578,12 +1880,16 @@ function effectToString(e) {
             : e.randomTier
               ? `aleatorio (${e.randomTier})`
               : 'aleatorio total');
-    return `🎒 Encontrar ${itemLabel} → ${e.target||'base'} x${e.amount||1}`;
+    const chance = Number.isFinite(Number(e.chancePercent ?? e.chance)) ? Number(e.chancePercent ?? e.chance) : 100;
+    const chanceText = chance === 100 ? '' : ` · ${chance}%`;
+    return `🎒 Encontrar ${itemLabel} → ${e.target||'base'} x${e.amount||1}${chanceText}`;
   }
   if (e.type === 'damageItem') return `🛠 Dañar ${(getItemDefs().find(it=>it.id===e.itemId)?.name)||e.itemId||'equipo'} → ${e.target||'base'} (${e.amount||1})`;
   if (e.type === 'removeItem') return `📦 Perder ${(getItemDefs().find(it=>it.id===e.itemId)?.name)||e.itemId||'equipo'} → ${e.target||'base'} x${e.amount||1}`;
   if (['createThreat','addThreat','spawnThreat'].includes(e.type)) {
-    return `🧨 Activar amenaza: ${getThreatLabel(e.threatId||e.templateId||e.id||'')}${e.severity?` · sev ${e.severity}`:''}`;
+    const chance = Number.isFinite(e.chancePercent) ? Number(e.chancePercent) : (Number.isFinite(e.chance) ? Number(e.chance) : 100);
+    const chanceText = chance === 100 ? '' : ` · ${chance}% prob.`;
+    return `🧨 Activar amenaza: ${getThreatLabel(e.threatId||e.templateId||e.id||'')}${e.severity?` · sev ${e.severity}`:''}${chanceText}`;
   }
   if (e.type === 'setAttackThreat') {
     const hostileDef = hostileDefs.find(h=>h.id===(e.hostileType||e.hostile||''));
@@ -1602,12 +1908,18 @@ function effectToString(e) {
   if (e.type === 'moraleSurvivorPermanent') return `🧬 Moral máxima permanente ${e.amount>0?'+':''}${e.amount} (${e.targetId||'sin ID'})`;
   if (e.type === 'moraleSurvivor') return `${e.amount>0?'😊':'😞'} Moral superviviente ${e.amount>0?'+':''}${e.amount} (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))})`;
   if (e.type === 'stabilityChange') return `🏛 Estabilidad ${e.amount>0?'+':''}${e.amount}`;
+  if (e.type === 'modifyRisk') return `🧭 Riesgo scout ${e.amount>0?'+':''}${e.amount}`;
   if (e.type === 'decide') return `🎭 DECIDIR (${(e.options||[]).length} opciones)`;
+  if (e.type === 'log') return `📝 Log: "${(e.text||'').slice(0,30)}${(e.text||'').length>30?'...':''}"${(e.imageUrl||e.image||e.pic)?' (imagen personalizada)':(e.useEventImage?' (con imagen)':'')}`;
   if (e.type === 'activateQuest' || e.type === 'activateEvent') return `📜 Activar quest ${e.questId || e.eventId || 'sin ID'} en ${e.minDays ?? 0}-${e.maxDays ?? 0} día(s)${e.forcedSurvivorId?` · ${e.forcedSurvivorId}`:(e.leadTargetMode?` · ${e.leadTargetMode.toUpperCase()}`:'')}${e.leaveCamp?` · sale ${e.leaveDays||3}d · ${e.returnInjuryChance||0}%`:''}`;
   if (e.type === 'disableSurvivor') return `🚫 Inhabilitar superviviente (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))}) ${e.days||1}d`;
   if (e.type === 'awaySurvivor') return `🚶 Ausentar superviviente (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))}) ${e.days||1}d · ${e.returnInjuryChance||0}%`;
   if (e.type === 'removeSurvivor') return `👋 Quitar superviviente (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))})`;
-  if (e.type === 'unlockBuilding') return `🏗 Desbloquear: ${e.building||'?'}`;
+  if (e.type === 'unlockBuilding') return `🏗 Desbloquear: ${e.building||'?'}${(e.built||e.constructed)?' · construido':''}`;
+  if (e.type === 'unlockBaseUpgrade') return `Desbloquear mejora: ${e.upgradeId||e.id||'?'}`;
+  if (e.type === 'setRestMoraleBonus') return `Descanso: ${e.chancePercent??e.chance??0}% de +${e.amount||1} moral`;
+  if (e.type === 'setInjuryRollBonus') return `Descanso: tirada heridas ${Number(e.amount||0)>=0?'+':''}${e.amount||0}`;
+  if (e.type === 'valueID') return `ValueID ${e.id||'sin ID'} = ${Number(e.value)===1?1:0}`;
   return e.type;
 }
 
@@ -1627,6 +1939,9 @@ function buildEventObject() {
   const dayMax = Number(document.getElementById('f-dayMax')?.value||0) || undefined;
   const relatedAction = document.getElementById('f-relatedAction')?.value || '';
   const tags = parseTags(document.getElementById('f-tags')?.value || '');
+  const scoutRiskInput = document.getElementById('f-scoutRisk')?.value ?? '';
+  const scoutRiskRaw = scoutRiskInput === '' ? NaN : Number(scoutRiskInput);
+  const scoutCombat = document.getElementById('f-scoutCombat')?.value === 'true';
   const rawParticipants = Math.max(0, Number(document.getElementById('f-participants')?.value || 0) || 0);
   const useFixedPersonalSurvivor = !!document.getElementById('f-personalUseFixedSurvivor')?.checked;
   const personalSurvivorId = document.getElementById('f-personalSurvivorId')?.value.trim() || '';
@@ -1650,6 +1965,13 @@ function buildEventObject() {
   if(skipWhenAttackActive) ev.skipWhenAttackActive=true;
   if(week!==undefined) ev.week=week;
   if(day!==undefined)  ev.day=day;
+  if(type==='scout'){
+    if(Number.isFinite(scoutRiskRaw)) {
+      ev.risk = scoutRiskRaw;
+      ev.riskLevel = scoutRiskRaw;
+    }
+    if(scoutCombat) ev.combat = true;
+  }
   if(relatedAction) ev.relatedAction=relatedAction;
   if(tags.length) ev.tags = tags;
   const finalParticipants = type==='personal' ? Math.max(1, rawParticipants || 1) : rawParticipants;
@@ -1796,7 +2118,7 @@ function updatePreview() {
       }
     }
 
-    const typeStr = ev.type==='story'?`📖 Historia — día ${ev.day||'?'}`:ev.type==='weekly'?`📅 Semanal — semana ${ev.week||1}`:ev.type==='explore'?'🗺 Exploración':ev.type==='ambush'?'🚨 Emboscada':ev.type==='personal'?'🗣 Personal':'📋 Diario';
+    const typeStr = ev.type==='story'?`📖 Historia — día ${ev.day||'?'}`:ev.type==='weekly'?`📅 Semanal — semana ${ev.week||1}`:ev.type==='scout'?'🧭 Scout':ev.type==='explore'?'🗺 Exploración':ev.type==='ambush'?'🚨 Emboscada':ev.type==='personal'?'🗣 Personal':'📋 Diario';
     const actionStr = ev.relatedAction ? `  ·  Relacionado con: ${ev.relatedAction}` : '';
     const participantsStr = ev.participants ? `  ·  👥 ${ev.participants} participante${ev.participants!==1?'s':''}` : '';
     const repeatStr = ev.repeatable ? '  ·  ↺ Repetible' : '';
@@ -1911,14 +2233,17 @@ function onTypeChange(){
   const t=document.getElementById('f-type').value;
   const isPersonal=t==='personal';
   const isAmbush=t==='ambush';
+  if(t==='scout' && mode!=='direct') setMode('direct');
   const setDisplay=(id,show)=>{ const el=document.getElementById(id); if(el) el.style.display=show?'':'none'; };
   setDisplay('weekField', t==='weekly');
   setDisplay('dayField', t==='story');
   setDisplay('dayMinField', t!=='story');
   setDisplay('dayMaxField', t!=='story');
+  setDisplay('scoutRiskField', t==='scout');
+  setDisplay('scoutCombatField', t==='scout');
   setDisplay('weightField', !(t==='weekly'||t==='story'||t==='quest'));
-  setDisplay('relatedActionField', !((t==='weekly'||t==='story'||t==='quest'||t==='explore'||isPersonal) && !isAmbush));
-  setDisplay('repeatableField', !(t==='weekly'||t==='story'||t==='quest'));
+  setDisplay('relatedActionField', !((t==='weekly'||t==='story'||t==='quest'||t==='explore'||t==='scout'||isPersonal) && !isAmbush));
+  setDisplay('repeatableField', !(t==='weekly'||t==='story'));
   setDisplay('personalStartNodeField', isPersonal);
   setDisplay('personalNodesField', isPersonal);
   updatePersonalSurvivorUI();
@@ -1963,7 +2288,7 @@ function validateExploreFields(ev){
 }
 
 // ── ALL FORM INPUTS → PREVIEW ──
-['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-labelD','f-week','f-day','f-dayMin','f-dayMax','f-relatedAction','f-tags','f-personalSurvivorId','f-personalStartNode','f-personalNodeTitle','f-personalNodeText','f-personalLabelA','f-personalLabelB','f-personalLabelC','f-reqTypeA','f-reqOpA','f-reqValueA','f-reqSkillA','f-reqTypeB','f-reqOpB','f-reqValueB','f-reqSkillB','f-reqTypeC','f-reqOpC','f-reqValueC','f-reqSkillC','f-reqTypeD','f-reqOpD','f-reqValueD','f-reqSkillD'].forEach(id => {
+['f-id','f-name','f-story','f-days','f-weight','f-labelA','f-labelB','f-labelC','f-labelD','f-week','f-day','f-dayMin','f-dayMax','f-scoutRisk','f-scoutCombat','f-relatedAction','f-tags','f-personalSurvivorId','f-personalStartNode','f-personalNodeTitle','f-personalNodeText','f-personalLabelA','f-personalLabelB','f-personalLabelC','f-reqTypeA','f-reqOpA','f-reqValueA','f-reqSkillA','f-reqTypeB','f-reqOpB','f-reqValueB','f-reqSkillB','f-reqTypeC','f-reqOpC','f-reqValueC','f-reqSkillC','f-reqTypeD','f-reqOpD','f-reqValueD','f-reqSkillD'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', safeUpdatePreview);
 });
@@ -1989,7 +2314,29 @@ function addEvent() {
   const useFixedPersonalSurvivor = !!document.getElementById('f-personalUseFixedSurvivor')?.checked;
   if (ev.type === 'personal' && useFixedPersonalSurvivor && !ev.personalSurvivorId) { showToast('Has marcado survivor concreto, pero no has indicado su ID', true); return; }
 
-  if (events.find(e => e.id === ev.id)) {
+  const newId = String(ev.id || '').trim();
+  const editKey = editingEventId != null ? String(editingEventId).trim() : '';
+  if (editKey) {
+    const editIdx = events.findIndex(e => String(e.id || '').trim() === editKey);
+    if (editIdx === -1) {
+      editingEventId = null;
+    } else {
+      const dupIdx = events.findIndex(e => String(e.id || '').trim() === newId);
+      if (dupIdx !== -1 && dupIdx !== editIdx) {
+        showToast(`Ya existe un evento con el ID "${ev.id}"`, true);
+        return;
+      }
+      events[editIdx] = ev;
+      editingEventId = null;
+      renderEventList();
+      updateEventCount();
+      syncEditorAddButtonLabel();
+      showToast(`Evento "${ev.name}" guardado (sustituye la versión en la lista) ✓`);
+      return;
+    }
+  }
+
+  if (events.some(e => String(e.id || '').trim() === newId)) {
     showToast(`Ya existe un evento con el ID "${ev.id}"`, true); return;
   }
 
@@ -1997,6 +2344,7 @@ function addEvent() {
   renderEventList();
   showToast(`Evento "${ev.name}" añadido ✓`);
   updateEventCount();
+  syncEditorAddButtonLabel();
 }
 
 
@@ -2041,6 +2389,7 @@ function renderEventList() {
     if (typeKey === 'story') item.style.borderLeftColor = 'var(--amber)';
     else if (typeKey === 'quest') item.style.borderLeftColor = 'var(--amber-bright)';
     else if (typeKey === 'ambush') item.style.borderLeftColor = 'var(--danger)';
+    else if (typeKey === 'scout') item.style.borderLeftColor = 'var(--accent-bright)';
     else if (typeKey === 'explore') item.style.borderLeftColor = 'var(--accent-bright)';
     else if (typeKey === 'personal') item.style.borderLeftColor = 'var(--ok-bright)';
 
@@ -2053,7 +2402,7 @@ function renderEventList() {
       img.style.display = 'block';
       thumb.appendChild(img);
     } else {
-      const icon = typeKey === 'story' ? '📖' : typeKey === 'quest' ? '📜' : typeKey === 'weekly' ? '📅' : typeKey === 'explore' ? '🧭' : typeKey === 'ambush' ? '🚨' : typeKey === 'personal' ? '🗣' : '📋';
+      const icon = typeKey === 'story' ? '📖' : typeKey === 'quest' ? '📜' : typeKey === 'weekly' ? '📅' : typeKey === 'scout' ? '🧭' : typeKey === 'explore' ? '🧭' : typeKey === 'ambush' ? '🚨' : typeKey === 'personal' ? '🗣' : '📋';
       thumb.innerHTML = `<span class="no-img-sm">${icon}</span>`;
     }
 
@@ -2071,6 +2420,8 @@ function renderEventList() {
         ? `📖 Historia (día ${ev.day||'?'})`
         : typeKey==='quest'
           ? '📜 Quest'
+          : typeKey==='scout'
+            ? '🧭 Scout'
           : typeKey==='explore'
             ? '🧭 Exploración'
             : typeKey==='ambush'
@@ -2102,9 +2453,12 @@ function renderEventList() {
     delBtn.textContent = '✕';
     delBtn.title = 'Eliminar';
     delBtn.addEventListener('click', () => {
+      const removed = events[idx];
+      if (removed && String(removed.id || '').trim() === String(editingEventId || '').trim()) editingEventId = null;
       events.splice(idx, 1);
       renderEventList();
       updateEventCount();
+      syncEditorAddButtonLabel();
       showToast(typeKey === 'story' ? 'Evento de historia eliminado' : 'Evento eliminado');
     });
 
@@ -2118,6 +2472,7 @@ function renderEventList() {
 
 function loadEventForEditing(idx) {
   const ev = events[idx];
+  editingEventId = String(ev?.id || '').trim() || null;
   document.getElementById('f-id').value = ev.id || '';
   document.getElementById('f-name').value = ev.name || '';
   document.getElementById('f-story').value = ev.text || '';
@@ -2127,6 +2482,8 @@ function loadEventForEditing(idx) {
   if(document.getElementById('f-type')) document.getElementById('f-type').value = ev.type || 'city';
   if(document.getElementById('f-week')) document.getElementById('f-week').value = ev.week || 1;
   if(document.getElementById('f-day'))  document.getElementById('f-day').value  = ev.day  || 7;
+  if(document.getElementById('f-scoutRisk')) document.getElementById('f-scoutRisk').value = ev.risk ?? ev.riskLevel ?? '';
+  if(document.getElementById('f-scoutCombat')) document.getElementById('f-scoutCombat').value = ev.combat ? 'true' : '';
   const {dayMin,dayMax,condition}=splitDayRangeCondition(ev.condition);
   if(document.getElementById('f-dayMin')) document.getElementById('f-dayMin').value = dayMin??'';
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = dayMax??'';
@@ -2149,11 +2506,6 @@ function loadEventForEditing(idx) {
   setRepeatable(!!ev.repeatable);
   onTypeChange();
 
-  // Remove from list so it can be re-added
-  events.splice(idx, 1);
-  renderEventList();
-  updateEventCount();
-
   const hasAttackEffect = (ev.effects||[]).some(e=>e.type==='setAttackThreat');
   if (hasAttackEffect) {
     setMode('attack');
@@ -2174,7 +2526,7 @@ function loadEventForEditing(idx) {
       (atk.effectOnDefeat||[]).forEach(eff => { addEffectRow('attackDefeat'); const rows=document.getElementById('attackDefeatRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
     }
   } else {
-    setMode(ev.choiceMode === 'choice' ? 'choice' : 'direct');
+    setMode(ev.type === 'scout' ? 'direct' : (ev.choiceMode === 'choice' ? 'choice' : 'direct'));
   }
 
   // Clear effect rows
@@ -2228,14 +2580,14 @@ function loadEventForEditing(idx) {
   }
 
   safeUpdatePreview();
+  syncEditorAddButtonLabel();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  showToast('Evento cargado para editar');
+  showToast('Editando: el evento sigue en la lista. Pulsa «Guardar cambios» para aplicar.');
 }
 
 function loadStoryEventForEditing(idx) {
   const ev = events[idx];
-  events.splice(idx, 1);
-  renderEventList(); updateEventCount();
+  editingEventId = String(ev?.id || '').trim() || null;
   document.getElementById('f-id').value = ev.id || '';
   document.getElementById('f-name').value = ev.name || '';
   document.getElementById('f-story').value = ev.text || '';
@@ -2272,7 +2624,7 @@ function loadStoryEventForEditing(idx) {
       (atk.effectOnDefeat||[]).forEach(eff => { addEffectRow('attackDefeat'); const rows=document.getElementById('attackDefeatRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1],eff); });
     }
   } else {
-    setMode(ev.choiceMode === 'choice' ? 'choice' : 'direct');
+    setMode(ev.type === 'scout' ? 'direct' : (ev.choiceMode === 'choice' ? 'choice' : 'direct'));
   }
 
   ['directEffectRows','optionAEffectRows','optionBEffectRows','optionCEffectRows','optionDEffectRows','personalOptionAEffectRows','personalOptionBEffectRows','personalOptionCEffectRows'].forEach(id => {
@@ -2293,8 +2645,9 @@ function loadStoryEventForEditing(idx) {
     (ev.options.D?.effects||[]).forEach(eff => { addEffectRow('optionD'); const rows = document.getElementById('optionDEffectRows').querySelectorAll('.effect-row'); loadEffectIntoRow(rows[rows.length-1], eff); });
   }
   safeUpdatePreview();
+  syncEditorAddButtonLabel();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  showToast('Evento de historia cargado para editar');
+  showToast('Editando historia: el evento sigue en la lista. Pulsa «Guardar cambios» para aplicar.');
 }
 
 function loadEffectIntoRow(row, eff) {
@@ -2311,6 +2664,7 @@ function loadEffectIntoRow(row, eff) {
   else if (['createThreat','addThreat','spawnThreat'].includes(eff.type)) uiType = 'createThreat';
   else if (eff.type === 'activateEvent' || eff.type === 'activateQuest') uiType = 'activateQuest';
   else if (eff.type === 'awaySurvivor') uiType = 'awaySurvivor';
+  else if (eff.type === 'valueID') uiType = 'valueID';
 
   typeSelect.value = uiType;
   updateEffectRowFields(row, uiType);
@@ -2318,6 +2672,7 @@ function loadEffectIntoRow(row, eff) {
   if (eff.type === 'addResource' || eff.type === 'removeResource') {
     p1.value = eff.resource || 'food';
     amt.value = eff.type === 'removeResource' ? -(eff.amount || 1) : (eff.amount || 1);
+    if (p2) p2.value = String(eff.delayDays || 0);
   } else if (eff.type === 'addFatigue' || eff.type === 'removeFatigue') {
     if (eff.targetId) {
       row.dataset.customTargetId = eff.targetId;
@@ -2359,6 +2714,9 @@ function loadEffectIntoRow(row, eff) {
     if (eff.type === 'healSurvivor' && p2) {
       p2.value = eff.injuryLevel || 'simple';
     }
+    if (eff.type === 'injureSurvivor' && p2) {
+      p2.value = eff.injuryLevel || '';
+    }
     if (eff.type === 'disableSurvivor') amt.value = eff.days || 1;
     if (eff.type === 'awaySurvivor') {
       if (p2) p2.value = String(eff.returnInjuryChance ?? 35);
@@ -2368,6 +2726,8 @@ function loadEffectIntoRow(row, eff) {
     p1.value = eff.action || 'related';
     if (p2) p2.value = eff.injuryLevel || '';
   } else if (eff.type === 'addItem') {
+    const chanceInput = row.querySelector('.item-chance-input');
+    if (chanceInput) chanceInput.value = Number.isFinite(Number(eff.chancePercent ?? eff.chance)) ? Number(eff.chancePercent ?? eff.chance) : 100;
     if (eff.itemId) {
       p1.value = '__specific__';
       row.dataset.specificItemId = eff.itemId;
@@ -2398,6 +2758,13 @@ function loadEffectIntoRow(row, eff) {
     p1.value = eff.itemId || p1.value;
     if (p2) p2.value = eff.target || 'base';
     amt.value = eff.amount || 1;
+  } else if (eff.type === 'log') {
+    const textArea = row.querySelector('.log-text-input');
+    const imgCheck = row.querySelector('.log-use-image');
+    const imgInput = row.querySelector('.log-image-input');
+    if(textArea) textArea.value = eff.text || '';
+    if(imgCheck) imgCheck.checked = eff.useEventImage === true;
+    if(imgInput) imgInput.value = eff.imageUrl || eff.image || eff.pic || '';
   } else if (['createThreat','addThreat','spawnThreat'].includes(eff.type)) {
     const threatId = eff.threatId || eff.templateId || eff.id || '';
     if ([...p1.options].some(o => o.value === threatId)) {
@@ -2411,6 +2778,7 @@ function loadEffectIntoRow(row, eff) {
       p1.value = '__manual_threat__';
     }
     if (p2) p2.value = eff.severity ? String(eff.severity) : '';
+    amt.value = eff.chancePercent !== undefined ? Number(eff.chancePercent) : 100;
   } else if (eff.type === 'limitAction') {
     p1.value = eff.action || 'forraje';
     amt.value = eff.days || 1;
@@ -2447,6 +2815,33 @@ function loadEffectIntoRow(row, eff) {
     } else if (eff.leadTargetMode && [...lead.options].some(o => o.value === eff.leadTargetMode)) {
       lead.value = eff.leadTargetMode;
     }
+  } else if (eff.type === 'valueID') {
+    const idInput = row.querySelector('.value-id-input');
+    if (idInput) idInput.value = eff.id || '';
+    if (p2) p2.value = Number(eff.value) === 1 ? '1' : '0';
+  } else if (eff.type === 'setRestMoraleBonus') {
+    amt.value = eff.chancePercent ?? eff.chance ?? 25;
+    if (p2) p2.value = String(eff.amount || 1);
+  } else if (eff.type === 'setInjuryRollBonus') {
+    amt.value = eff.amount ?? eff.bonus ?? 1;
+  } else if (eff.type === 'modifyRisk') {
+    amt.value = eff.amount ?? 1;
+  } else if (eff.type === 'unlockBaseUpgrade') {
+    const upgradeId = eff.upgradeId || eff.id || '';
+    if ([...p1.options].some(o => o.value === upgradeId)) {
+      p1.value = upgradeId;
+    } else if (upgradeId) {
+      row.dataset.customBaseUpgradeId = upgradeId;
+      p1.dataset.manualBaseUpgradeId = upgradeId;
+      p1.dataset.manualBaseUpgradeLabel = `✍ ${upgradeId}`;
+      const manualOpt = [...p1.options].find(o => o.value === '__manual_base_upgrade__');
+      if (manualOpt) manualOpt.textContent = `✍ ${upgradeId}`;
+      p1.value = '__manual_base_upgrade__';
+    }
+  } else if (eff.type === 'unlockBuilding') {
+    p1.value = eff.building || p1.value;
+    const builtCheck = row.querySelector('.unlock-building-built-check');
+    if (builtCheck) builtCheck.checked = !!(eff.built || eff.constructed || eff.alreadyBuilt);
   } else if (eff.type === 'moraleAll' || eff.type === 'moraleAllPermanent' || eff.type === 'moraleSurvivorPermanent' || eff.type === 'moraleSurvivor' || eff.type === 'stabilityChange') {
     amt.value = eff.amount || 1;
     if (eff.type === 'moraleSurvivor' || eff.type === 'moraleSurvivorPermanent') {
@@ -2468,6 +2863,7 @@ function loadEffectIntoRow(row, eff) {
 
 // ── CLEAR ──
 function clearForm() {
+  editingEventId = null;
   ['f-id','f-name','f-story','f-labelA','f-labelB','f-labelC','f-labelD','f-imgurl','f-tags','f-reqValueA','f-reqSkillA','f-reqValueB','f-reqSkillB','f-reqValueC','f-reqSkillC','f-reqValueD','f-reqSkillD'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -2482,6 +2878,8 @@ function clearForm() {
   });
   document.getElementById('f-weight').value = 8;
   if(document.getElementById('f-day')) document.getElementById('f-day').value = 7;
+  if(document.getElementById('f-scoutRisk')) document.getElementById('f-scoutRisk').value = '';
+  if(document.getElementById('f-scoutCombat')) document.getElementById('f-scoutCombat').value = '';
   if(document.getElementById('f-dayMin')) document.getElementById('f-dayMin').value = '';
   if(document.getElementById('f-dayMax')) document.getElementById('f-dayMax').value = '';
   setRepeatable(false);
@@ -2513,6 +2911,7 @@ function clearForm() {
   setMode('direct');
   ['A','B','C','D'].forEach(updateChoiceRequirementUI);
   updatePreview();
+  syncEditorAddButtonLabel();
 }
 
 function importJSON(input) {
@@ -2527,6 +2926,7 @@ function importJSON(input) {
       let added = 0, skipped = 0;
       incoming.forEach(ev => {
         if (!ev.id) { skipped++; return; }
+        normalizeEditorEventConditionShape(ev);
         // Normalise: some JSONs use 'title' instead of 'name'
         if (!ev.name && ev.title) ev.name = ev.title;
         if (!ev.name) { skipped++; return; }
@@ -2534,8 +2934,10 @@ function importJSON(input) {
         events.push(ev);
         added++;
       });
+      editingEventId = null;
       renderEventList();
       updateEventCount();
+      syncEditorAddButtonLabel();
       showToast(`Importados ${added} evento${added!==1?'s':''} · ${skipped} omitido${skipped!==1?'s':''} (ID duplicado o inválido)`);
     } catch {
       showToast('El archivo no es un JSON válido', true);
@@ -2550,6 +2952,7 @@ function clearAll() {
   if (!events.length) { showToast('No hay eventos que limpiar', true); return; }
   if (!confirm(`¿Eliminar los ${events.length} evento(s) creados? Esta acción no se puede deshacer.`)) return;
   events = [];
+  editingEventId = null;
   activeEventTab = 'all';
   activeEventTag = 'all';
   eventSearchQuery = '';
@@ -2557,6 +2960,7 @@ function clearAll() {
   const searchInput = document.getElementById('eventSearchInput'); if(searchInput) searchInput.value = '';
   renderEventList();
   updateEventCount();
+  syncEditorAddButtonLabel();
   document.getElementById('exportArea').style.display = 'none';
   showToast('Lista vaciada');
 }
@@ -2614,6 +3018,16 @@ function showToast(msg, isErr = false) {
 }
 
 // ── INIT ──
+function ensureValueIdConditionOption(){
+  const sel = document.getElementById('f-condType');
+  if(!sel || [...sel.options].some(opt => opt.value === 'valueID')) return;
+  const opt = document.createElement('option');
+  opt.value = 'valueID';
+  opt.textContent = 'ValueID';
+  const before = [...sel.options].find(option => option.value === 'and') || null;
+  sel.insertBefore(opt, before);
+}
+ensureValueIdConditionOption();
 updateWeightHint(8);
 setRepeatable(false);
 renderEventTabs();
@@ -2638,6 +3052,7 @@ populateHostileSelect();
   loadItemsForEditor();
   loadSkillsForEditor();
 safeUpdatePreview();
+syncEditorAddButtonLabel();
 
 // Auto-load JSONs from /data/ on startup (works on Netlify/server)
 async function autoLoadFromServer() {
@@ -2649,6 +3064,7 @@ async function autoLoadFromServer() {
     let added = 0;
     incoming.forEach(ev => {
       if (!ev.id) return;
+      normalizeEditorEventConditionShape(ev);
       if (!ev.name && ev.title) ev.name = ev.title;
       if (!ev.name) return;
       if (events.find(x => x.id === ev.id)) return;
@@ -2738,6 +3154,23 @@ async function autoLoadFromServer() {
   } catch(e) {
     setDataWarning('survivors.json', e?.message || 'No se pudo cargar');
     renderEventList();
+    safeUpdatePreview();
+  }
+
+  try {
+    const resBaseUpgrades = await fetch('./data/base_upgrades.json');
+    if (!resBaseUpgrades.ok) throw new Error(`HTTP ${resBaseUpgrades.status}`);
+    const incomingBaseUpgrades = await resBaseUpgrades.json();
+    if (Array.isArray(incomingBaseUpgrades)) {
+      baseUpgradeDefs = incomingBaseUpgrades;
+      clearDataWarning('base_upgrades.json');
+      safeUpdatePreview();
+    } else {
+      throw new Error('base_upgrades.json no contiene un array');
+    }
+  } catch(e) {
+    baseUpgradeDefs = [];
+    setDataWarning('base_upgrades.json', e?.message || 'No se pudo cargar');
     safeUpdatePreview();
   }
 

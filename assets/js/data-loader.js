@@ -55,8 +55,8 @@ function replaceDynamicNameTokens(text, extraMap={}){
  });
 }
 
-const DATA_FILE_LABELS={events:'events.json',story:'story_events.json',survivors:'survivors.json',buildings:'buildings.json',config:'config.json',locations:'locations.json',hostiles:'hostiles.json',zones:'zones.json',items:'items.json',dogs:'dogs.json',threats:'threats.json',names:'names.json',npcs:'npc.json'};
-const OPTIONAL_DATA_TYPES=new Set(['items','dogs','threats','names','npcs']);
+const DATA_FILE_LABELS={events:'events.json',story:'story_events.json',survivors:'survivors.json',buildings:'buildings.json',config:'config.json',locations:'locations.json',hostiles:'hostiles.json',zones:'zones.json',loot:'loot.json',items:'items.json',dogs:'dogs.json',threats:'threats.json',names:'names.json',npcs:'npc.json',baseUpgrades:'base_upgrades.json'};
+const OPTIONAL_DATA_TYPES=new Set(['loot','items','dogs','threats','names','npcs','baseUpgrades']);
 
 const REQUIRED_GAME_DATA=[
  {type:'events',label:'events.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
@@ -67,6 +67,17 @@ const REQUIRED_GAME_DATA=[
  {type:'hostiles',label:'hostiles.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
  {type:'zones',label:'zones.json',validate:v=>Array.isArray(v)&&v.length>0,reason:'vacío o no válido'},
 ];
+
+function normalizeEventConditionShape(ev){
+ if(!ev || typeof ev !== 'object' || Array.isArray(ev)) return ev;
+ if(!ev.condition && Array.isArray(ev.conditions)){
+  ev.condition={type:'and',conditions:ev.conditions};
+ }
+ return ev;
+}
+function normalizeEventConditionList(list){
+ return Array.isArray(list) ? list.map(ev=>normalizeEventConditionShape(ev)) : list;
+}
 
 function clearDataLoadErrors(){
  dataLoadState.errors=[];
@@ -134,15 +145,16 @@ function importGameJSON(type, jsonData, silent=false){
  const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
  if(type==='events'){
  if(!Array.isArray(data)) throw new Error('events.json no contiene un array');
- gameData.story_events=data.filter(e=>e.type==='story');
- gameData.events=data.filter(e=>e.type!=='story');
+ const normalizedEvents=normalizeEventConditionList(data);
+ gameData.story_events=normalizedEvents.filter(e=>e.type==='story');
+ gameData.events=normalizedEvents.filter(e=>e.type!=='story');
  clearDataLoadErrorFor('events.json');
  if(!silent){
   const questCount=gameData.events.filter(e=>e&&e.type==='quest').length;
   addLog(`events.json importado: ${gameData.events.length} eventos · ${gameData.story_events.length} historia · ${questCount} quest.`);
  }
  }
- else if(type==='story') { if(!Array.isArray(data)) throw new Error('story_events.json no contiene un array'); gameData.story_events=data; clearDataLoadErrorFor('story_events.json'); if(!silent) addLog(`story_events.json importado: ${data.length} eventos.`); }
+ else if(type==='story') { if(!Array.isArray(data)) throw new Error('story_events.json no contiene un array'); gameData.story_events=normalizeEventConditionList(data); clearDataLoadErrorFor('story_events.json'); if(!silent) addLog(`story_events.json importado: ${data.length} eventos.`); }
  else if(type==='survivors'){ if(!Array.isArray(data)) throw new Error('survivors.json no contiene un array'); gameData.survivors=data; clearDataLoadErrorFor('survivors.json'); if(!silent) addLog(`survivors.json importado: ${data.length} supervivientes.`); }
  else if(type==='buildings'){ if(!Array.isArray(data)) throw new Error('buildings.json no contiene un array'); gameData.buildings=data; clearDataLoadErrorFor('buildings.json'); if(!silent) addLog(`buildings.json importado: ${data.length} edificios.`); }
  else if(type==='config') { if(!data || typeof data!=='object' || Array.isArray(data)) throw new Error('config.json no contiene un objeto'); gameData.config=data; clearDataLoadErrorFor('config.json'); try{ if(typeof applyAudioSettingsFromConfig==='function') applyAudioSettingsFromConfig(); }catch(audioErr){ console.warn('No se pudieron aplicar los ajustes de audio desde config:', audioErr); } if(!silent) addLog('config.json importado.'); }
@@ -161,6 +173,7 @@ function importGameJSON(type, jsonData, silent=false){
  }
  else if(type==='hostiles') { if(!Array.isArray(data)) throw new Error('hostiles.json no contiene un array'); gameData.hostiles=data; clearDataLoadErrorFor('hostiles.json'); if(!silent) addLog(`hostiles.json importado: ${data.length} tipos.`); }
  else if(type==='zones') { if(!Array.isArray(data)) throw new Error('zones.json no contiene un array'); gameData.zones=data; clearDataLoadErrorFor('zones.json'); if(!silent) addLog(`zones.json importado: ${data.length} zonas.`); }
+ else if(type==='loot') { if(!data || typeof data!=='object' || Array.isArray(data)) throw new Error('loot.json no contiene un objeto'); gameData.loot=data; clearDataLoadErrorFor('loot.json'); if(!silent) addLog(`loot.json importado: ${Object.keys(data).length} niveles.`); }
  else if(type==='items') { if(!Array.isArray(data)) throw new Error('items.json no contiene un array'); gameData.items=data; clearDataLoadErrorFor('items.json'); if(!silent) addLog(`items.json importado: ${data.length} objetos.`); }
  else if(type==='dogs') { if(!Array.isArray(data)) throw new Error('dogs.json no contiene un array'); gameData.dogs=data; clearDataLoadErrorFor('dogs.json'); if(!silent) addLog(`dogs.json importado: ${data.length} perros.`); }
  else if(type==='threats') {
@@ -180,12 +193,8 @@ function importGameJSON(type, jsonData, silent=false){
  clearDataLoadErrorFor('names.json');
  if(!silent) addLog(`names.json importado: ${Object.keys(data).length} categorías.`);
  }
- else if(type==='npcs') {
- if(!Array.isArray(data)) throw new Error('npc.json no contiene un array');
- gameData.npcs=typeof normalizeNpcStateList==='function' ? normalizeNpcStateList(data) : data;
- clearDataLoadErrorFor('npc.json');
- if(!silent) addLog(`npc.json importado: ${gameData.npcs.length} NPCs.`);
- }
+ else if(type==='npcs') { if(!Array.isArray(data)) throw new Error('npc.json no contiene un array'); gameData.npcs=data; clearDataLoadErrorFor('npc.json'); if(typeof ensureNpcRuntimeState==='function') ensureNpcRuntimeState(); if(!silent) addLog(`npc.json importado: ${data.length} NPCs.`); }
+ else if(type==='baseUpgrades') { if(!Array.isArray(data)) throw new Error('base_upgrades.json no contiene un array'); gameData.baseUpgrades=data; clearDataLoadErrorFor('base_upgrades.json'); if(!silent) addLog(`base_upgrades.json importado: ${data.length} mejoras.`); }
  if(!silent) render();
  } catch(e) {
  handleDataLoadError(DATA_FILE_LABELS[type]||type, e.message);
@@ -204,11 +213,13 @@ async function loadFromFiles(){
  ['locations', ['./data/locations.json','./data/location.json','./data/Locations.json']],
  ['hostiles', ['./data/hostiles.json']],
  ['zones', ['./data/zones.json']],
+ ['loot', ['./data/loot.json']],
  ['items', ['./data/items.json']],
  ['dogs', ['./data/dogs.json']],
  ['threats', ['./data/threats.json']],
  ['names', ['./data/names.json']],
  ['npcs', ['./data/npc.json','./data/npcs.json']],
+ ['baseUpgrades', ['./data/base_upgrades.json']],
  ];
 
  async function fetchJsonFromCandidates(paths){
@@ -254,9 +265,15 @@ function loadDefaults(){
  gameData.locationTemplates=[];
  gameData.hostiles=[];
  gameData.zones=[];
+ gameData.loot={};
  gameData.items=[];
  gameData.dogs=[];
  gameData.threats=[];
  gameData.names={};
  gameData.npcs=[];
+ gameData.baseUpgrades=[];
+ if(state && state.npcs) state.npcs={};
+ if(state && state.npcContinuousEffects) state.npcContinuousEffects={};
 }
+
+loadDefaults();

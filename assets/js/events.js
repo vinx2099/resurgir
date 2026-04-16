@@ -1,4 +1,4 @@
-// Extraído de app.js
+﻿// Extraído de app.js
 
 function getAmbushEventPool(actionType=''){
  const normalizedAction=String(actionType||'').toLowerCase();
@@ -240,6 +240,19 @@ function pickForcedStoryEventForDay(dayNumber=state.day){
  return weightedPickField(weightedPool,'_storyPriorityWeight') || finalPool[0] || null;
 }
 
+function getExploreEventDailyKey(ev){
+ return String(ev?.id||ev?.name||ev?.title||'').trim();
+}
+
+function getExploreEventsUsedToday(){
+ const day=Number(state.day||1);
+ if(Number(state._exploreEventsUsedDay||0)!==day || !(state._exploreEventsUsedToday instanceof Set)){
+  state._exploreEventsUsedDay=day;
+  state._exploreEventsUsedToday=new Set();
+ }
+ return state._exploreEventsUsedToday;
+}
+
 function checkStoryEvent(){
  if(!Array.isArray(state.deferredStoryEventIds)) state.deferredStoryEventIds=[];
  // First, try deferred story events that were postponed in previous days
@@ -389,13 +402,18 @@ function triggerExploreEvent(survivor){
  const groupMods=getExploreGroupModifiers(survivor);
  // Pull explore events from events.json type='explore' only
  const pool=(gameData.events||[]).filter(e=>e&&e.type==='explore'&&isEventEligibleBySchedule(e)&&schemaHasEnoughEventActors(e, survivor)&&!(activeEventBlocksAttackThreat()&&schemaContainsAttackThreat(e)));
+ const usedToday=getExploreEventsUsedToday();
+ const dailyPool=pool.filter(e=>{
+  const key=getExploreEventDailyKey(e);
+  return !key || !usedToday.has(key);
+ });
 
  // Exclude already seen unless repeatable, cycle when exhausted
- const available=pool.filter(e=>e.repeatable||!state._seenExplore?.has(e.id));
- if(available.length===0&&pool.length>0){
+ const available=dailyPool.filter(e=>e.repeatable||!state._seenExplore?.has(e.id));
+ if(available.length===0&&dailyPool.length>0){
  state._seenExplore=new Set();
  }
- const finalPool=available.length?available:pool;
+ const finalPool=available.length?available:dailyPool;
 
  // Pick schema in two stages:
  // 1) category using config phase weights
@@ -540,6 +558,8 @@ function triggerExploreEvent(survivor){
  if(!state.seenEvents) state.seenEvents=new Set();
  state.seenEvents.add(schema.id);
  }
+ const dailyKey=getExploreEventDailyKey(schema);
+ if(dailyKey&&dailyKey!=='explore_nothing') usedToday.add(dailyKey);
 }
 
 
@@ -634,7 +654,6 @@ function scheduleQuestActivation(questId, minDays=0, maxDays=0, forcedSurvivor=n
  const scheduledDay=state.day + offset;
  if(!Array.isArray(state.delayedQueue)) state.delayedQueue=[];
  state.delayedQueue.push({day:scheduledDay,effect:{type:'_queueQuestEvent',questId:schema.id,forcedSurvivorId:forcedSurvivor?.id||null}});
- addLog(`📜 Quest activada: ${schema.name||schema.id}. Queda programada para el día ${scheduledDay} (${min}-${max} días).`);
  addTechnicalLog('quest_scheduled', 'Quest programada por efecto.', {questId:schema.id, questName:schema.name||schema.id, currentDay:state.day, minDays:min, maxDays:max, scheduledDay});
  return true;
 }
@@ -916,8 +935,8 @@ function resolveEventTargetRef(effect, ev){
  if(!ref) return null;
  const actors=getEventActors(ev);
  if(!actors.length) return null;
- if(ref==='randomeventactor'||ref==='anyeventactor') return pick(actors)||null;
- const match=ref.match(/^eventactor(\d+)$/);
+ if(ref==='randomeventactor'||ref==='anyeventactor'||ref==='randomactor') return pick(actors)||null;
+ const match=ref.match(/^(?:event)?actor(\d+)$/);
  if(match){
  const idx=Math.max(0, Number(match[1])-1);
  return actors[idx]||null;
@@ -930,7 +949,7 @@ function injectEventActors(effects, ev){
  if(!effect||typeof effect!=='object') return effect?[effect]:[];
  if(!effect.targetRef) return [effect];
  const ref=String(effect.targetRef||'').trim().toLowerCase();
- if(ref==='alleventactors'){
+ if(['alleventactors','allactors','actors','eventactors','actores'].includes(ref)){
  const actors=getEventActors(ev);
  return actors.map(actor=>({ ...effect, targetId:actor.id, targetRef:undefined }));
  }
@@ -944,12 +963,13 @@ function injectEventTargetModes(effects, ev){
  return (effects||[]).flatMap(effect=>{
  if(!effect || typeof effect!=='object') return effect?[effect]:[];
  const mode=String(effect.targetMode||'').trim();
+ const normalizedMode=mode.toLowerCase();
  if(!mode) return [effect];
  const actors=getEventActors(ev);
- if(mode==='allActors'){
+ if(['allactors','alleventactors','actors','eventactors','actores'].includes(normalizedMode)){
  return actors.map(actor=>({ ...effect, targetId:actor.id, targetMode:undefined }));
  }
- const match=mode.match(/^actor(\d)$/);
+ const match=normalizedMode.match(/^(?:event)?actor(\d)$/);
  if(match){
  const idx=Math.max(0, Number(match[1])-1);
  const actor=actors[idx]||null;
@@ -1000,6 +1020,8 @@ function buildPersonalEventNode(schema, survivor, nodeId){
  days:1,
  relatedAction:schema.relatedAction||null,
  _schemaId:schema.id||null,
+ _npcId:schema._npcId||null,
+ _npcName:schema._npcName||'',
  _personal:true,
  _personalNodeId:resolvedNodeId,
  _personalSurvivorId:survivor?.id||null,
@@ -1072,6 +1094,8 @@ function buildEventFromSchema(schema,forcedSurvivor){
  days,
  relatedAction:schema.relatedAction||null,
  _schemaId:schema.id||null,
+ _npcId:schema._npcId||null,
+ _npcName:schema._npcName||'',
  _explorerId: forcedSurvivor?.id || null,
  _personalSurvivorId: schema.type==='personal' ? survivor?.id||null : null,
  _eventActorIds: eventActorIds,
@@ -1089,11 +1113,13 @@ function buildEventFromSchema(schema,forcedSurvivor){
  if(choiceMode==='direct'||normOpts.length===0){
  ev.autoResolve=true;
  if(allDirect.length>0){
+ const nonLogEffects = allDirect.filter(e => e.type !== 'log');
+ const logEffects = allDirect.filter(e => e.type === 'log');
  ev.options=[{
  label:'Continuar',
  className:'primary',
  action:()=>{
- applyEffectList(injectEventContextEffects(allDirect, ev, ev._explorerId));
+ if(nonLogEffects.length > 0) applyEffectList(injectEventContextEffects(nonLogEffects, ev, ev._explorerId));
  handleLegacyFlags(schema.effects||{});
  // If multi-day, register as active so it persists
  if(days>1&&!ev._continuing){
@@ -1104,6 +1130,8 @@ function buildEventFromSchema(schema,forcedSurvivor){
  state._activeMultiDayEvent=null;
  }
  closeEvent();
+ // Apply log effects after closing the event
+ if(logEffects.length > 0) applyEffectList(injectEventContextEffects(logEffects, ev, ev._explorerId));
  }
  }];
  } else {
@@ -1155,11 +1183,15 @@ function buildEventFromSchema(schema,forcedSurvivor){
  if(opt.cost?.length){
  applyEffectList(injectEventContextEffects(opt.cost, ev, expId));
  }
- applyEffectList(injectEventContextEffects(opt.effects, ev, expId));
+ const nonLogEffects = (opt.effects || []).filter(e => e.type !== 'log');
+ const logEffects = (opt.effects || []).filter(e => e.type === 'log');
+ if(nonLogEffects.length) applyEffectList(injectEventContextEffects(nonLogEffects, ev, expId));
  queueDelayedEffects(injectEventContextEffects(opt.delayed||[], ev, expId));
  handleLegacyFlags(schema.effects||{});
  state._activeMultiDayEvent=null;
  closeEvent();
+ // Apply log effects after closing the event
+ if(logEffects.length) applyEffectList(injectEventContextEffects(logEffects, ev, expId));
  }
  }));
  }
@@ -1194,8 +1226,27 @@ function injectExplorer(effects, explorerId){
 
 // Handle legacy boolean flags in the effects object that affect game state directly
 
+function renderEventResourceStrip(){
+ const box=document.getElementById('eventPopupResources');
+ if(!box) return;
+ const electricityCap=typeof getElectricityCapacity==='function' ? getElectricityCapacity() : Number(state.electricityCapacity||0);
+ const electricityUsed=typeof getElectricityUsed==='function' ? getElectricityUsed() : Number(state.electricityUsed||0);
+ const resources=[
+  ['\u{1F37D}', 'Comida', state.food],
+  ['\u{1F527}', 'Materiales', state.materials],
+  ['\u{1F48A}', 'Medicamentos', state.meds],
+  ['\u26FD', 'Combustible', state.fuel],
+  ['\u{1F3DB}', 'Estabilidad', state.stability]
+ ];
+ if(Number(state.chickens||0)>0) resources.push(['\u{1F414}', 'Gallinas', state.chickens]);
+ if(electricityCap>0) resources.push(['\u26A1', 'Electricidad', `${electricityUsed}/${electricityCap}`]);
+ const esc=value=>String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+ box.innerHTML=resources.map(([icon,label,value])=>`<span class="event-popup-resource-chip" title="${esc(label)}" aria-label="${esc(label)}: ${esc(value)}"><span class="event-popup-resource-icon" aria-hidden="true">${esc(icon)}</span><b>${esc(value)}</b></span>`).join('');
+}
+
 function setEvent(ev){
  state.pendingEvent=ev;
+ renderEventResourceStrip();
  if(ev.relatedAction){
  const count=state._lastDayActions?.[ev.relatedAction]||0;
  if(count>0) addLog(`El evento "${ev.title}" está relacionado con la acción ${actionLabel(ev.relatedAction)} (${count} superviviente${count!==1?'s':''} activo${count!==1?'s':''}).`);
@@ -1324,6 +1375,10 @@ function renderEventDurationBar(){
 
 
 function closeEvent(){
+ const closingNpcId=state.pendingEvent?._npcId||null;
+ if(closingNpcId && typeof markNpcInteractionUsedToday==='function'){
+  markNpcInteractionUsedToday(closingNpcId);
+ }
  state.pendingEvent=null;
  state.eventDaysLeft=0;
  state.eventTotalDays=1;
@@ -1334,6 +1389,7 @@ function closeEvent(){
  const eo=document.getElementById('eventOptions'); if(eo){ eo.innerHTML=''; eo.dataset.busy='0'; }
  const bar=document.getElementById('eventDurationBar'); if(bar) bar.style.display='none';
  const sub=document.getElementById('eventSubtitle'); if(sub) sub.style.display='none';
+ renderEventResourceStrip();
 }
 
 
@@ -1431,5 +1487,3 @@ function rollExplorerRandomInjuryLevel(){
    return null;
   };
  }
-
-

@@ -66,7 +66,7 @@
       document.getElementById('f-imgurl')?.value?.trim() ||
       document.querySelector('.effect-row')
     );
-    if(dirty && !window.confirm('Se limpiará el formulario actual para crear un evento nuevo. ¿Continuar?')) return;
+    if(dirty && !window.confirm('Se vaciará solo el formulario (campos y efectos) para empezar un evento nuevo. Los eventos de la lista a la derecha no se borran. ¿Continuar?')) return;
     if(typeof clearForm === 'function') clearForm();
     const idInput = document.getElementById('f-id');
     if(idInput) idInput.focus();

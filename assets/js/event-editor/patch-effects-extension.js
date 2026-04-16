@@ -9,8 +9,8 @@
     { after:'cancelThreat', entry:{ group:'⚔ Riesgo y restricciones', value:'modifyThreatSeverity', label:'📈 Modificar severidad de amenaza (+/-)' } },
     { after:'activateQuest', entry:{ group:'🎭 Narrativa', value:'completeQuest', label:'✅ Completar quest' } },
     { after:'completeQuest', entry:{ group:'🎭 Narrativa', value:'failQuest', label:'❌ Fallar quest' } },
-    { after:'limitAction', entry:{ group:'⚔ Riesgo y restricciones', value:'bonusAction', label:'🟢 Bonificar acción (% durante X días)' } },
-    { after:'bonusAction', entry:{ group:'⚔ Riesgo y restricciones', value:'penaltyAction', label:'🔴 Penalizar acción (% durante X días)' } }
+    { after:'limitAction', entry:{ group:'⚔ Riesgo y restricciones', value:'bonusAction', label:'🟢 Bonificar acción (Forrajear/Reciclar) (plano durante X días)' } },
+    { after:'bonusAction', entry:{ group:'⚔ Riesgo y restricciones', value:'penaltyAction', label:'🔴 Penalizar acción (Forrajear/Reciclar) (plano durante X días)' } }
   ];
 
   function insertEffectOption(afterValue, entry){
@@ -22,16 +22,8 @@
   EXTRA_EFFECTS.forEach(item => insertEffectOption(item.after, item.entry));
 
   const ACTION_OPTIONS = [
-    ['related', 'Acción relacionada del evento'],
     ['forraje', 'Forrajear'],
-    ['reciclar', 'Reciclar'],
-    ['explorar', 'Explorar'],
-    ['vigilar', 'Vigilar'],
-    ['construir', 'Construir'],
-    ['descansar', 'Descansar'],
-    ['defender', 'Defender'],
-    ['ataque', 'Ataque'],
-    ['atacar', 'Atacar']
+    ['reciclar', 'Reciclar']
   ];
 
   function ensureAllTypeSelectsHaveExtras(){
@@ -73,7 +65,7 @@
       opt.textContent = label;
       select.appendChild(opt);
     });
-    select.value = 'related';
+    select.value = 'forraje';
   }
 
   function ensureManualEventPrompt(row){
@@ -172,13 +164,13 @@
     const percentWrap = document.createElement('div');
     percentWrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
     const percentLabel = document.createElement('label');
-    percentLabel.textContent = '% modificador';
+    percentLabel.textContent = 'Modificador plano';
     const percentInput = document.createElement('input');
     percentInput.type = 'number';
-    percentInput.min = '1';
+    percentInput.min = '-999';
     percentInput.max = '999';
-    percentInput.value = row.dataset.actionModifierPercent || '25';
-    percentInput.className = 'action-modifier-percent';
+    percentInput.value = row.dataset.actionModifierFlat || '0';
+    percentInput.className = 'action-modifier-flat';
     percentWrap.append(percentLabel, percentInput);
 
     const daysWrap = document.createElement('div');
@@ -193,8 +185,11 @@
     daysInput.className = 'action-modifier-days';
     daysWrap.append(daysLabel, daysInput);
 
-    [actionSelect, percentInput, daysInput].forEach(el => el.addEventListener('input', () => {
-      row.dataset.actionModifierPercent = percentInput.value || '25';
+    actionSelect.addEventListener('change', () => {
+      safeUpdatePreview();
+    });
+    [percentInput, daysInput].forEach(el => el.addEventListener('input', () => {
+      row.dataset.actionModifierFlat = percentInput.value || '0';
       row.dataset.actionModifierDays = daysInput.value || '1';
       safeUpdatePreview();
     }));
@@ -365,8 +360,8 @@
       } else if(type === 'bonusAction' || type === 'penaltyAction'){
         const panel = row.querySelector('.action-modifier-panel');
         effect.type = type;
-        effect.action = panel?.querySelector('.action-modifier-target')?.value || 'related';
-        effect.percent = Number(panel?.querySelector('.action-modifier-percent')?.value) || 25;
+        effect.action = panel?.querySelector('.action-modifier-target')?.value || 'forraje';
+        effect.flat = Number(panel?.querySelector('.action-modifier-flat')?.value) || 0;
         effect.days = Number(panel?.querySelector('.action-modifier-days')?.value) || 1;
       } else if(type === 'activateQuest' || type === 'activateEvent'){
         const panel = ensureQuestTimingEnhancement(row);
@@ -392,8 +387,8 @@
     if(e?.type === 'modifyThreatSeverity') return `📈 Severidad de amenaza ${e.amount>0?'+':''}${e.amount||1} · ${getThreatLabel(e.threatId||'')}`;
     if(e?.type === 'completeQuest') return `✅ Completar quest: ${e.questId || e.eventId || 'sin ID'}`;
     if(e?.type === 'failQuest') return `❌ Fallar quest: ${e.questId || e.eventId || 'sin ID'}`;
-    if(e?.type === 'bonusAction') return `🟢 Bonificar ${e.action||'acción'} +${e.percent||25}% (${e.days||1}d)`;
-    if(e?.type === 'penaltyAction') return `🔴 Penalizar ${e.action||'acción'} -${e.percent||25}% (${e.days||1}d)`;
+    if(e?.type === 'bonusAction') return `🟢 Bonificar ${e.action||'acción'} +${e.flat||0} plano (${e.days||1}d)`;
+    if(e?.type === 'penaltyAction') return `🔴 Penalizar ${e.action||'acción'} -${e.flat||0} plano (${e.days||1}d)`;
     if(e?.type === 'awaySurvivor') return `🚶 Ausentar superviviente (${e.targetMode==='action'?'realiza la acción':(e.targetMode&&e.targetMode.startsWith('actor')?e.targetMode.toUpperCase():(e.targetId||'aleatorio'))}) ${e.days||1}d · ${e.returnInjuryChance||0}%`;
     if(e?.type === 'activateQuest' || e?.type === 'activateEvent'){
       const timing = getTimingModeFromEffect(e);
@@ -460,9 +455,11 @@
         const panel = ensureActionModifierPanel(row);
         const actionSel = panel.querySelector('.action-modifier-target');
         const percentInput = panel.querySelector('.action-modifier-percent');
+        const flatInput = panel.querySelector('.action-modifier-flat');
         const daysInput = panel.querySelector('.action-modifier-days');
-        if(actionSel && [...actionSel.options].some(o => o.value === (eff.action || 'related'))) actionSel.value = eff.action || 'related';
-        if(percentInput) percentInput.value = eff.percent ?? eff.amount ?? 25;
+        if(actionSel && [...actionSel.options].some(o => o.value === (eff.action || 'forraje'))) actionSel.value = eff.action || 'forraje';
+        if(percentInput) percentInput.value = eff.percent ?? eff.amount ?? '';
+        if(flatInput) flatInput.value = eff.flat ?? eff.modifier ?? '';
         if(daysInput) daysInput.value = eff.days ?? 1;
       }
       return;

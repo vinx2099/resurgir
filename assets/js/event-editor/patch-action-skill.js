@@ -30,9 +30,9 @@
     group.appendChild(opt);
    }
    const bonus=[...select.options].find(opt=>opt.value==='bonusAction');
-   if(bonus) bonus.textContent='🟢 Bonificar acción (% / plano durante X días)';
+   if(bonus) bonus.textContent='🟢 Bonificar acción (Forrajear/Reciclar) (% / plano durante X días)';
    const penalty=[...select.options].find(opt=>opt.value==='penaltyAction');
-   if(penalty) penalty.textContent='🔴 Penalizar acción (% / plano durante X días)';
+   if(penalty) penalty.textContent='🔴 Penalizar acción (Forrajear/Reciclar) (% / plano durante X días)';
   });
  }
  function toNumberOrNull(value){
@@ -47,6 +47,17 @@
   const opts=[['random','Superviviente aleatorio'],['actor1','Actor 1 ({actor1})'],['actor2','Actor 2 ({actor2})'],['actor3','Actor 3 ({actor3})'],['actor4','Actor 4 ({actor4})'],['__action__','Quien realizó la acción']];
   if(includeAllActors) opts.splice(5,0,['allActors','Todos los actores']);
   return opts;
+ }
+ function fillActionSelect(select){
+  if(!select) return;
+  select.innerHTML='';
+  [['forraje','Forrajear'],['reciclar','Reciclar']].forEach(([value,label])=>{
+   const opt=document.createElement('option');
+   opt.value=value;
+   opt.textContent=label;
+   select.appendChild(opt);
+  });
+  select.value='forraje';
  }
  function fillTargetSelect(select, includeAllActors=false){
   if(!select) return;
@@ -145,7 +156,20 @@
   } else if(type==='addSkill'){
    if(p1){ p1.style.display=''; fillTargetSelect(p1, true); }
    if(p2){ p2.style.display=''; fillSkillSelect(p2, row.dataset.addSkillId || ''); }
-   if(amt){ amt.style.display='none'; amt.value=''; }
+   if(amt){
+    amt.style.display='';
+    amt.type='number';
+    amt.min='0';
+    amt.max='100';
+    amt.step='1';
+    amt.placeholder='% aprender';
+    amt.title='Porcentaje de aprender la skill';
+    amt.value=row.dataset.addSkillChance ?? '100';
+    amt.oninput=()=>{
+     row.dataset.addSkillChance=amt.value || '100';
+     if(typeof safeUpdatePreview==='function') safeUpdatePreview();
+    };
+   }
    if(typeof attachManualTargetIdPrompt==='function') attachManualTargetIdPrompt(row);
   }
   return result;
@@ -171,9 +195,11 @@
     if(flat!==null) effect.flat=flat; else delete effect.flat;
     effect.days=Math.max(1, Number(panel.querySelector('.action-modifier-days')?.value||1) || 1);
    } else if(type==='addSkill'){
-    effect.type='addSkill';
-    effect.skill=p2?.value?.trim() || '';
-    if(p1?.value === '__by_id__' && row.dataset.customTargetId) effect.targetId=row.dataset.customTargetId;
+   effect.type='addSkill';
+   effect.skill=p2?.value?.trim() || '';
+   const chance=Number(row.querySelector('.effect-amount-input')?.value);
+   effect.chancePercent=Number.isFinite(chance) ? Math.max(0, Math.min(100, chance)) : 100;
+   if(p1?.value === '__by_id__' && row.dataset.customTargetId) effect.targetId=row.dataset.customTargetId;
     else if(p1?.value === '__action__') effect.targetMode='action';
     else if(/^actor\d$/.test(p1?.value||'') || p1?.value === 'allActors') effect.targetMode=p1.value;
    }
@@ -193,7 +219,9 @@
   }
   if(e?.type==='addSkill'){
    const target=e.targetMode==='action' ? 'realiza la acción' : (e.targetMode==='allActors' ? 'todos los actores' : (e.targetMode&&e.targetMode.startsWith('actor') ? e.targetMode.toUpperCase() : (e.targetId || 'aleatorio')));
-   return `🎓 Añadir skill ${e.skill||'sin skill'} (${target})`;
+   const chance=Number(e.chancePercent ?? e.chance ?? 100);
+   const chanceText=Number.isFinite(chance) && chance!==100 ? ` · ${Math.max(0, Math.min(100, chance))}%` : '';
+   return `🎓 Añadir skill ${e.skill||'sin skill'} (${target})${chanceText}`;
   }
   return prevEffectToString.apply(this, arguments);
  };
@@ -228,6 +256,11 @@
     else p1.value='random';
     fillSkillSelect(p2, eff.skill || eff.skillId || '');
     if(p2 && [...p2.options].some(opt=>opt.value===(eff.skill||eff.skillId||''))) p2.value=eff.skill||eff.skillId||'';
+    const amt=row.querySelector('.effect-amount-input');
+    if(amt){
+     amt.value=eff.chancePercent ?? eff.chance ?? 100;
+     row.dataset.addSkillChance=amt.value || '100';
+    }
    }
    return;
   }

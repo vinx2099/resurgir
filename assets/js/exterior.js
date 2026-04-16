@@ -143,11 +143,11 @@ function switchMapTab(tab){
  if(tab==='base'){
  mapArea.style.display='';
  extMap.classList.remove('active');
- document.querySelectorAll('.map-tab')[0].classList.add('active');
+ document.querySelector('[data-map-tab="base"]')?.classList.add('active');
  } else {
  mapArea.style.display='none';
  extMap.classList.add('active');
- document.querySelectorAll('.map-tab')[1].classList.add('active');
+ document.querySelector('[data-map-tab="exterior"]')?.classList.add('active');
  renderExteriorMap();
  }
  renderSurvivors();
@@ -494,6 +494,12 @@ function evaluateCondition(cond){
  }
  case 'day_max':{
  return state.day<=(cond.value||999);
+ }
+ case 'valueID':{
+ const id=String(cond.id||'').trim();
+ if(!id) return false;
+ const values=(state.values&&typeof state.values==='object'&&!Array.isArray(state.values)) ? state.values : {};
+ return values[id] === (Number(cond.value)===1 ? 1 : 0);
  }
  case 'and':{
  return (cond.conditions||[]).every(c=>evaluateCondition(c));
@@ -1107,4 +1113,3 @@ function resolveTravelMovement(){
  }
  });
 }
-

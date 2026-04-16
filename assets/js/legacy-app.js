@@ -50,7 +50,6 @@ const DEFAULT_MORALE_TABLES=Object.freeze({
 
 /* dedup:getMoraleColor moved to survivors.js */
 
-
 /* dedup:ensureRelationshipStore moved to survivors.js */
 
 /* dedup:getRelationshipPairKey moved to survivors.js */
@@ -70,7 +69,6 @@ const DEFAULT_MORALE_TABLES=Object.freeze({
 /* dedup:getSurvivorRelationshipBadges moved to survivors.js */
 
 /* dedup:getRelationshipRestBonus moved to survivors.js */
-
 
 function getActionStartMoraleState(survivor){
  return survivor?._moraleStateAtActionStart || getMoraleStateKey(survivor);
@@ -163,7 +161,6 @@ function getHostileImageFromInfo(hostileInfo){
  || hostileInfo?.typeDef?.illustration
  || '';
 }
-
 
 function applyGroupForageRecycleBonuses(leader, actionType){
  const ctx=getGroupActionContextForSurvivor(leader, actionType);
@@ -363,7 +360,6 @@ function initializeSeedRelationships(){
 
 const topbar=document.getElementById('topbar'),survivorList=document.getElementById('survivorList'),detailBox=document.getElementById('detailBox'),logBox=document.getElementById('logBox'),logScrollUpBtn=document.getElementById('logScrollUpBtn'),logScrollDownBtn=document.getElementById('logScrollDownBtn'),eventImage=document.getElementById('eventImage'),eventTitle=document.getElementById('eventTitle'),eventText=document.getElementById('eventText'),eventOptions=document.getElementById('eventOptions'),buildModalWrap=document.getElementById('buildModalWrap'),buildOptions=document.getElementById('buildOptions'),gameOverWrap=document.getElementById('gameOverWrap');
 
-
 let logVirtualOffset = 0;
 if(logScrollUpBtn) logScrollUpBtn.addEventListener('click', ()=>scrollLogBoxBy(-1));
 if(logScrollDownBtn) logScrollDownBtn.addEventListener('click', ()=>scrollLogBoxBy(1));
@@ -390,6 +386,13 @@ if(_groupActionBtn){
  _groupActionBtn.style.justifyContent='center';
  _groupActionBtn.addEventListener('click',openGroupActionPopup);
 }
+const _survivorReorderBtn=document.getElementById('survivorReorderToggleBtn');
+if(_survivorReorderBtn){
+ _survivorReorderBtn.addEventListener('click',()=>{
+  if(typeof toggleSurvivorReorderMode==='function') toggleSurvivorReorderMode();
+ });
+ if(typeof syncSurvivorReorderToggleButton==='function') syncSurvivorReorderToggleButton();
+}
 document.getElementById('groupActionCancel')?.addEventListener('click',closeGroupActionPopup);
 document.getElementById('groupActionCloseX')?.addEventListener('click',closeGroupActionPopup);
 document.getElementById('groupActionConfirm')?.addEventListener('click',confirmGroupAction);
@@ -411,7 +414,6 @@ document.getElementById('closeTechnicalLogBtn')?.addEventListener('click',closeT
 document.getElementById('closeTechnicalLogBtnFooter')?.addEventListener('click',closeTechnicalLogModal);
 document.getElementById('technicalLogModal')?.addEventListener('click',(e)=>{ if(e.target?.id==='technicalLogModal') closeTechnicalLogModal(); });
 
-
 function deepClone(v){return JSON.parse(JSON.stringify(v))}
 
 /* phaseA:data file labels + optional data types moved to data-loader.js */
@@ -430,7 +432,6 @@ const DEFAULT_STABILITY_MODIFIERS_BY_TIER={
 function getStartingSurvivorRarity(){
  return Math.max(1, Number(gameData.config?.starting?.startingSurvivorRarity ?? 4) || 4);
 }
-
 
 /* dedup:getInjuryRulesConfig moved to survivors.js */
 
@@ -471,19 +472,13 @@ function getStabilityDefenseModifierByRange(value=state.stability){
  return Number.isFinite(modifier) ? modifier : null;
 }
 
-
 /* dedup:getAverageMorale moved to survivors.js */
 
 /* phaseA:getSettlementDefenseValue + one-day output modifiers moved to buildings.js */
 
-
 /* phaseA:required game data rules moved to data-loader.js */
 
-function escapeHtml(str){
- return String(str??'').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-}
 /* phaseA:data load state helpers moved to data-loader.js */
-
 
 const DEFAULT_ACTION_RISK_CHANCE=Object.freeze({
  forraje:0.08,
@@ -500,16 +495,16 @@ const DEFAULT_ACTION_SKILL_MAP=Object.freeze({
  explorar:['rastreador','explorador','precavido','combatiente']
 });
 const DEFAULT_ACTION_ICONS=Object.freeze({
- forraje:{icon:'🌿',label:'Forrajear'},
- reciclar:{icon:'⚙',label:'Reciclar'},
- construir:{icon:'🔨',label:'Construir'},
- explorar:{icon:'🧭',label:'Explorar'},
- viajar:{icon:'🥾',label:'Viajar'},
- vigilar:{icon:'👁',label:'Vigilar'},
- defender:{icon:'🛡',label:'Defender'},
- atacar:{icon:'⚔',label:'Atacar'},
- descansar:{icon:'💤',label:'Descansar'},
- investigar:{icon:'🔬',label:'Investigar'}
+ forraje:{icon:'\u{1F33F}',label:'Forrajear'},
+ reciclar:{icon:'\u2699',label:'Reciclar'},
+ construir:{icon:'\u{1F528}',label:'Construir'},
+ explorar:{icon:'\u{1F9ED}',label:'Explorar'},
+ viajar:{icon:'\u{1F97E}',label:'Viajar'},
+ vigilar:{icon:'\u{1F441}',label:'Vigilar'},
+ defender:{icon:'\u{1F6E1}',label:'Defender'},
+ atacar:{icon:'\u2694',label:'Atacar'},
+ descansar:{icon:'\u{1F4A4}',label:'Descansar'},
+ investigar:{icon:'\u{1F52C}',label:'Investigar'}
 });
 const DEFAULT_AUDIO_CONFIG=Object.freeze({bgVolume:0.18, combatVolume:0.25});
 const DEFAULT_INTRO_LINES=Object.freeze(['War...','War never changes.']);
@@ -529,7 +524,12 @@ function getActionSkillMap(){
 }
 function getActionIcons(){
  const configured=gameData.config?.ui?.actionIcons;
- return (configured && typeof configured==='object' && !Array.isArray(configured)) ? configured : DEFAULT_ACTION_ICONS;
+ if(!(configured && typeof configured==='object' && !Array.isArray(configured))) return DEFAULT_ACTION_ICONS;
+ const merged={};
+ Object.keys(DEFAULT_ACTION_ICONS).forEach(key=>{
+  merged[key]={...DEFAULT_ACTION_ICONS[key], label:configured[key]?.label||DEFAULT_ACTION_ICONS[key].label};
+ });
+ return merged;
 }
 function getAudioConfig(){
  const configured=gameData.config?.audio;
@@ -623,11 +623,15 @@ function initGame(){
  state.cemetery=[];
  state.actionXP={};
  state.inventory=[];
+ state.junk=[];
  state.dog=null;
  state.activeThreats=[];
  state.threatCooldowns={};
  state.buildingDisableTimers={};
  state._oneDayOutputMods=[];
+ state.values={};
+ state.restEffects={moraleChanceBonus:0,moraleAmount:1,injuryRollBonus:0};
+ state.npcContinuousEffects={};
  state._processingDay=false;
  state.locations=[];
  state._seenExplore=new Set();
@@ -652,7 +656,6 @@ function initGame(){
  const starterCount=Math.max(1, Number(gameData.config?.starting?.survivors??3) || 3);
  state.relationships={};
  state._relationshipProgressDay=0;
- state.npcs=typeof normalizeNpcStateList==='function' ? normalizeNpcStateList(gameData.npcs||[]) : [];
  const starters=pickStartingSurvivors(starterCount);
  if(starters.length===0){
  handleDataLoadError('survivors.json', 'no contiene supervivientes válidos para iniciar la partida');
@@ -687,7 +690,9 @@ function initGame(){
  travelReturnDay:null,
  inventory:normalizeInventoryList(deepClone(s.inventory||[])),
  inventorySlots:Number(s.inventorySlots||3),
- equippedWeapon:s.equippedWeapon||null
+ equippedWeapon:s.equippedWeapon||null,
+ equippedGear:deepClone(s.equippedGear||[]),
+ joinedOnDay:state.day
  }));
  initializeSeedRelationships();
 
@@ -712,17 +717,12 @@ function initGame(){
  maxLevel:Number(b.maxLevel||5),
  category:b.category||'Base',
  map:deepClone(b.map||null),
+ hiddenUntilUnlocked:!!(b.hiddenUntilUnlocked || b.hiddenUntilRevealed || b.mapHiddenUntilUnlocked),
+ mapUnlocked:!(b.hiddenUntilUnlocked || b.hiddenUntilRevealed || b.mapHiddenUntilUnlocked) || !!b.unlocked || !!b.initial,
+ revealedOnMap:!(b.hiddenUntilUnlocked || b.hiddenUntilRevealed || b.mapHiddenUntilUnlocked) || !!b.unlocked || !!b.initial,
  electricityCost:Number(b.electricityCost||0),
  constructionDays:deepClone(b.constructionDays!=null?b.constructionDays:1),
- upgradeRequirements:deepClone(b.upgradeRequirements||{}),
- actions:deepClone(b.actions||[]),
- type:b.type||'',
- fromAbandoned:!!b.fromAbandoned,
- unlocked:!!b.unlocked,
- abandonedBuilding:!!b.abandonedBuilding,
- recycleDays:Number(b.recycleDays||0),
- recycleYieldMin:Number(b.recycleYieldMin||0),
- recycleYieldMax:Number(b.recycleYieldMax||0)
+ upgradeRequirements:deepClone(b.upgradeRequirements||{})
  };
 });
 
@@ -806,7 +806,8 @@ function assignAction(id,type){
  if((type==='defender'||type==='atacar')&&isExteriorSurvivor(s)){addLog(`${s.name} está en el exterior y no puede participar en amenazas de la base.`);render();return}
  if(type==='viajar'){openTravelPopup(id);render();return}
  if(type==='construir'){openBuildModal(id);render();return}
- s.action={type};s.status='ocupado';addLog(`${s.name} ha sido asignado a ${actionLabel(type)}.`);render();
+ const finalType=(type==='descansar'&&typeof isExteriorSurvivor==='function'&&isExteriorSurvivor(s)&&s.location!=='travelling') ? 'descansar_exterior' : type;
+ s.action={type:finalType};s.status='ocupado';addLog(`${s.name} ha sido asignado a ${actionLabel(finalType)}.`);render();
 }
 
 /* dedup:queueGraveInjuryWarningsForNewDay moved to survivors.js */
@@ -1044,6 +1045,13 @@ function resolveActions(){
  const restState=getActionStartMoraleState(s);
  const restChance=restState==='low' ? 0.25 : restState==='normal' ? 0.10 : 0;
  tryGainMoraleWithChance(s, restChance, `😊 ${s.name} consigue recomponerse un poco al descansar. +1 moral.`);
+ const restEffects=(state.restEffects&&typeof state.restEffects==='object') ? state.restEffects : {};
+ const npcRestEffects=typeof getAssignedNpcRestEffectTotals==='function' ? getAssignedNpcRestEffectTotals() : {};
+ const extraRestChance=Math.max(0, (Number(restEffects.moraleChanceBonus||0)||0)+(Number(npcRestEffects.moraleChanceBonus||0)||0))/100;
+ const extraRestAmount=Math.max(1, Number(restEffects.moraleAmount||1)||1, Number(npcRestEffects.moraleAmount||1)||1);
+ if(extraRestChance>0 && typeof tryGainMoraleAmountWithChance==='function'){
+ tryGainMoraleAmountWithChance(s, extraRestChance, extraRestAmount);
+ }
  maybeApplyRestGroupMoraleBonus(s);
  if(s.morale>0) s._lowMoraleRestOnly=false;
  }else if(resolvedType==='construir'){
@@ -1052,10 +1060,30 @@ function resolveActions(){
  if(bld&&bld._underConstruction){
  const workerBonus=Math.max(0,getEquippedEffectTotal(s,'worker')); bld._constructionDaysLeft=Math.max(0,(bld._constructionDaysLeft||1)-1-workerBonus);
  if(bld._constructionDaysLeft>0){
+ if(bld._abandonedRecycle||bld._abandonedAdaptation){
+ s._keepBuilding=true;
+ const workVerb=bld._abandonedRecycle?'reciclando':'adaptando';
+ addLog(`[TRABAJO] ${s.name} continua ${workVerb} ${bld.name}. (${bld._constructionDaysLeft} dia${bld._constructionDaysLeft!==1?'s':''} restante${bld._constructionDaysLeft!==1?'s':''})`);
+ return;
+ }
  // Still building — keep survivor occupied
  s._keepBuilding=true;
  addLog(`🔨 ${s.name} continúa construyendo ${bld.name}. (${bld._constructionDaysLeft} día${bld._constructionDaysLeft!==1?'s':''} restante${bld._constructionDaysLeft!==1?'s':''})`);
  } else {
+ if(bld._abandonedRecycle){
+ bld._underConstruction=false;
+ addLog(`[OK] ${s.name} termina de reciclar ${bld.name}.`);
+ trackActionXP(s,'construir');
+ if(typeof finalizeCompletedAbandonedRecycles==='function') finalizeCompletedAbandonedRecycles(buildTarget);
+ return;
+ }
+ if(bld._abandonedAdaptation){
+ bld._underConstruction=false;
+ addLog(`[OK] ${s.name} termina de adaptar ${bld.name}.`);
+ trackActionXP(s,'construir');
+ if(typeof finalizeCompletedAbandonedAdaptations==='function') finalizeCompletedAbandonedAdaptations(buildTarget);
+ return;
+ }
  // Construction complete!
  bld._underConstruction=false;
  bld._constructionCost=0;
@@ -1119,6 +1147,7 @@ function resolveActions(){
  }
  });
  processGroupRestRomance();
+ if(typeof processNpcContinuousEffects==='function') processNpcContinuousEffects();
  state.survivors.forEach(s=>{ delete s._moraleStateAtActionStart; });
  // Collective attack resolution — only when attack day has arrived
  const hasAttackers=state.survivors.some(s=>s.action?.type==='atacar'&&s.status!=='muerto'&&!isExteriorSurvivor(s));
@@ -1164,11 +1193,9 @@ function applyFoodConsumption(){
  }
  const alive=aliveSurvivors().filter(s=>!isExteriorSurvivor(s));
  const aliveBase=aliveSurvivors().filter(s=>!isExteriorSurvivor(s));
- const recruitedNpcs=(typeof getRecruitedNpcs==='function' ? getRecruitedNpcs() : []).filter(Boolean);
  // Glotón: counts as 2 food portions
  const glutonCount=aliveBase.filter(s=>(s.negativeSkill||'').toLowerCase()==='glotón').length;
- const npcNeeded=recruitedNpcs.length*foodPer;
- const neededBase=aliveBase.length*foodPer + glutonCount + npcNeeded; // gluton counts double
+ const neededBase=aliveBase.length*foodPer + glutonCount; // gluton counts double
  const needed=Math.max(0,neededBase);
 
  if(state.food<=0){
@@ -1177,15 +1204,14 @@ function applyFoodConsumption(){
  s.fed=false;
  changeSurvivorHunger(s,2);
  });
- recruitedNpcs.forEach(npc=>{ if(typeof applyNpcNoFoodConsequence==='function') applyNpcNoFoodConsequence(npc); });
  state.stability=Math.max(0,state.stability-1);
  addLog(`🍽 Sin comida. Todos los supervivientes pasan hambre. Hambre +2 individual, -1 estabilidad.`);
  } else if(state.food<needed){
  // Shortage — need to choose who eats
  const canFeed=Math.floor(state.food/foodPer);
  state.food=Math.max(0,state.food-canFeed*foodPer);
- state._pendingFoodChoice={canFeed,survivors:[...alive],npcs:[...recruitedNpcs]};
- addLog(`🍽 Solo hay ${canFeed} ración${canFeed!==1?'es':''} para ${alive.length + recruitedNpcs.length} bocas.`);
+ state._pendingFoodChoice={canFeed,survivors:[...alive]};
+ addLog(`🍽 Solo hay ${canFeed} ración${canFeed!==1?'es':''} para ${alive.length} supervivientes.`);
  } else {
  // Everyone eats
  state.food-=needed;
@@ -1193,11 +1219,9 @@ function applyFoodConsumption(){
  s.fed=true;
  changeSurvivorHunger(s,-1);
  });
- recruitedNpcs.forEach(npc=>{ npc.fed=true; });
- addLog(`🍽 El grupo consume ${needed} comida.${recruitedNpcs.length?` (${recruitedNpcs.length} NPC${recruitedNpcs.length!==1?'s':''} incluidos)`:''}`);
+ addLog(`🍽 El grupo consume ${needed} comida.`);
  }
 }
-
 
 function maybeDamageEquippedWeapon(survivor, chance=0.2){
  if(!survivor) return;
@@ -1216,7 +1240,6 @@ function maybeDamageEquippedWeapon(survivor, chance=0.2){
  }
  }
 }
-
 
 function normalizeResourceKey(key){
  const raw=String(key||'').trim().toLowerCase();
@@ -1257,10 +1280,8 @@ function optionIsAffordable(opt){
 }
 /* dedup:runFoodAndMoralePhase moved to survivors.js */
 
-
 function resolveFoodChoice(fedIds){
  const alive=(state._pendingFoodChoice?.survivors||aliveSurvivors().filter(s=>!isExteriorSurvivor(s)));
- const npcs=(state._pendingFoodChoice?.npcs||[]);
  alive.forEach(s=>{
  if(fedIds.includes(s.id)){
  s.fed=true;
@@ -1272,19 +1293,9 @@ function resolveFoodChoice(fedIds){
  addLog(`🍽 ${s.name} no ha comido hoy. Hambre +2.`);
  }
  });
- npcs.forEach(npc=>{
-  if(fedIds.includes(npc.id)){
-   npc.fed=true;
-   addLog(`🍽 ${npc.name} recibe una ración.`);
-  } else {
-   npc.fed=false;
-   if(typeof applyNpcNoFoodConsequence==='function') applyNpcNoFoodConsequence(npc);
-  }
- });
  state._pendingFoodChoice=null;
  render();
 }
-
 
 function getNextTreatmentSurvivor(){
  const queue=Array.isArray(state._pendingTreatmentQueue)?state._pendingTreatmentQueue:[];
@@ -1314,7 +1325,6 @@ function getNextTreatmentSurvivor(){
 
 /* dedup:closeInjuryTreatmentPopup moved to survivors.js */
 
-
 function advanceTreatmentFlow(){
  const next=getNextTreatmentSurvivor();
  if(next){
@@ -1328,7 +1338,6 @@ function advanceTreatmentFlow(){
 
 /* dedup:openInjuryTreatmentPopup moved to survivors.js */
 
-
 function applyBarracksPenalty(){
  const overflow=Math.max(0,aliveSurvivors().length-barracksCapacity());
  if(overflow>0){state.stability=Math.max(0,state.stability-overflow);addLog(`Los barracones están saturados. -${overflow} estabilidad.`)}
@@ -1339,7 +1348,6 @@ function processDelayedEffects(){
  state.delayedQueue=state.delayedQueue.filter(item=>item.day!==state.day);
  due.forEach(item=>applyEffect(item.effect,true));
 }
-
 
 function dismissSurvivorById(targetId, reason='abandona el asentamiento'){
  if(!targetId) return false;
@@ -1462,7 +1470,6 @@ function trackActionXP(survivor, actionType){
  addLog(`★ ${survivor.name} ha aprendido: ${getSurvivorSkillLabel({skill:newSkill})}!`);
 }
 
-
 // ── ACTION ICONS ──
 // All possible actions in display order
 const ALL_ACTIONS = ['vigilar','forraje','reciclar','construir','explorar','viajar','atacar','defender','investigar','descansar'];
@@ -1554,17 +1561,13 @@ function getActiveSkillBonuses(context){
  .filter(b=>Object.keys(b).length>0);
 }
 
-
 // Helper: get all skills declared on a survivor, keeping legacy compatibility
 /* dedup:getSurvivorSkills moved to survivors.js */
-
 
 // Helper: get skill bonus for a specific survivor
 /* dedup:getSurvivorSkillLabel moved to survivors.js */
 
-
 // ── LOCATION SYSTEM ──
-
 
 function applyLootList(lootArr,target='base'){
  (lootArr||[]).forEach(entry=>{
@@ -1582,11 +1585,14 @@ function applyLootList(lootArr,target='base'){
 }
 
 /* moved to threats.js: getHostileTypeDef/getHostileDef/resolveHostileVariant/getHostileLabel */
+/* generateLocations: en resurgir.html, vehicles.js (después de este script) asigna window.generateLocations.
+   La que se ejecuta en partida es la de vehicles.js (zonas, persistencia exterior, plantillas fijas).
+   Si corriges lógica de localizaciones, revisa también esa función o ambas quedarán desalineadas. */
 function generateLocations(){
  const templates=gameData.locationTemplates||[];
  if(!templates.length) return;
  state.locations=[];
- const availableZones=(gameData.zones||[]).filter(z=>state.day>=(z.unlockDay||1));
+ const availableZones=(gameData.zones||[]).filter(z=>z?.startsUnlocked===true||!!state.discoveredZones?.[String(z?.id||'')]);
  const zone=availableZones.length
  ? availableZones[Math.floor(Math.random()*availableZones.length)]
  : null;
@@ -1670,7 +1676,6 @@ function generateLocations(){
 
 // ── SURVIVOR MORALE SYSTEM ──
 /* dedup:hasLowMoraleRestRestriction moved to survivors.js */
-
 
 function queueDeparturePopup(entry){
  if(!Array.isArray(state.departureQueue)) state.departureQueue=[];
@@ -1785,9 +1790,7 @@ function triggerSurvivorLeaving(s, opts={}){
 
 /* dedup:applyDailyMoraleDecay moved to survivors.js */
 
-
 /* dedup:applyUntreatedInjuryOutcome moved to survivors.js */
-
 
 function finalizeInjuriesEndOfDay(){
  aliveSurvivors().forEach(s=>{
@@ -1847,7 +1850,6 @@ function processInjuriesEndOfDay(){
 
  finalizeInjuriesEndOfDay();
 }
-
 
 function resetForNewDay(){
  if(!state.actionLimits) state.actionLimits={};
@@ -1970,6 +1972,8 @@ function resetAssignments(){
 
 function getAvailableActions(s){
  if(s.status==='muerto') return [];
+ const exteriorResident = typeof isExteriorSurvivor==='function' && isExteriorSurvivor(s) && s.location!=='travelling';
+ if(exteriorResident) return ['descansar'];
  if(hasLowMoraleRestRestriction(s)) return ['descansar'];
  if(requiresForcedRest(s)||Number(s.fatigue||0)<=0) return ['descansar'];
  const neg=(s.negativeSkill||'').toLowerCase().trim();
@@ -2030,7 +2034,6 @@ function actionSummary(s){
 }
 function statusLabel(status){return({activo:'Activo',ocupado:'Ocupado',herido:'Herido',muerto:'Muerto'})[status]||status}
 
-
 function getSurvivorImage(s){
  if(s.status==='muerto') return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230a0c09'/%3E%3Crect x='35' y='60' width='30' height='28' rx='2' fill='%23222' stroke='%23444' stroke-width='1.5'/%3E%3Crect x='40' y='65' width='20' height='4' rx='1' fill='%23444'/%3E%3Cpath d='M30 60 Q50 20 70 60 Z' fill='%23222' stroke='%23444' stroke-width='1.5'/%3E%3Ctext x='50' y='52' text-anchor='middle' font-size='14' fill='%23556' font-family='serif'%3E%E2%9C%9D%3C/text%3E%3Cpath d='M44 72 h12 M50 68 v8' stroke='%23445' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E`;
  if(hasActiveInjury(s)&&s.imageUrlInjured) return s.imageUrlInjured;
@@ -2078,7 +2081,6 @@ function injuredLabel(s){
 
 /* dedup:rollInjuryLevel moved to survivors.js */
 
-
 /* dedup:getMoraleEmoji moved to survivors.js */
 
 function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:'Moral',stability:'Estabilidad',meds:'Medicamentos',electricity:'Electricidad',chickens:'Gallinas',fuel:'Combustible'})[key]||key}
@@ -2086,18 +2088,52 @@ function resourceLabel(key){return({food:'Comida',materials:'Materiales',morale:
 
 /* dedup:getAliveSurvivorById moved to survivors.js */
 
-
 function barracksCapacity(){const base=Number(gameData.config?.rules?.barracksCapacity??4);return state.buildings.barracones?.built?state.buildings.barracones.level*base:0}
 /* dedup:injureSurvivor moved to survivors.js */
 
-
 /* dedup:killSurvivor moved to survivors.js */
 
+function transferDeadSurvivorInventoryToStorage(s){
+ const items=normalizeInventoryList(s?.inventory||[]);
+ const known=new Set(items.map(it=>String(it.itemId||it.id||'')));
+ [s?.equippedWeapon, ...(Array.isArray(s?.equippedGear)?s.equippedGear:[])].forEach(id=>{
+  const key=String(id||'');
+  if(!key||known.has(key)) return;
+  items.push(materializeItem({itemId:key}));
+  known.add(key);
+ });
+ if(!items.length) return 0;
+ if(!Array.isArray(state.inventory)) state.inventory=[];
+ if(!Array.isArray(state.junk)) state.junk=[];
+ items.forEach(raw=>{
+  const item=materializeItem(raw);
+  if(item.itemType==='junk') state.junk.push(item);
+  else state.inventory.push(item);
+ });
+ return items.length;
+}
+
+function getDeathLoveMemorial(s){
+ if(!s||typeof getRelationshipEntriesForSurvivor!=='function'||typeof getRelationshipOther!=='function') return null;
+ const entry=getRelationshipEntriesForSurvivor(s.id).find(rel=>rel?.type==='love');
+ const other=entry ? getRelationshipOther(entry, s.id) : null;
+ if(!other) return null;
+ return {id:other.id||'', name:other.name||other.id||''};
+}
+
+function getSurvivorDaysLived(s){
+ const start=Number(s?.joinedOnDay||1);
+ const end=Number(state.day||1);
+ return Math.max(1, end-start+1);
+}
 
 function _doKill(s, msg){
  cancelConstructionForSurvivor(s, 'superviviente muerto');
  cancelBaseUpgradeDevelopmentForSurvivor(s, 'superviviente muerto');
- if(isExteriorSurvivor(s) && Array.isArray(s.inventory) && s.inventory.length){
+ const recoveredItems=transferDeadSurvivorInventoryToStorage(s);
+ const loveMemorial=getDeathLoveMemorial(s);
+ const daysLived=getSurvivorDaysLived(s);
+ if(false && isExteriorSurvivor(s) && Array.isArray(s.inventory) && s.inventory.length){
  const loc=state.locations.find(l=>l.instanceId===s.exteriorSiteId);
  if(loc){
  if(!Array.isArray(loc.droppedItems)) loc.droppedItems=[];
@@ -2110,23 +2146,46 @@ function _doKill(s, msg){
  s.status='muerto';
  s.inventory=[];
  s.equippedWeapon=null;
+ s.equippedGear=[];
  state.cemetery.push({
  id:s.id,
  name:s.name,
  imageUrl:s.imageUrl||'',
  story:s.story||'',
- diedOnDay:state.day
+ diedOnDay:state.day,
+ joinedOnDay:s.joinedOnDay||1,
+ daysLived,
+ loveMemorial
  });
+ if(recoveredItems) addLog(`🎒 El equipo de ${s.name} pasa al almacén.`);
  const deathMsg=(msg||`${s.name} ha muerto.`);
  addLog(deathMsg);
  addTechnicalLog('survivor_dead','Un superviviente ha muerto.', {survivorId:s.id,survivorName:s.name,message:deathMsg});
 }
+function normalizeLogText(text){
+ let out=String(text??'');
+ const swaps=[
+  ['Día','Dia'],['Día','Dia'],['día','dia'],['día','dia'],['días','dias'],['días','dias'],['caído','caido'],['construcción','construccion'],['construcción','construccion'],['investigación','investigacion'],['investigación','investigacion'],['ración','racion'],['ración','racion'],['raciónes','raciones'],
+  ['❌','[FALLO]'],['❌','[FALLO]'],['✅','[OK]'],['✅','[OK]'],['⚠️','[ALERTA]'],['⚠','[ALERTA]'],['⚠','[ALERTA]'],
+  ['🍽','[COMIDA]'],['🍽','[COMIDA]'],['🏛','[BASE]'],['🏛','[BASE]'],['🔨','[CONSTRUIR]'],['🔨','[CONSTRUIR]'],['🧱','[RECICLAR]'],['🧱','[RECICLAR]'],['🏚','[RUINA]'],['🏚','[RUINA]'],
+  ['⚔','[COMBATE]'],['⚔','[COMBATE]'],['💀','[MUERTE]'],['💀','[MUERTE]'],['🩸','[HERIDA]'],['🩸','[HERIDA]'],['💊','[MEDS]'],['💊','[MEDS]'],['🔬','[INVESTIGAR]'],['🔬','[INVESTIGAR]'],
+  ['⛺','[CAMP]'],['⛺','[CAMP]'],['😊','[MORAL]'],['😞','[MORAL]'],['😐','[MORAL]'],['😊','[MORAL]'],['😞','[MORAL]'],['😐','[MORAL]'],['⚙','[INGENIERO]'],['⚙','[INGENIERO]'],['★','[SKILL]'],['★','[SKILL]']
+ ];
+ swaps.forEach(([from,to])=>{ out=out.split(from).join(to); });
+ const tagSwaps=[
+  ['[FALLO]','\u274c'],['[OK]','\u2705'],['[ALERTA]','\u26a0'],['[COMIDA]','\u{1F37D}'],['[BASE]','\u{1F3DB}'],['[CONSTRUIR]','\u{1F528}'],['[RECICLAR]','\u{1F9F1}'],['[RUINA]','\u{1F3DA}'],['[COMBATE]','\u2694'],['[MUERTE]','\u{1F480}'],['[HERIDA]','\u{1FA78}'],['[MEDS]','\u{1F48A}'],['[INVESTIGAR]','\u{1F52C}'],['[CAMP]','\u26FA'],['[MORAL]','\u{1F60A}'],['[INGENIERO]','\u2699'],['[SKILL]','\u2605']
+ ];
+ tagSwaps.forEach(([from,to])=>{ out=out.split(from).join(to); });
+ return out;
+}
 function addLog(text){
- const resolvedText=replaceDynamicNameTokens(text);
- state.log.unshift(`Día ${state.day}: ${resolvedText}`);
+ const resolvedText=normalizeLogText(replaceDynamicNameTokens(text));
+ state.log.unshift(`D\u00eda ${state.day}: ${resolvedText}`);
  state.log=state.log.slice(0,80);
  try{ renderLog(); }catch(e){}
 }
+window.addLog = addLog;
+window.normalizeLogText = normalizeLogText;
 function checkGameOver(){if(!state._gameInitialized)return false;if(aliveSurvivors().length<=0)return openGameOver('No queda ningún superviviente con vida.');if(state.stability<=0)return openGameOver('La estabilidad del asentamiento ha caído a cero. El grupo se disuelve.');return false}
 function pickStartingSurvivors(count){
  const all=(gameData.survivors||[]).filter(Boolean);
@@ -2243,7 +2302,6 @@ function attackPopupPayload(side, payload){
  };
 }
 
-
 document.getElementById('inviteYes').addEventListener('click',()=>{
  const btn=document.getElementById('inviteYes');
  if(btn.disabled) return;
@@ -2268,6 +2326,9 @@ document.getElementById('combatResultClose').addEventListener('click',()=>{
  finishAmbushQueueFlow();
  return;
  }
+});
+document.getElementById('logPopupClose').addEventListener('click',()=>{
+ document.getElementById('logPopup').classList.remove('open');
 });
 /* dedup:survivorHasSkill moved to survivors.js */
 
@@ -2301,7 +2362,7 @@ function joinSurvivor(s){
  _moralePositiveToday:false,
  _highMoraleDryDays:0,
  fed:true, status:'activo', action:null,
- location:'base', travelDest:null, travelArrivalDay:null, travelReturnDay:null, inventory:deepClone(s.inventory||[]), inventorySlots:Number(s.inventorySlots||3), equippedWeapon:s.equippedWeapon||null, equippedGear:deepClone(s.equippedGear||[]), equippedGear:deepClone(s.equippedGear||[]),
+ location:'base', travelDest:null, travelArrivalDay:null, travelReturnDay:null, inventory:deepClone(s.inventory||[]), inventorySlots:Number(s.inventorySlots||3), equippedWeapon:s.equippedWeapon||null, equippedGear:deepClone(s.equippedGear||[]), joinedOnDay:state.day,
  });
  addLog('✅ '+s.name+' se une al asentamiento.');
  const joined=state.survivors[state.survivors.length-1];
@@ -2333,9 +2394,7 @@ function attemptRecruitmentOffer(s, source='evento'){
  return true;
 }
 
-loadDefaults();
 // Try to load from /data/ (works on Netlify/server). Falls back to embedded data if not found.
-
 
 // ── MUSIC ──
 function getBgMusicEl(){
@@ -2551,7 +2610,6 @@ document.getElementById('survivorLoreModal').addEventListener('click',(e)=>{
  if(e.target===e.currentTarget) e.currentTarget.classList.remove('open');
 });
 
-
 window.addEventListener('DOMContentLoaded',()=>{
  try{ initPopupStacking(); }catch(e){}
  document.getElementById('inventoryModalClose')?.addEventListener('click',closeInventoryModal);
@@ -2559,7 +2617,6 @@ window.addEventListener('DOMContentLoaded',()=>{
  document.getElementById('repairModalClose')?.addEventListener('click',closeRepairModal);
  try{ renderLog(); }catch(e){}
 });
-
 
 window.addEventListener('DOMContentLoaded',()=>{
  const graveBtn=document.getElementById('graveWarningConfirm');
@@ -2702,78 +2759,6 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
  }
 
- function getAbandonedDef(id){
-  const key=String(id||'');
-  const live=state?.buildings?.[key]||null;
-  const catalog=(gameData.buildings||[]).find(def=>String(def?.id||'')===key && !!def?.abandonedBuilding) || null;
-  if(catalog) return catalog;
-  if(live?.abandonedBuilding){
-   return {
-    id:live.id,
-    name:live.name,
-    description:live.description||live.desc||'',
-    image:live.image||'',
-    map:deepClone(live.map||null),
-    category:live.category||'Base',
-    abandonedBuilding:true,
-    recycleDays:Number(live.recycleDays||live._constructionDays||0),
-    recycleYieldMin:Number(live.recycleYieldMin||live._abandonedRecycleMin||0),
-    recycleYieldMax:Number(live.recycleYieldMax||live._abandonedRecycleMax||0)
-   };
-  }
-  return null;
- }
-
- function getBaseActiveSurvivors(){
-  return (state.survivors||[]).filter(s=>s && s.status==='activo' && s.location==='base' && s.status!=='muerto');
- }
- window.getAbandonedDef=getAbandonedDef;
- window.getBaseActiveSurvivors=getBaseActiveSurvivors;
-
- function startAbandonedRecycle(buildingId, survivorId){
-  const b=state.buildings?.[buildingId];
-  const def=getAbandonedDef(buildingId);
-  const s=(state.survivors||[]).find(x=>x && x.id===survivorId);
-  if(!b || !def || !s) return;
-  if(b._underConstruction || b._abandonedRecycle) return;
-  if(s.status!=='activo' || s.location!=='base' || s.status==='muerto') return;
-  const days=Math.max(1, Number(def.recycleDays||4) || 4);
-  b._constructionDays=days;
-  b._constructionDaysLeft=days;
-  b._constructionCost=0;
-  b._lastConstructionCost=0;
-  b._underConstruction=true;
-  b._abandonedRecycle=true;
-  b._abandonedRecycleMin=Math.max(0, Number(def.recycleYieldMin||5) || 5);
-  b._abandonedRecycleMax=Math.max(b._abandonedRecycleMin, Number(def.recycleYieldMax||9) || 9);
-  s.action={type:'construir', target:buildingId};
-  s.status='ocupado';
-  addLog(`🧱 ${s.name} comienza a reciclar ${b.name}. Tiempo: ${days} días.`);
-  closeBuildingPopup();
-  render();
- }
-  window.startAbandonedRecycle=startAbandonedRecycle;
-
- function finalizeCompletedAbandonedRecycles(){
-  if(!state || !state.buildings) return;
-  const ids=Object.keys(state.buildings).filter(id=>{
-   const b=state.buildings[id];
-   return b && b._abandonedRecycle && !b._underConstruction;
-  });
-  ids.forEach(id=>{
-   const b=state.buildings[id];
-   if(!b) return;
-   const minYield=Math.max(0, Number(b._abandonedRecycleMin||5) || 5);
-   const maxYield=Math.max(minYield, Number(b._abandonedRecycleMax||9) || 9);
-   const materials=minYield + Math.floor(Math.random()*(maxYield-minYield+1));
-   state.materials=(Number(state.materials||0)+materials);
-   addLog(`🧱 ${b.name} ha sido reciclado. +${materials} materiales.`);
-   delete state.buildings[id];
-   if(Array.isArray(gameData.buildings)) gameData.buildings=gameData.buildings.filter(def=>String(def?.id||'')!==String(id));
-   if(state.currentDetail===id) closeBuildingPopup();
-  });
- }
-
  const previousGetBaseMapBuildings=window.getBaseMapBuildings;
  if(typeof previousGetBaseMapBuildings==='function' && !previousGetBaseMapBuildings.__garageDedupeWrapped){
   window.getBaseMapBuildings=function(){
@@ -2790,9 +2775,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   window.getBaseMapBuildings.__garageDedupeWrapped=true;
  }
 
+ const previousShowBuildingDetail=window.showBuildingDetail;
+ if(typeof previousShowBuildingDetail==='function' && !previousShowBuildingDetail.__abandonedWrapped2){
+  window.showBuildingDetail=function(id){
+   dedupeGarageBuildings();
+   return previousShowBuildingDetail.apply(this, arguments);
+  };
+  window.showBuildingDetail.__abandonedWrapped2=true;
+ }
 
  function injectExteriorVehicleCard(){
   if(activeMapTab!=='exterior') return;
+  if(typeof window.injectExteriorCampControls==='function') return;
   const list=document.getElementById('survivorList');
   if(!list) return;
   list.querySelector('[data-exterior-camp-actions]')?.remove();
@@ -2805,31 +2799,30 @@ window.addEventListener('DOMContentLoaded',()=>{
    .map(item=>`<span>${item.icon} <b>${item.amount}</b> ${item.label}</span>`)
    .join(' · ');
   const card=document.createElement('div');
-  card.className='survivor-card';
+  card.className='survivor-card survivor-wide-banner';
   card.dataset.vehicleCard='1';
+  card.style.cssText='width:100%;min-width:100%;display:grid;grid-template-columns:112px 1fr;gap:10px;padding:10px;border-left:3px solid var(--accent-bright);background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));';
   card.innerHTML=`
-   <div class="avatar"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:26px;">🚗</div></div>
-   <div class="survivor-head-row">
-    <div class="survivor-name-wrap"><div class="survivor-name">${escapeHtml(vehicle.name||'Vehículo')}</div></div>
-    <div class="badge activo">Vehículo</div>
-   </div>
-   <div class="survivor-meta-line">
-    <span class="meta-fatigue"><span style="color:var(--ok)">⛽</span> ${vehicle.fuelCurrent}/${vehicle.fuelCapacity}</span>
-    <span class="meta-morale" style="color:var(--ok-bright);font-weight:700;">Estado ${vehicle.condition}/${vehicle.maxCondition} · ${escapeHtml(vehicleStatusLabel(vehicle))}</span>
-   </div>
-   <div class="survivor-health-line ok"><span style="color:var(--ok-bright);">⛺ Campamento exterior:</span> <b style="color:var(--text);">${resources||'Sin recursos'}</b></div>
-   <div class="survivor-note"><span style="color:var(--ok-bright);">📍 ${escapeHtml(getExteriorZoneName())}</span><br><span style="color:var(--muted);">${extCount} superviviente${extCount!==1?'s':''} en campamento</span></div>
-   <div class="action-bar" style="display:flex;gap:8px;flex-wrap:wrap;">
-    <button class="btn secondary" id="vehicleExteriorRestBtn" ${extCount?'':'disabled'}>🛏 Descansar</button>
-    <button class="btn primary" id="vehicleExteriorReturnBtn" ${extCount?'':'disabled'}>↩ Volver a base</button>
-   </div>
-   <div class="survivor-slot-grid">
-    <button class="survivor-slot lore-btn" disabled title="Ficha de vehículo">🚗</button>
-    <button class="survivor-slot inv-btn" disabled title="Campamento exterior">⛺</button>
-    <button class="survivor-slot dog-btn empty" disabled title="Sin acción adicional">—</button>
-    <button class="survivor-slot future-btn empty" disabled title="Espacio reservado">▣</button>
+   <div class="avatar" style="width:112px;height:112px;clip-path:none;"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px;">🚗</div></div>
+   <div style="display:grid;gap:8px;min-width:0;">
+    <div class="survivor-head-row" style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+      <div class="survivor-name-wrap" style="display:flex;flex-direction:column;gap:3px;min-width:0;"><div class="survivor-name" style="font-size:18px;color:var(--ok-bright);">${escapeHtml(vehicle.name||'Vehículo')}</div><div style="font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;">Campamento exterior · ${escapeHtml(getExteriorZoneName())}</div></div>
+      <div class="badge activo">Vehículo</div>
+    </div>
+    <div class="survivor-meta-line" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;align-items:center;">
+      <span class="meta-fatigue"><span style="color:var(--ok)">⛽</span> ${vehicle.fuelCurrent}/${vehicle.fuelCapacity}</span>
+      <span class="meta-morale" style="color:var(--ok-bright);font-weight:700;">Estado ${vehicle.condition}/${vehicle.maxCondition} · ${escapeHtml(vehicleStatusLabel(vehicle))}</span>
+    </div>
+    <div class="survivor-health-line ok"><span style="color:var(--ok-bright);">📦 Campamento exterior:</span> <b style="color:var(--text);">${resources||'Sin recursos'}</b></div>
+    <div class="survivor-note"><span style="color:var(--ok-bright);">👥 Expedición:</span> ${extCount} superviviente${extCount!==1?'s':''} en campamento.</div>
+    <div class="action-bar" style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn secondary" id="vehicleExteriorCampBtn">⛺ Ver campamento</button>
+      <button class="btn secondary" id="vehicleExteriorRestBtn" ${extCount?'':'disabled'}>🛏 Descansar</button>
+      <button class="btn primary" id="vehicleExteriorReturnBtn" ${extCount?'':'disabled'}>↩ Volver a base</button>
+    </div>
    </div>`;
   list.insertBefore(card, list.firstChild||null);
+  document.getElementById('vehicleExteriorCampBtn')?.addEventListener('click',openExteriorVehicleDetail);
   document.getElementById('vehicleExteriorRestBtn')?.addEventListener('click',openExteriorCampRestPopup);
   document.getElementById('vehicleExteriorReturnBtn')?.addEventListener('click',()=>window.openTravelReturnPopup('exterior'));
   const meta=document.getElementById('uiV2SurvivorMeta');
@@ -2853,7 +2846,6 @@ window.addEventListener('DOMContentLoaded',()=>{
  if(typeof previousRender==='function' && !previousRender.__abandonedFinalizeWrapped2){
   window.render=function(){
    dedupeGarageBuildings();
-   finalizeCompletedAbandonedRecycles();
    const result=previousRender.apply(this, arguments);
    if(activeMapTab==='exterior'){
     const list=document.getElementById('survivorList');
@@ -2868,49 +2860,13 @@ window.addEventListener('DOMContentLoaded',()=>{
   window.render.__abandonedFinalizeWrapped2=true;
  }
 
- setTimeout(()=>{ try{ dedupeGarageBuildings(); finalizeCompletedAbandonedRecycles(); if(state._gameInitialized && typeof render==='function') render(); }catch(_e){} },0);
+ setTimeout(()=>{ try{ dedupeGarageBuildings(); if(state._gameInitialized && typeof render==='function') render(); }catch(_e){} },0);
 })();
 
 (()=>{
  if(window.__resurgirDrunkCantinaPatch) return;
  window.__resurgirDrunkCantinaPatch=true;
 
- function getAbandonedAdaptationDefs(){
-  return (gameData?.buildings||[]).filter(def=>def && def.type==='adaptation' && def.fromAbandoned);
- }
- function getAbandonedAdaptationDef(id){
-  const key=String(id||'').trim().toLowerCase();
-  return getAbandonedAdaptationDefs().find(def=>String(def?.id||'').trim().toLowerCase()===key) || null;
- }
- function getAbandonedAdaptationName(id){
-  return getAbandonedAdaptationDef(id)?.name || String(id||'');
- }
- function getAbandonedAdaptationCost(def){
-  return Number(def?.cost||10);
- }
- function getAbandonedAdaptationDays(def){
-  return Number(def?.constructionDays||def?.days||3);
- }
- function getAbandonedAdaptationEffect(def){
-  return String(def?.effect || def?.levelEffects?.['1'] || def?.levelEffects?.[1] || '');
- }
- function getAbandonedAdaptationDescription(def){
-  if(!def) return '';
-  if(def?.description) return String(def.description);
-  const lvl=Array.isArray(def?.levels) ? def.levels.find(x=>Number(x?.level||0)===1) : null;
-  return String(lvl?.description || '');
- }
- function getBuiltOrAssignedAbandonedAdaptationIds(){
-  const ids=new Set();
-  Object.values(state?.buildings||{}).forEach(b=>{
-   const adaptationId=String(b?._abandonedAdaptation || '').trim().toLowerCase();
-   if(adaptationId) ids.add(adaptationId);
-   const bid=String(b?.id||'').trim().toLowerCase();
-   const match=bid.match(/^(cantina|sala_comun)_/);
-   if(match) ids.add(match[1]);
-  });
-  return ids;
- }
  function ensureDrunkArrays(s){
   if(!s || typeof s!=='object') return s;
   s.drunk=Math.max(0, Number(s.drunk||0)||0);
@@ -2933,7 +2889,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 /* dedup:hasSurvivorAlertStatus moved to survivors.js */
 
  function getStatusButtonMarkup(s){
-  const active=hasSurvivorAlertStatus(s);
+  const active=typeof hasSurvivorAlertStatus === 'function' ? hasSurvivorAlertStatus(s) : false;
   return `<button class="survivor-slot future-btn ${active?'occupied':'empty'}" title="${escapeAttr(active?'Estados y efectos activos':'Sin estados activos')}" ${active?'':'disabled'}>${active?'❗':'▣'}</button>`;
  }
  function ensureStatusModal(){
@@ -2977,13 +2933,15 @@ window.addEventListener('DOMContentLoaded',()=>{
    return (state?.survivors||[]).find(s=>s.id===effect.targetId && s.status!=='muerto') || null;
   }
   const mode=String(effect?.targetMode||'').trim();
+  const normalizedMode=mode.toLowerCase();
+  if(['allactors','alleventactors','actors','eventactors','actores'].includes(normalizedMode)) return null;
   if(mode==='action'){
    const action=effect.action || state?.pendingEvent?.relatedAction;
    const ids=action && state?._lastDayActionSurvivors?.[action];
    const pool=(ids||[]).map(id=>(state?.survivors||[]).find(s=>s.id===id && s.status!=='muerto')).filter(Boolean);
    return pool.length ? pick(pool) : null;
   }
-  const match=mode.match(/^actor(\d)$/);
+  const match=normalizedMode.match(/^(?:event)?actor(\d)$/);
   if(match){
    const idx=Math.max(0, Number(match[1])-1);
    return getEventActorsSafe(state?.pendingEvent)[idx] || null;
@@ -2993,125 +2951,12 @@ window.addEventListener('DOMContentLoaded',()=>{
  }
 /* dedup:modifySurvivorDrunk moved to survivors.js */
 
- function unlockAbandonedBuildingOption(buildingKey, delayed=false){
-  const key=String(buildingKey||'').trim().toLowerCase();
-  if(!key) return;
-  const def=getAbandonedAdaptationDef(key);
-  if(!def) return;
-  if(!def.unlocked){
-   def.unlocked=true;
-   addLog(`${delayed?'[Retrasado] ':''}🏚 Se desbloquea una nueva adaptación de edificio abandonado: ${def.name||key}.`);
-  }
- }
- function getUnlockedAbandonedAdaptations(){
-  const used=getBuiltOrAssignedAbandonedAdaptationIds();
-  return getAbandonedAdaptationDefs().filter(def=>!!def?.unlocked && !used.has(String(def.id||'').trim().toLowerCase()));
- }
- window.getAbandonedAdaptationDef=getAbandonedAdaptationDef;
- window.getAbandonedAdaptationCost=getAbandonedAdaptationCost;
- window.getAbandonedAdaptationDays=getAbandonedAdaptationDays;
- window.getAbandonedAdaptationEffect=getAbandonedAdaptationEffect;
- window.getAbandonedAdaptationDescription=getAbandonedAdaptationDescription;
- window.getUnlockedAbandonedAdaptations=getUnlockedAbandonedAdaptations;
- function startAbandonedAdaptation(buildingId, adaptationId, survivorId){
-  const b=state.buildings?.[buildingId];
-  const s=(state.survivors||[]).find(x=>x && x.id===survivorId);
-  const adaptation=getAbandonedAdaptationDef(adaptationId);
-  if(!b || !s || !adaptation) return;
-  const adapKey=String(adaptation.id||'').trim().toLowerCase();
-  if(getBuiltOrAssignedAbandonedAdaptationIds().has(adapKey)){
-   addLog(`❌ Ya existe una ${adaptation.name} en el asentamiento.`);
-   return;
-  }
-  const cost=getAbandonedAdaptationCost(adaptation);
-  const days=getAbandonedAdaptationDays(adaptation);
-  if(Number(state.materials||0) < cost){
-   addLog(`❌ No hay materiales suficientes para adaptar ${b.name}.`);
-   return;
-  }
-  state.materials-=cost;
-  b._constructionDays=days;
-  b._constructionDaysLeft=days;
-  b._constructionCost=0;
-  b._lastConstructionCost=0;
-  b._underConstruction=true;
-  b._abandonedAdaptation=adaptation.id;
-  s.action={type:'construir', target:buildingId};
-  s.status='ocupado';
-  addLog(`🏚 ${s.name} empieza a adaptar ${b.name} en ${adaptation.name}. Coste: ${cost} materiales.`);
-  closeBuildingPopup();
-  render();
- }
- window.startAbandonedAdaptation=startAbandonedAdaptation;
- function finalizeCompletedAbandonedAdaptations(){
-  if(!state || !state.buildings) return;
-  const ids=Object.keys(state.buildings).filter(id=>{
-   const b=state.buildings[id];
-   return b && b._abandonedAdaptation && !b._underConstruction;
-  });
-  ids.forEach(oldId=>{
-   const oldB=state.buildings[oldId];
-   const adaptation=getAbandonedAdaptationDef(oldB._abandonedAdaptation);
-   if(!adaptation) return;
-   const newId=`${adaptation.id}_${oldId}`;
-   const oldDef=(gameData.buildings||[]).find(def=>String(def?.id||'')===String(oldId)) || {};
-   const effect=getAbandonedAdaptationEffect(adaptation);
-   const description=getAbandonedAdaptationDescription(adaptation);
-   const newMap=deepClone(oldDef.map||oldB.map||{});
-   if(newMap && typeof newMap==='object' && 'specialStyle' in newMap) delete newMap.specialStyle;
-   const newDef={
-    id:newId,
-    name:adaptation.name,
-    category:'Base',
-    initial:false,
-    constructible:true,
-    cost:getAbandonedAdaptationCost(adaptation),
-    maxLevel:Number(adaptation.maxLevel||1),
-    map:newMap,
-    image:oldB.image||oldDef.image||adaptation.image||'',
-    description,
-    effect,
-    actions:deepClone(adaptation.actions||[]),
-    levelEffects:deepClone(adaptation.levelEffects||{1:effect})
-   };
-   gameData.buildings=(gameData.buildings||[]).filter(def=>String(def?.id||'')!==String(oldId));
-   gameData.buildings.push(newDef);
-   delete state.buildings[oldId];
-   state.buildings[newId]={
-    id:newId,
-    name:adaptation.name,
-    desc:effect,
-    description,
-    image:oldB.image||oldDef.image||adaptation.image||'',
-    levelEffects:deepClone(adaptation.levelEffects||{1:effect}),
-    cost:getAbandonedAdaptationCost(adaptation),
-    built:true,
-    level:1,
-    maxLevel:Number(adaptation.maxLevel||1),
-    active:true,
-    constructible:true,
-    actions:deepClone(adaptation.actions||[])
-   };
-   addLog(`🏗 ${oldB.name} ha sido adaptado y ahora es ${adaptation.name}.`);
-   if(state.currentDetail===oldId) closeBuildingPopup();
-  });
- }
-
  const oldApplyEffect=window.applyEffect;
  window.applyEffect=function(effect, delayed){
   ensureAllDrunkData();
   if(effect && ['addFatigue','removeFatigue','moraleSurvivor'].includes(effect.type) && !effect.targetId && effect.targetMode){
    const target=resolveEffectTargetByMode(effect);
    if(target) effect={...effect, targetId:target.id};
-  }
-  const abandonedUnlockKey=String(effect?.building||effect?.id||'').trim().toLowerCase();
-  if(effect?.type==='unlockAbandonedBuilding'){
-   unlockAbandonedBuildingOption(abandonedUnlockKey||'cantina', delayed);
-   return;
-  }
-  if(effect?.type==='unlockBuilding' && getAbandonedAdaptationDef(abandonedUnlockKey)){
-   unlockAbandonedBuildingOption(abandonedUnlockKey, delayed);
-   return;
   }
   if(effect?.type==='addDrunk' || effect?.type==='removeDrunk'){
    const target=resolveEffectTargetByMode(effect);
@@ -3121,13 +2966,16 @@ window.addEventListener('DOMContentLoaded',()=>{
   return oldApplyEffect(effect, delayed);
  };
 
+ const oldShowBuildingDetail=window.showBuildingDetail;
+ window.showBuildingDetail=function(id){
+  ensureAllDrunkData();
+  return oldShowBuildingDetail.apply(this, arguments);
+ };
 
  const oldResolveActions=window.resolveActions;
  window.resolveActions=function(){
   ensureAllDrunkData();
-  const cantinaWorkers=(state?.survivors||[]).filter(s=>s?.action?.type==='cantina' && s.status!=='muerto').map(s=>({s, action:deepClone(s.action)}));
   const resters=(state?.survivors||[]).filter(s=>['descansar','descansar_exterior'].includes(s?.action?.type) && s.status!=='muerto');
-  cantinaWorkers.forEach(({s})=>{ s._cantinaHold=true; s._cantinaOriginalAction=deepClone(s.action); s.action=null; if(s.status==='ocupado') s.status='activo'; });
   const result=oldResolveActions.apply(this, arguments);
   resters.forEach(s=>{
    ensureDrunkArrays(s); syncBorrachoState(s);
@@ -3141,26 +2989,6 @@ window.addEventListener('DOMContentLoaded',()=>{
      addLog(`💧 ${s.name} descansa y reduce su drunk en 1. (${s.drunk})`);
     }
    }
-  });
-  cantinaWorkers.forEach(({s,action})=>{
-   s.action=action;
-   s.status='ocupado';
-   adjustSurvivorMorale(s,1);
-   addLog(`🍺 ${s.name} pasa por la cantina. +1 moral.`);
-   const drunkBefore=Math.max(0, Number(s.drunk||0)||0);
-   const drunkGainChance=Math.min(100, 40 + (5*drunkBefore));
-   if(Math.random()*100 < drunkGainChance){
-    s.drunk=drunkBefore+1;
-    addLog(`🍺 ${s.name} gana +1 drunk. (Total: ${s.drunk})`);
-    const borrachoChance=Math.min(100, 20 + (10*drunkBefore));
-    if(Math.random()*100 < borrachoChance){
-     addStateFlag(s,'borracho');
-     s.borrachoUntilDay=(Number(state?.day||0)+1);
-     addLog(`🥴 ${s.name} acaba borracho/a.`);
-    }
-   }
-   delete s._cantinaHold;
-   delete s._cantinaOriginalAction;
   });
   return result;
  };
@@ -3176,224 +3004,36 @@ window.addEventListener('DOMContentLoaded',()=>{
  window.renderSurvivors=function(){
   ensureAllDrunkData();
   const result=oldRenderSurvivors.apply(this, arguments);
-  document.querySelectorAll('#survivorList > .survivor-card:not([data-vehicle-card])').forEach(card=>{
-   const actionBtn=card.querySelector('.action-icon-btn[data-sid]');
-   if(!actionBtn) return;
-   const sid=actionBtn.dataset.sid;
-   const s=(state?.survivors||[]).find(x=>x.id===sid);
-   if(!s) return;
-   const slotGrid=card.querySelector('.survivor-slot-grid');
-   const futureBtn=slotGrid?.querySelector('.future-btn');
-   if(futureBtn){
-    futureBtn.outerHTML=getStatusButtonMarkup(s);
-    const newBtn=slotGrid.querySelector('.future-btn');
-    if(newBtn && hasSurvivorAlertStatus(s)) newBtn.addEventListener('click',()=>window.openSurvivorStatusModal(sid));
-   }
-  });
+  setTimeout(() => {
+   const cards = document.querySelectorAll('#survivorList > .survivor-card');
+   cards.forEach(card=>{
+    if(card.hasAttribute('data-vehicle-card')) return;
+    const actionBtn=card.querySelector('.action-icon-btn[data-sid]');
+    if(!actionBtn) return;
+    const sid=actionBtn.dataset.sid;
+    const s=(state?.survivors||[]).find(x=>x.id===sid);
+    if(!s) return;
+    const slotGrid=card.querySelector('.survivor-slot-grid');
+    const futureBtn=slotGrid?.querySelector('.future-btn');
+    if(futureBtn){
+     futureBtn.outerHTML=getStatusButtonMarkup(s);
+     const newBtn=slotGrid.querySelector('.future-btn');
+     if(newBtn && typeof hasSurvivorAlertStatus === 'function' && hasSurvivorAlertStatus(s)) {
+      newBtn.addEventListener('click',()=>window.openSurvivorStatusModal(sid));
+     }
+    }
+   });
+  }, 0);
   return result;
  };
 
  const oldRender=window.render;
  window.render=function(){
   ensureAllDrunkData();
-  finalizeCompletedAbandonedAdaptations();
   return oldRender.apply(this, arguments);
  };
 
- setTimeout(()=>{ try{ ensureAllDrunkData(); finalizeCompletedAbandonedAdaptations(); if(typeof render==='function') render(); }catch(_e){} },0);
-})();
-
-(()=>{
- if(window.__resurgirAbandonedEventExplorePatch) return;
- window.__resurgirAbandonedEventExplorePatch=true;
-
- function countFreeAbandonedBuildings(){
-  return Object.keys(state?.buildings||{}).filter(id=>{
-   const b=state?.buildings?.[id];
-   const def=(typeof getAbandonedDef==='function') ? getAbandonedDef(id) : null;
-   return !!(b && def && !b._underConstruction && !b._abandonedAdaptation);
-  }).length;
- }
- function eventNeedsAbandonedBuilding(ev){
-  const effects=(typeof extractAllEventEffects==='function') ? extractAllEventEffects(ev) : [];
-  return effects.some(e=>{
-   if(!e) return false;
-   const key=String(e.building||e.id||'').trim().toLowerCase();
-   return ['cantina','sala_comun'].includes(key) && (e.type==='unlockAbandonedBuilding' || (e.type==='unlockBuilding' && !!getAbandonedAdaptationDef(key)));
-  });
- }
- function isEventEligibleForAbandonedBuildings(ev){
-  return !eventNeedsAbandonedBuilding(ev) || countFreeAbandonedBuildings()>0;
- }
- function withFilteredEventPools(fn){
-  const originalEvents=gameData.events;
-  const originalStory=gameData.story_events;
-  try{
-   if(Array.isArray(originalEvents)) gameData.events=originalEvents.filter(isEventEligibleForAbandonedBuildings);
-   if(Array.isArray(originalStory)) gameData.story_events=originalStory.filter(isEventEligibleForAbandonedBuildings);
-   return fn();
-  } finally {
-   gameData.events=originalEvents;
-   gameData.story_events=originalStory;
-  }
- }
-
- const oldBuildAndSetEvent=window.buildAndSetEvent;
- window.buildAndSetEvent=function(schema, forcedSurvivor){
-  if(schema && !isEventEligibleForAbandonedBuildings(schema)) return false;
-  return oldBuildAndSetEvent.apply(this, arguments);
- };
-
- ['checkStoryEvent','checkPriorityEvent','checkWeeklyEvent','chooseEvent','consumeQueuedPriorityEvent'].forEach(name=>{
-  const original=window[name];
-  if(typeof original==='function'){
-   window[name]=function(){ return withFilteredEventPools(()=>original.apply(this, arguments)); };
-  }
- });
-
-
- window.triggerExploreEvent=function(survivor){
-  const groupMods=getExploreGroupModifiers(survivor);
-  const pool=(gameData.events||[]).filter(e=>e&&e.type==='explore'&&isEventEligibleBySchedule(e)&&schemaHasEnoughEventActors(e, survivor)&&isEventEligibleForAbandonedBuildings(e));
-
-  const available=pool.filter(e=>e.repeatable||!state._seenExplore?.has(e.id));
-  if(available.length===0&&pool.length>0){
-   state._seenExplore=new Set();
-  }
-  const finalPool=available.length?available:pool;
-
-  let schema;
-  if(!finalPool.length){
-   schema={id:'explore_nothing',name:'Sin novedad',type:'explore',effects:[],repeatable:true};
-  } else {
-   const categoryWeights=getExploreEventPhaseWeights();
-   const rastreadorBonus=getSkillBonus(survivor,'explore_survivor');
-   const grouped=new Map();
-   for(const ev of finalPool){
-    const category=classifyExploreEvent(ev);
-    if(!grouped.has(category)) grouped.set(category, []);
-    grouped.get(category).push({...ev,_category:category});
-   }
-   const availableCategories=[...grouped.keys()];
-   const weightedCategories=availableCategories.map(category=>{
-    let w=Math.max(0, Number(categoryWeights?.[category]??0));
-    if(category==='survivor' && rastreadorBonus.categoryBonus){
-     w+=Number(rastreadorBonus.categoryBonus||0);
-    }
-    if(groupMods.positiveMult>1 && ['resources','survivor','narrative'].includes(category)){
-     w=Math.round(w*groupMods.positiveMult);
-    }
-    return {category, weight:Math.max(0,w)};
-   }).filter(item=>item.weight>0);
-
-   let chosenCategory=null;
-   if(weightedCategories.length){
-    const totalCat=weightedCategories.reduce((sum,item)=>sum+item.weight,0);
-    let r=Math.random()*totalCat;
-    chosenCategory=weightedCategories[0]?.category||null;
-    for(const item of weightedCategories){
-     r-=item.weight;
-     if(r<=0){ chosenCategory=item.category; break; }
-    }
-   } else {
-    chosenCategory=availableCategories[0]||null;
-   }
-
-   const categoryPool=(grouped.get(chosenCategory)||finalPool).map(ev=>{
-    let w=Math.max(1, Number(ev.weight||1));
-    const tone=String(ev?.tone||'').toLowerCase();
-    const positiveBonus=getSkillBonus(survivor,'event_positive');
-    const negativeBonus=getSkillBonus(survivor,'event_negative');
-    const isPositive = chosenCategory==='resources' || chosenCategory==='survivor' || chosenCategory==='narrative' || tone==='positive';
-    const isNegative = chosenCategory==='negative' || chosenCategory==='danger' || tone==='negative';
-    if(isPositive && positiveBonus.weightMult) w=Math.round(w*positiveBonus.weightMult);
-    if(isNegative && negativeBonus.weightMult) w=Math.round(w*negativeBonus.weightMult);
-    return {...ev,_w:Math.max(1,w)};
-   });
-
-   const total=categoryPool.reduce((s,e)=>s+e._w,0);
-   let r=Math.random()*total;
-   schema=categoryPool[0];
-   for(const e of categoryPool){
-    r-=e._w;
-    if(r<=0){schema=e;break;}
-   }
-
-   if(schema.id&&!schema.repeatable){
-    if(!state._seenExplore) state._seenExplore=new Set();
-    state._seenExplore.add(schema.id);
-   }
-
-   addTechnicalLog('explore_pick', 'Selección de evento de exploración.', {
-    survivorId:survivor.id,
-    survivorName:survivor.name,
-    availableCategories: weightedCategories,
-    chosenCategory,
-    chosenEventId: schema?.id || null,
-    chosenEventName: schema?.name || schema?.title || null
-   });
-  }
-
-  const name=schema.name||schema.title||'Sin novedad';
-  const survivorName=survivor.name;
-
-  let effects=[];
-  if(schema.choiceMode==='choice'||schema.options){
-   const opts=schema.options;
-   if(opts&&opts.A) effects=normaliseEffects(opts.A.effects||opts.A.directEffects||[]);
-   else effects=normaliseEffects(schema.effects||[]);
-  } else {
-   effects=normaliseEffects(schema.effects||[]);
-  }
-
-  effects=injectExplorer(effects, survivor.id);
-
-  const resultParts=[];
-  for(const ef of effects){
-   if(ef.type==='addResource'){
-    const key=ef.resource;
-    let val=Number(ef.amount)||0;
-    const recolectorBonus=getSkillBonus(survivor,'explore_resource');
-    const cazadorBonus=getSkillBonus(survivor,'explore_food');
-    if(key==='food'&&cazadorBonus.bonus) val+=Number(cazadorBonus.bonus||0);
-    if(['food','materials','meds','fuel','chickens'].includes(key)&&recolectorBonus.bonus) val+=Number(recolectorBonus.bonus||0);
-    applyEffectList([{type:'addResource',resource:key,amount:val}], false);
-    resultParts.push(`${resourceLabel(key)} +${val}`);
-   }else if(ef.type==='removeResource'){
-    const key=ef.resource; const val=Number(ef.amount)||0;
-    applyEffectList([ef], false);
-    resultParts.push(`${resourceLabel(key)} -${val}`);
-   }else if(ef.type==='addSurvivorByRarity'||ef.type==='addSurvivorRandom'||ef.type==='addSurvivor'){
-    applyEffectList([ef], false);
-    resultParts.push('nuevo superviviente');
-   }else if(['addDog','addPerro','addCompanionDog','addSettlementDog','giveDog'].includes(ef.type)){
-    applyEffectList([ef], false);
-    resultParts.push('perro');
-   }else if(['injureExplorer','injureActionSurvivor','injureRandom','injureSurvivor'].includes(ef.type)){
-    applyEffectList([ef], false);
-    resultParts.push('herido');
-   }else{
-    applyEffectList([ef], false);
-   }
-  }
-
-  const desc=(schema.description||schema.text||'').trim();
-  const summary=resultParts.length?` [${resultParts.join(' · ')}]`:'';
-  addLog(`🧭 ${survivorName} → ${name}${desc?`: ${desc}`:''}${summary}`);
-
-  (groupMods.itemChances||[]).forEach(entry=>{
-   if(Math.random()<Number(entry.chance||0)) grantRandomGroupItem(entry.survivor, 'la expedición de exploración');
-  });
-  if(Number(groupMods.ambushChance||0)>0){
-   maybeTriggerGroupActionAmbush(groupMods.ctx, 'explorar', 'la expedición de exploración', groupMods.ambushChance);
-  }
-
-
-  if(schema.id&&!schema.repeatable){
-   if(!state.seenEvents) state.seenEvents=new Set();
-   state.seenEvents.add(schema.id);
-  }
- };
+ setTimeout(()=>{ try{ ensureAllDrunkData(); if(typeof render==='function') render(); }catch(_e){} },0);
 })();
 
 (()=>{
@@ -3453,11 +3093,21 @@ window.addEventListener('DOMContentLoaded',()=>{
   const flat=Math.abs(Number(effect?.flat ?? effect?.modifier ?? 0) || 0);
   if(!percent && !flat) return false;
   const days=Math.max(1, Number(effect?.days||1) || 1);
-  const startDay=state.day + (delayed ? 0 : 1);
   const signedPercent=sign<0 ? -percent : percent;
   const signedFlat=sign<0 ? -flat : flat;
   if(!Array.isArray(state.delayedQueue)) state.delayedQueue=[];
-  for(let offset=0; offset<days; offset++){
+
+  if(!delayed){
+   if(!window.tempActionMods) window.tempActionMods={};
+   const currentRaw=window.tempActionMods[action];
+   const current=(currentRaw && typeof currentRaw==='object')
+    ? {flat:Number(currentRaw.flat||0)||0, percent:Number(currentRaw.percent||0)||0}
+    : {flat:Number(currentRaw||0)||0, percent:0};
+   window.tempActionMods[action]={flat:current.flat+signedFlat, percent:current.percent+signedPercent};
+  }
+
+  const startDay = state.day + (delayed ? 0 : 1);
+  for(let offset=0; offset<days - (delayed ? 0 : 1); offset++){
    state.delayedQueue.push({day:startDay+offset,effect:{type:'_internalModifyAction',action,percent:signedPercent,flat:signedFlat}});
   }
   addLog(`${delayed?'[Retrasado] ':''}${sign<0?'🔴':'🟢'} ${sign<0?'Penalizada':'Bonificada'} la acción ${getActionModDescriptor(action, signedFlat, signedPercent)} durante ${days} día${days!==1?'s':''}.`);
@@ -3473,11 +3123,20 @@ window.addEventListener('DOMContentLoaded',()=>{
    if(queueActionModifier(effect, delayed, -1)) return;
   }
   if(effect?.type==='addSkill'){
-   const skillId=String(effect?.skill || effect?.skillId || '').trim();
-   if(!skillId) return;
-   const targets=resolveEffectTargets(effect);
-   if(!targets.length) return;
-   targets.forEach(target=>addSkillToSurvivor(target, skillId, delayed));
+  const skillId=String(effect?.skill || effect?.skillId || '').trim();
+  if(!skillId) return;
+  const targets=resolveEffectTargets(effect);
+  if(!targets.length) return;
+   targets.forEach(target=>{
+    const chancePercent=Number(effect.chancePercent ?? effect.chance ?? 100);
+    const finalChance=Number.isFinite(chancePercent) ? Math.max(0, Math.min(100, chancePercent)) : 100;
+    if(finalChance<100 && (finalChance<=0 || Math.random()*100>=finalChance)){
+     const skillName=typeof getSurvivorSkillName==='function' ? getSurvivorSkillName(skillId) : skillId;
+     addLog(`${delayed?'[Retrasado] ':''}\u{1F393} ${target.name} sigue intentando dominar ${skillName}.`);
+     return;
+    }
+    addSkillToSurvivor(target, skillId, delayed);
+   });
    return;
   }
   if(effect?.type==='_internalModifyAction'){
@@ -3913,4 +3572,104 @@ window.addEventListener('DOMContentLoaded',()=>{
  }
 
  window.getKidnappedSurvivorEntry = resolveKidnappedEntry;
+})();
+
+(()=>{
+ if(window.__npcBuildingSupportInstalled) return;
+ window.__npcBuildingSupportInstalled=true;
+
+ function applyNpcStatePatch(effect, delayed){
+  if(!effect||typeof ensureNpcRuntimeState!=='function') return false;
+  ensureNpcRuntimeState();
+  const npcId=String(effect.npcId||effect.id||'').trim();
+  if(!npcId) return false;
+  const entry=getNpcStateEntry(npcId);
+  if(!entry) return false;
+  const npcName=(getNpcById(npcId)?.name)||npcId;
+  if(effect.type==='discoverNpc'){
+   entry.state='known';
+   addLog(`${delayed?'[Retrasado] ':''}👤 ${npcName} ahora es conocido.`);
+   return true;
+  }
+  if(effect.type==='modifyNpcTrust'){
+   entry.trust=clampNpcTrustValue((Number(entry.trust||0)||0)+(Number(effect.amount||0)||0));
+   addLog(`${delayed?'[Retrasado] ':''}🤝 Confianza con ${npcName}: ${entry.trust}.`);
+   return true;
+  }
+  if(effect.type==='assignNpcToBuilding'){
+   entry.buildingId=String(effect.buildingId||effect.building||entry.buildingId||'').trim()||null;
+   entry.state='available';
+   addLog(`${delayed?'[Retrasado] ':''}🏠 ${npcName} se instala en ${entry.buildingId||'el asentamiento'}.`);
+   return true;
+  }
+  if(effect.type==='setNpcState'){
+   entry.state=normalizeNpcStateValue(effect.state||'available');
+   if(entry.state==='gone' || entry.state==='hostile') entry.buildingId=null;
+   addLog(`${delayed?'[Retrasado] ':''}🎭 ${npcName} pasa a estado: ${entry.state}.`);
+   return true;
+  }
+  return false;
+ }
+
+ const oldApplyNpc=window.applyEffect;
+ if(typeof oldApplyNpc==='function' && !oldApplyNpc.__npcEffectsWrapped){
+  window.applyEffect=function(effect, delayed){
+   if(applyNpcStatePatch(effect, delayed)) return;
+   return oldApplyNpc.apply(this, arguments);
+  };
+  window.applyEffect.__npcEffectsWrapped=true;
+ }
+
+ function buildNpcButtonHtml(npc){
+  const portrait=escapeAttr(npc?.portrait||npc?.image||'');
+  const name=escapeHtml(npc?.name||'NPC');
+  const trust=Number(npc?.trust||0)||0;
+  return `<button type="button" class="npc-building-btn" data-npc-id="${escapeAttr(npc?.id||'')}" title="${name} · confianza ${trust}" style="display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border:1px solid var(--amber);background:rgba(184,124,42,0.12);padding:0;cursor:pointer;overflow:hidden;"><img src="${portrait}" alt="${name}" style="width:100%;height:100%;object-fit:cover;display:block;"></button>`;
+ }
+
+ function wireNpcButtons(rootEl){
+  if(!rootEl) return;
+  rootEl.querySelectorAll('.npc-building-btn').forEach(btn=>{
+   if(btn.dataset.boundNpc==='1') return;
+   btn.dataset.boundNpc='1';
+   btn.addEventListener('click', ()=>{
+    const npcId=btn.getAttribute('data-npc-id')||'';
+    const npc=getNpcById(npcId);
+    if(!npc){ addLog('❌ NPC no encontrado.'); return; }
+    const eventId=resolveNpcEventId(npc);
+    if(!eventId){ addLog(`ℹ ${npc.name} no tiene evento asignado para confianza ${npc.trust}.`); return; }
+    if(!triggerNpcEventById(eventId, npc)){ addLog(`❌ No existe el evento ${eventId} para ${npc.name}.`); return; }
+   });
+  });
+ }
+
+ const oldShowNpcBuild=window.showBuildingDetail;
+ if(typeof oldShowNpcBuild==='function' && !oldShowNpcBuild.__npcBuildingWrapped){
+  window.showBuildingDetail=function(id){
+   const result=oldShowNpcBuild.apply(this, arguments);
+   try{
+    const npcs=typeof getBuildingNpcList==='function' ? getBuildingNpcList(id) : [];
+    if(!npcs.length) return result;
+    const detail=document.getElementById('detailBox');
+    if(!detail) return result;
+    if([...detail.querySelectorAll('.metric span')].some(el => el.textContent.trim()==='Personal asignado')) return result;
+    let mount=document.getElementById('buildingNpcMount');
+    if(!mount){
+     mount=document.createElement('div');
+     mount.id='buildingNpcMount';
+     mount.className='metric';
+     mount.style.gridColumn='1/-1';
+     mount.style.alignItems='center';
+     mount.style.justifyContent='space-between';
+     mount.innerHTML='<span>Personal del edificio</span><b id="buildingNpcButtons" style="display:flex;gap:8px;flex-wrap:wrap;"></b>';
+     detail.appendChild(mount);
+    }
+    const buttons=mount.querySelector('#buildingNpcButtons')||mount.querySelector('b');
+    buttons.innerHTML=npcs.map(buildNpcButtonHtml).join('');
+    wireNpcButtons(mount);
+   }catch(err){ console.warn('NPC building detail error', err); }
+   return result;
+  };
+  window.showBuildingDetail.__npcBuildingWrapped=true;
+ }
 })();

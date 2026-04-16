@@ -1,4 +1,4 @@
-// effects.js
+﻿// effects.js
 // Efectos, recompensas y utilidades relacionadas con efectos/eventos.
 
 // ── Normalise any effect format into the unified [{type,...}] array ──
@@ -163,6 +163,7 @@ function getInventoryTarget(effect){
 function addItemEntryToList(list, itemId, qty=1, overrides={}){
  if(!Array.isArray(list)) return false;
  const base=materializeItem({itemId, ...overrides});
+ if(base.itemType==='junk' && typeof addJunkToBaseStorage==='function') return addJunkToBaseStorage(base, qty);
  if(base.itemType==='consumable' && base.stackable){
  const existing=list.find(it=>materializeItem(it).itemId===base.itemId && materializeItem(it).itemType==='consumable');
  if(existing){ existing.qty = Number(existing.qty||1) + qty; return true; }
@@ -208,14 +209,98 @@ function formatInventoryTargetLabel(targetInfo){
  return targetInfo.survivor?.name || 'un superviviente';
 }
 
+function isDeathInjuryLevel(level){
+ const clean=String(level||'').trim().toLowerCase();
+ return ['muerte','muerto','death','dead','fatal','kill','killed'].includes(clean);
+}
+function normalizeValueIdValue(value){
+ return Number(value) === 1 ? 1 : 0;
+}
+function ensureStateValues(){
+ if(!state.values || typeof state.values !== 'object' || Array.isArray(state.values)) state.values={};
+ return state.values;
+}
+function ensureRestEffects(){
+ if(!state.restEffects || typeof state.restEffects !== 'object' || Array.isArray(state.restEffects)){
+  state.restEffects={moraleChanceBonus:0,moraleAmount:1,injuryRollBonus:0};
+ }
+ if(!Number.isFinite(Number(state.restEffects.moraleChanceBonus))) state.restEffects.moraleChanceBonus=0;
+ if(!Number.isFinite(Number(state.restEffects.moraleAmount)) || Number(state.restEffects.moraleAmount)<=0) state.restEffects.moraleAmount=1;
+ if(!Number.isFinite(Number(state.restEffects.injuryRollBonus))) state.restEffects.injuryRollBonus=0;
+ return state.restEffects;
+}
+
+function getEffectEventActors(){
+ try{
+  return typeof getEventActors==='function' ? (getEventActors(state?.pendingEvent)||[]) : [];
+ }catch(_err){
+  return [];
+ }
+}
+
+function resolveEffectSurvivorTargets(effect, {allowRandom=true, actionAll=false}={}){
+ const living=(state?.survivors||[]).filter(s=>s&&s.status!=='muerto');
+ const byId=id=>living.find(s=>String(s.id)===String(id))||null;
+ if(effect?.targetId){
+  const direct=byId(effect.targetId);
+  return direct?[direct]:[];
+ }
+ const rawMode=String(effect?.targetMode || effect?.target || effect?.targetRef || '').trim();
+ const mode=rawMode.toLowerCase();
+ const actors=getEffectEventActors().filter(s=>s&&s.status!=='muerto');
+ if(['allactors','alleventactors','actors','eventactors','actores'].includes(mode)){
+  return actors.filter((target,idx,arr)=>arr.findIndex(s=>String(s.id)===String(target.id))===idx);
+ }
+ const actorMatch=mode.match(/^(?:event)?actor(\d)$/);
+ if(actorMatch){
+  const actor=actors[Math.max(0, Number(actorMatch[1])-1)]||null;
+  return actor?[actor]:[];
+ }
+ if(mode==='randomeventactor'||mode==='anyeventactor'){
+  const actor=pick(actors);
+  return actor?[actor]:[];
+ }
+ if(mode==='action'||mode==='actionsurvivor'||mode==='__action__'){
+  const action=effect.action || state?.pendingEvent?.relatedAction;
+  const ids=action&&state?._lastDayActionSurvivors?.[action];
+  const targets=(ids||[]).map(byId).filter(Boolean);
+  if(actionAll) return targets;
+  const target=pick(targets);
+  return target?[target]:[];
+ }
+ if((mode==='explorer'||mode==='actionexplorer') && state?.pendingEvent?._explorerId){
+  const explorer=byId(state.pendingEvent._explorerId);
+  return explorer?[explorer]:[];
+ }
+ if(mode==='random'||mode==='randomsurvivor'||(!mode&&allowRandom)){
+  const target=pick(living);
+  return target?[target]:[];
+ }
+ return [];
+}
+
 function applyEffect(effect,delayed){
  effect=normalizeEffectShape(effect);
  if(!effect||!effect.type) return;
  switch(effect.type){
+ case 'valueID':{
+ const id=String(effect.id||'').trim();
+ if(!id) break;
+ ensureStateValues()[id]=normalizeValueIdValue(effect.value);
+ break;
+ }
  case 'addResource':{
+ if(!delayed && Number(effect.delayDays||0)>0){
+ const queued={...effect};
+ delete queued.delayDays;
+ const delay=Math.max(1, Number(effect.delayDays)||1);
+ state.delayedQueue.push({day:state.day+delay,effect:deepClone(queued)});
+ addLog(`Se programa ${resourceLabel(normalizeResourceKey(effect.resource))} +${Number(effect.amount||0)} para dentro de ${delay} día${delay!==1?'s':''}.`);
+ break;
+ }
  const key=normalizeResourceKey(effect.resource),amt=Number(effect.amount||0);
+ if(key==='morale'){ aliveSurvivors().forEach(s=>{ adjustSurvivorMorale(s,amt); }); addLog(`${delayed?'[Retrasado] ':''}${amt>=0?'😊':'😞'} Moral de todos ${amt>=0?'+':''}${amt}.`); break; }
  if(key==='stability'){ state.stability=Math.min(10,state.stability+amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad +${amt}.`); break; }
- if(key==='morale'){ aliveSurvivors().forEach(s=>{ adjustSurvivorMorale(s,amt); }); addLog(`${delayed?'[Retrasado] ':''}😊 Moral de todos +${amt}.`); break; }
  if(typeof state[key]==='number'){
  state[key]+=amt;
  addLog(`${delayed?'[Retrasado] ':''}${resourceLabel(key)} +${amt}.`);
@@ -228,6 +313,14 @@ function applyEffect(effect,delayed){
  break;
  }
  case 'removeResource':{
+ if(!delayed && Number(effect.delayDays||0)>0){
+ const queued={...effect};
+ delete queued.delayDays;
+ const delay=Math.max(1, Number(effect.delayDays)||1);
+ state.delayedQueue.push({day:state.day+delay,effect:deepClone(queued)});
+ addLog(`Se programa ${resourceLabel(normalizeResourceKey(effect.resource))} -${Number(effect.amount||0)} para dentro de ${delay} día${delay!==1?'s':''}.`);
+ break;
+ }
  const key=normalizeResourceKey(effect.resource),amt=Number(effect.amount||0);
  if(key==='stability'){ state.stability=Math.max(0,state.stability-amt); addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad -${amt}.`); break; }
  if(key==='morale'){ aliveSurvivors().forEach(s=>{ adjustSurvivorMorale(s,-amt); }); addLog(`${delayed?'[Retrasado] ':''}😞 Moral de todos -${amt}.`); break; }
@@ -265,6 +358,13 @@ function applyEffect(effect,delayed){
  targets=targets.filter((target,idx,arr)=>target && arr.findIndex(s=>String(s.id)===String(target.id))===idx);
  if(!targets.length) break;
  targets.forEach(target=>{
+  const chancePercent=Number(effect.chancePercent ?? effect.chance ?? 100);
+  const finalChance=Number.isFinite(chancePercent) ? Math.max(0, Math.min(100, chancePercent)) : 100;
+  if(finalChance<100 && (finalChance<=0 || Math.random()*100>=finalChance)){
+   const skillName=typeof getSurvivorSkillName==='function' ? getSurvivorSkillName(skillId) : skillId;
+   addLog(`${delayed?'[Retrasado] ':''}\u{1F393} ${target.name} sigue intentando dominar ${skillName}.`);
+   return;
+  }
   if(typeof addSkillToSurvivor==='function') addSkillToSurvivor(target, skillId, delayed);
   else {
    if(!Array.isArray(target.skills)) target.skills=[];
@@ -277,6 +377,9 @@ function applyEffect(effect,delayed){
  }
 
  case 'addItem':{
+ const chancePercent=Number(effect.chancePercent ?? effect.chance ?? 100);
+ const finalChance=Number.isFinite(chancePercent) ? Math.max(0, Math.min(100, chancePercent)) : 100;
+ if(finalChance<=0 || Math.random()*100>=finalChance) break;
  const targetInfo=getInventoryTarget(effect);
  if(!targetInfo){ addLog(`${delayed?'[Retrasado] ':''}❌ No se ha encontrado destino para el equipo.`); break; }
  const qty=Math.max(1, Number(effect.qty||effect.amount||1));
@@ -341,8 +444,11 @@ function applyEffect(effect,delayed){
  }
  case 'moraleSurvivor':{
  const amt=Number(effect.amount||0);
- const target=effect.targetId?state.survivors.find(s=>s.id===effect.targetId):pick(aliveSurvivors());
- if(target){ adjustSurvivorMorale(target,amt); addLog(`${delayed?'[Retrasado] ':''}${getMoraleEmoji(target)} ${target.name} moral ${amt>0?'+':''}${amt}.`); }
+ const targets=resolveEffectSurvivorTargets(effect, {allowRandom:true, actionAll:true});
+ targets.forEach(target=>{
+  adjustSurvivorMorale(target,amt);
+  addLog(`${delayed?'[Retrasado] ':''}${amt>=0?'😊':'😞'} ${target.name} moral ${amt>=0?'+':''}${amt}.`);
+ });
  break;
  }
  case 'stabilityChange':{
@@ -351,16 +457,104 @@ function applyEffect(effect,delayed){
  addLog(`${delayed?'[Retrasado] ':''}🏛 Estabilidad ${amt>0?'+':''}${amt}.`);
  break;
  }
- case 'unlockBuilding':{
- const bid=effect.building;
- if(bid==='hospital'){
- state.hospitalUnlocked=true;
- if(state.buildings.hospital) state.buildings.hospital.constructible=true;
- addLog('🏥 El Hospital ya puede construirse.');
- }
+ case 'setRestMoraleBonus':{
+ const rest=ensureRestEffects();
+ rest.moraleChanceBonus=Math.max(0, Number(effect.chancePercent ?? effect.chance ?? 0)||0);
+ rest.moraleAmount=Math.max(1, Number(effect.amount||1)||1);
+ addLog(`${delayed?'[Retrasado] ':''}Descanso mejorado: ${rest.moraleChanceBonus}% de recuperar ${rest.moraleAmount} moral al descansar.`);
  break;
  }
- case 'discoverNpc':{
+case 'setInjuryRollBonus':{
+ const rest=ensureRestEffects();
+ rest.injuryRollBonus=Number(effect.amount ?? effect.bonus ?? 0)||0;
+ addLog(`${delayed?'[Retrasado] ':''}Tirada de heridas modificada: ${rest.injuryRollBonus>=0?'+':''}${rest.injuryRollBonus}.`);
+ break;
+ }
+case 'modifyRisk':
+case 'modifyScoutRisk':{
+ const amount=Number(effect.amount ?? effect.value ?? 0)||0;
+ if(state.expedition&&typeof state.expedition==='object'){
+  state.expedition.hiddenRisk=Math.max(0, Number(state.expedition.hiddenRisk||0)+amount);
+ }
+ break;
+}
+ case 'unlockBaseUpgrade':{
+  const upgradeId=String(effect.upgradeId||effect.id||'').trim();
+  if(!upgradeId) break;
+  if(typeof buildBaseUpgrade==='function') buildBaseUpgrade(upgradeId);
+  else {
+   if(!state.baseUpgrades||typeof state.baseUpgrades!=='object') state.baseUpgrades={};
+   state.baseUpgrades[upgradeId]=true;
+  }
+  addLog(`${delayed?'[Retrasado] ':''}Mejora desbloqueada: ${upgradeId}.`);
+  break;
+ }
+case 'unlockBuilding':{
+const bid=String(effect.building||'').trim();
+if(!bid) break;
+if(bid==='cantina'||bid==='sala_comun'){
+if(typeof unlockAbandonedBuildingOption==='function') unlockAbandonedBuildingOption(bid, delayed);
+break;
+}
+const def=typeof getBuildingDef==='function' ? getBuildingDef(bid) : null;
+if(def){
+ const b=typeof revealBuildingOnMap==='function'
+ ? revealBuildingOnMap(bid)
+ : (state.buildings?.[bid] || null);
+ if(b){
+  b.constructible=def.constructible!==false;
+  if(def.hiddenUntilUnlocked || def.hiddenUntilRevealed || def.mapHiddenUntilUnlocked){
+   b.mapUnlocked=true;
+   b.revealedOnMap=true;
+  }
+  if(effect.built || effect.constructed || effect.alreadyBuilt){
+   b.built=true;
+   b.level=Math.max(1, Number(b.level||0) || 0);
+   b.active=true;
+   b._underConstruction=false;
+   delete b._constructionCost;
+   delete b._lastConstructionCost;
+   delete b._constructionDays;
+   delete b._constructionDaysLeft;
+  }
+ }
+ addLog(`${delayed?'[Retrasado] ':''}🏗 Edificio desbloqueado${(effect.built||effect.constructed||effect.alreadyBuilt)?' y construido':''}: ${def.name||bid}.`);
+ if(typeof render==='function') render();
+ break;
+}
+if(bid==='hospital'){
+ state.hospitalUnlocked=true;
+ if(state.buildings.hospital){
+  state.buildings.hospital.constructible=true;
+  if(effect.built || effect.constructed || effect.alreadyBuilt){
+   state.buildings.hospital.built=true;
+   state.buildings.hospital.level=Math.max(1, Number(state.buildings.hospital.level||0) || 0);
+   state.buildings.hospital.active=true;
+  }
+ }
+ addLog(`🏥 El Hospital ya puede ${effect.built||effect.constructed||effect.alreadyBuilt?'usarse':'construirse'}.`);
+ }
+break;
+}
+case 'unlockAbandonedBuilding':{
+const bid=effect.building;
+if(typeof unlockAbandonedBuildingOption==='function') unlockAbandonedBuildingOption(bid, delayed);
+break;
+}
+case 'discoverZone':{
+  const zoneId=String(effect.zoneId||effect.id||effect.zone||'').trim();
+  if(!zoneId) break;
+  const zone=(gameData.zones||[]).find(z=>String(z?.id||'')===zoneId);
+  if(!state.discoveredZones||typeof state.discoveredZones!=='object') state.discoveredZones={};
+  state.discoveredZones[zoneId]=true;
+  if(zone && (!state.activeZone || !state.discoveredZones[String(state.activeZone.id||'')])){
+   state.activeZone=zone;
+  }
+  addLog(`${delayed?'[Retrasado] ':''}🗺 Zona descubierta: ${zone?.name||zoneId}.`);
+  if(typeof render==='function') render();
+  break;
+}
+case 'discoverNpc':{
   const npc=getNpcById(effect.npcId);
   if(npc){
    if(!npc.state || npc.state==='unknown') npc.state='known';
@@ -400,10 +594,16 @@ function applyEffect(effect,delayed){
  // Injure the specific survivor who triggered this explore event
  const target=state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto');
  const forcedLevel=(effect.injuryLevel==='random'||effect.injuryLevel==='aleatorio') ? rollExplorerRandomInjuryLevel() : effect.injuryLevel;
- if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}${target.name} resulta {injuryLabel} durante la exploración.`,{source:'event',level:forcedLevel});
+ if(target){
+ if(isDeathInjuryLevel(forcedLevel)) killSurvivor(target, `${delayed?'[Retrasado] ':''}💀 ${target.name} muere durante la exploración.`);
+ else injureSurvivor(target,`${delayed?'[Retrasado] ':''}${target.name} resulta {injuryLabel} durante la exploración.`,{source:'event',level:forcedLevel});
+ }
  else {
  const candidate=pick(state.survivors.filter(s=>s.status!=='muerto'));
- if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta {injuryLabel}.`,{source:'event',level:forcedLevel});
+ if(candidate){
+ if(isDeathInjuryLevel(forcedLevel)) killSurvivor(candidate, `${delayed?'[Retrasado] ':''}💀 ${candidate.name} muere.`);
+ else injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta {injuryLabel}.`,{source:'event',level:forcedLevel});
+ }
  }
  break;
  }
@@ -415,7 +615,10 @@ function applyEffect(effect,delayed){
  ? state.survivors.filter(s=>ids.includes(s.id)&&s.status!=='muerto')
  : state.survivors.filter(s=>s.status!=='muerto');
  const target=pick(pool);
- if(target) injureSurvivor(target,`${delayed?'[Retrasado] ':''}🩸 ${target.name} resulta {injuryLabel}.`,{source:'event',level:effect.injuryLevel});
+ if(target){
+ if(isDeathInjuryLevel(effect.injuryLevel)) killSurvivor(target, `${delayed?'[Retrasado] ':''}💀 ${target.name} muere durante la acción.`);
+ else injureSurvivor(target,`${delayed?'[Retrasado] ':''}🩸 ${target.name} resulta {injuryLabel}.`,{source:'event',level:effect.injuryLevel});
+ }
  break;
  }
  case 'injureRandom':
@@ -423,7 +626,10 @@ function applyEffect(effect,delayed){
  const candidate=effect.targetId
  ? state.survivors.find(s=>s.id===effect.targetId&&s.status!=='muerto')
  : pick(state.survivors.filter(s=>s.status!=='muerto'));
- if(candidate) injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta {injuryLabel}.`,{source:'event',level:effect.injuryLevel});
+ if(candidate){
+ if(isDeathInjuryLevel(effect.injuryLevel)) killSurvivor(candidate, `${delayed?'[Retrasado] ':''}💀 ${candidate.name} muere.`);
+ else injureSurvivor(candidate,`${delayed?'[Retrasado] ':''}${candidate.name} resulta {injuryLabel}.`,{source:'event',level:effect.injuryLevel});
+ }
  break;
  }
  case 'healSurvivor':
@@ -444,6 +650,11 @@ function applyEffect(effect,delayed){
  case 'spawnThreat':{
  const threatId=effect.threatId||effect.templateId||effect.id;
  if(!threatId) break;
+ const chance = Number(effect.chancePercent ?? effect.chance ?? 100) || 0;
+ if (chance > 0 && Math.random()*100 >= chance) {
+   addLog(`${delayed?'[Retrasado] ':''}ℹ No se ha activado la amenaza ${threatId} (${chance}% probabilidad).`);
+   break;
+ }
  const threatDef=getThreatDef(threatId);
  const spawned=spawnThreatInstance(threatId, {force:effect.force===true || threatDef?.force===true, silent:false, severity:effect.severity, source:'event'});
  if(!spawned) addLog(`${delayed?'[Retrasado] ':''}ℹ No se ha podido activar la amenaza ${threatId}.`);
@@ -464,7 +675,6 @@ function applyEffect(effect,delayed){
  }
  const queued=queueEventById(schema.id, effect.forcedSurvivorId?state.survivors.find(s=>s.id===effect.forcedSurvivorId):null);
  if(queued){
-  addLog(`${delayed?'[Retrasado] ':''}📜 La quest ${schema.name||schema.id} ya está lista para lanzarse.`);
   addTechnicalLog('quest_ready', 'Quest preparada para lanzarse.', {questId:schema.id, questName:schema.name||schema.id, day:state.day});
  } else {
   addLog(`${delayed?'[Retrasado] ':''}❌ No se pudo poner en cola la quest ${schema.name||schema.id}.`);
@@ -501,8 +711,12 @@ function applyEffect(effect,delayed){
  state.attackPopupDefeat=effect.combatPopupDefeat?deepClone(effect.combatPopupDefeat):null;
  const arrDays=Number(effect.arrivalDays||0);
  state.attackArrivalDay=arrDays>0?state.day+arrDays:state.day;
- const days=arrDays>0?`en ${arrDays} día${arrDays!==1?'s':''}. Día ${state.attackArrivalDay}.`:'¡inminente!';
- addLog(`${delayed?'[Retrasado] ':''}⚠ ¡Amenaza de ataque detectada! ${state.attackHostileIcon}${state.attackHostileLabel} · Fuerza: ${state.attackStrength}${state.attackHostileVariant && state.attackHostileVariant!=='random'?` · Variante: ${state.attackHostileVariant}`:''} · Llegada: ${days}`);
+ const days=arrDays>0?`en ${arrDays} d\u00eda${arrDays!==1?'s':''}. D\u00eda ${state.attackArrivalDay}.`:'\u00a1inminente!';
+ const hasAtalayaIntel=typeof canUseAtalayaBinoculars==='function' && canUseAtalayaBinoculars();
+ const threatIntel=hasAtalayaIntel
+ ? ` \u00b7 Fuerza: ${state.attackStrength}${state.attackHostileVariant && state.attackHostileVariant!=='random'?` \u00b7 Variante: ${state.attackHostileVariant}`:''}`
+ : '';
+ addLog(`${delayed?'[Retrasado] ':''}\u26A0 \u00a1Amenaza de ataque detectada! ${state.attackHostileIcon}${state.attackHostileLabel}${threatIntel} \u00b7 Llegada: ${days}`);
  if(state.attackHostileNpc){
  addLog(`🎭 ${state.attackHostileLabel} no es un enemigo corriente. Habrá un encuentro antes del ataque.`);
  setEvent(buildNpcThreatIntroEvent(hostileInfo));
@@ -544,7 +758,7 @@ function applyEffect(effect,delayed){
  break;
  }
  case 'modifyActionEffect':{
- state.delayedQueue.push({day:state.day+(delayed?0:1),effect:{type:'_internalModifyAction',action:effect.action,modifier:Number(effect.modifier||0)}});
+ state.delayedQueue.push({day:state.day, effect:{type:'_internalModifyAction', action:effect.action, modifier:Number(effect.modifier||0)}});
  addLog(`${delayed?'[Retrasado] ':''}Se modifica el efecto de ${actionLabel(effect.action)}.`);
  break;
  }
@@ -580,6 +794,13 @@ function applyEffect(effect,delayed){
  // Show a choice popup to the player with custom options
  if(!effect.options||!effect.options.length) break;
  openDecidePopup(effect.options);
+ break;
+ }
+ case 'log':{
+ // Show a survival tip popup with text and an optional custom image.
+ const customImage=String(effect.imageUrl||effect.image||effect.pic||'').trim();
+ const imageUrl = customImage || (effect.useEventImage && state.pendingEvent ? resolveEventDisplayImage(state.pendingEvent) : null);
+ openLogPopup(effect.text || '', imageUrl);
  break;
  }
  case '_internalLimitAction':{

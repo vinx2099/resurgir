@@ -45,9 +45,7 @@
  silentFetchJson('./data/vehicles.json', data=>{
  gameData.vehicles=Array.isArray(data)?data:(Array.isArray(data?.vehicles)?data.vehicles:[]);
  });
- silentFetchJson('./data/npc.json', data=>{
- gameData.npcs=Array.isArray(data)?data:(Array.isArray(data?.npcs)?data.npcs:[]);
- });
+ /* npc.json: solo data-loader.js (importGameJSON + ensureNpcRuntimeState) */
 
  function normalizeVehicle(raw={}){
  const base={...DEFAULT_VEHICLE, ...(raw||{})};
@@ -93,7 +91,7 @@
  function getGarageLevel(){ return Number(getGarageBuilding()?.level||0); }
  function garageReady(){ const g=getGarageBuilding(); return !!(g?.built && !g?._underConstruction); }
  function vehicleAway(){
- return state.survivors.some(s=>s&&s.status!=='muerto'&&(s.location==='exterior'||(s.location==='travelling'&&(s.travelDest==='exterior'||s.travelReturnDay))));
+ return !!state.expedition?.active || state.survivors.some(s=>s&&s.status!=='muerto'&&(s.location==='expedition'||s.location==='exterior'||(s.location==='travelling'&&(s.travelDest==='exterior'||s.travelReturnDay))));
  }
  function hasExteriorExpedition(){ return vehicleAway(); }
  function getExteriorZoneById(zoneId){
@@ -102,30 +100,23 @@
  function isExteriorZoneUnlocked(zone){
  if(!zone) return false;
  if(zone.startsUnlocked===true) return true;
- const unlockBuilding=String(zone.unlockBuilding||'').trim().toLowerCase();
- const unlockLevel=Math.max(1, Number(zone.unlockBuildingLevel||1)||1);
- if(unlockBuilding){
- const building=state.buildings?.[unlockBuilding];
- return !!(building?.built && Number(building.level||0)>=unlockLevel);
- }
- return state.day>=(Number(zone.unlockDay||1)||1);
+ if(state.discoveredZones&&state.discoveredZones[String(zone.id||'')]) return true;
+ return false;
  }
  function getExteriorZoneUnlockReason(zone){
  if(!zone) return 'Zona no disponible';
  if(isExteriorZoneUnlocked(zone)) return '';
- const unlockBuilding=String(zone.unlockBuilding||'').trim().toLowerCase();
- const unlockLevel=Math.max(1, Number(zone.unlockBuildingLevel||1)||1);
- if(unlockBuilding){
- const building=state.buildings?.[unlockBuilding];
- if(!building?.built) return `Requiere ${formatBuildingRequirement(unlockBuilding)}`;
- if(Number(building.level||0)<unlockLevel) return `Requiere ${formatBuildingRequirement(unlockBuilding)} nivel ${unlockLevel}`;
- }
- return `Disponible a partir del día ${Number(zone.unlockDay||1)||1}`;
+ return 'Debe descubrirse por evento o quest.';
  }
  function getAvailableExteriorZones(includeLocked=false){
  const zones=(gameData.zones||[]).filter(Boolean);
  return includeLocked ? zones : zones.filter(isExteriorZoneUnlocked);
  }
+
+ window.openAtalayaMapDiscovery=function(){
+ addLog('Las zonas nuevas se descubren mediante eventos o quests.');
+ };
+
  function zoneTravelConfig(zone=state.activeZone){
  const fallback=ZONE_TRAVEL_FALLBACKS[String(zone?.id||'').toLowerCase()]||{fuelCost:0,travelDays:1};
  return {
@@ -138,7 +129,7 @@
  }
  function eligibleBaseTravelers(){
  return state.survivors.filter(s=>
- s&&s.status==='activo'&&s.location==='base'&&s.status!=='muerto'&&
+ s&&s.status==='activo'&&s.location==='base'&&
  (s.negativeSkill||'').toLowerCase().trim()!=='miedoso'
  );
  }
@@ -350,7 +341,7 @@
  window.getBuildingElectricityCost=function(id, targetLevel=null){
  const def=getBuildingDef(id);
  const current=state.buildings?.[id];
- const source=def?.electricityCostByLevel ?? def?.electricityCostLevels ?? current?.electricityCostByLevel ?? null;
+ const source=def?.electricityCostByLevel ?? def?.electricityCostLevels ?? (Array.isArray(def?.electricityCost)?def.electricityCost:null) ?? current?.electricityCostByLevel ?? (Array.isArray(current?.electricityCost)?current.electricityCost:null) ?? null;
  if(Array.isArray(source)){
  const level=Math.max(1, Number(targetLevel ?? current?.level ?? (current?.built?1:1)) || 1);
  const idx=Math.min(source.length-1, Math.max(0, level-1));
@@ -384,7 +375,21 @@
  if(!s||!buildOptionsEl||!modalWrap) return;
  buildOptionsEl.innerHTML='';
  (gameData.buildings||[]).forEach(def=>{
+ if(!def||!def.id) return;
+ if(def.showInBuildMenu===false || def.hideFromBuildMenu===true) return;
+ if(def?.abandonedBuilding && typeof isAbandonedBuildingRemoved==='function' && isAbandonedBuildingRemoved(def.id)) return;
+ if(typeof isBuildingHiddenUntilUnlocked==='function' && isBuildingHiddenUntilUnlocked(def)){
+  const current=state.buildings?.[def.id];
+  if(!(current?.mapUnlocked || current?.revealedOnMap || def.unlocked || def.revealed)) return;
+ }
+ const defId=String(def?.id||'').trim().toLowerCase();
+ if(def?.fromAbandoned || String(def?.type||'').toLowerCase()==='adaptation' || defId==='cantina' || defId==='sala_comun') return;
+ if(!state.buildings[def.id]&&typeof ensureBuildingStateEntry==='function') ensureBuildingStateEntry(def);
  const current=state.buildings[def.id];
+ if(def?.abandonedBuilding || current?.abandonedBuilding){
+  if(typeof appendAbandonedBuildOption==='function') appendAbandonedBuildOption(buildOptionsEl, def);
+  return;
+ }
  let constructible=current?.constructible===true;
  if(def.id==='generador'&&(state.buildings.taller?.level||0)<2) constructible=false;
  const maxLevel=Math.max(1, Number(def.maxLevel||5)||5);
@@ -550,6 +555,7 @@
  return eligibleExteriorCampSurvivors({mode});
  };
 
+ /* Implementación activa de generateLocations (sustituye la de legacy-app.js al cargar este script). */
  window.generateLocations=function(zoneOverride=null){
  state.locations=[];
  const templates=gameData.locationTemplates||[];
@@ -1013,7 +1019,7 @@
  const cfg=zoneTravelConfig(zone);
  const usingVehicle=zoneNeedsVehicle(zone);
  const vehicle=getVehicle();
- const selected=state.survivors.filter(s=>ids.includes(s.id)&&s.location==='base'&&s.status==='activo'&&s.status!=='muerto'&&(s.negativeSkill||'').toLowerCase().trim()!=='miedoso');
+ const selected=state.survivors.filter(s=>ids.includes(s.id)&&s.location==='base'&&s.status==='activo'&&(s.negativeSkill||'').toLowerCase().trim()!=='miedoso');
  if(!selected.length){ addLog('No hay supervivientes válidos para viajar.'); return; }
  if(usingVehicle){
  if(!garageReady()) return addLog('Necesitas un Garaje construido para viajar a esa zona.');
@@ -1078,6 +1084,7 @@
  });
  if(packed.length) addLog(`🎒 La expedición lleva ${packed.join(', ')} al campamento.`);
  addLog(`🧭 ${movedNames.join(', ')} parten hacia ${zone.name}. Llegarán el día ${state.day+cfg.travelDays}.`);
+ render();
  };
  window.travelToZone=function(survivorId, locationId){ window.travelGroupToZone([survivorId], locationId); };
  window.sendOnExpedition=window.travelToZone;
@@ -1237,6 +1244,7 @@
  const survivorListEl=document.getElementById('survivorList');
  if(!survivorListEl) return;
  survivorListEl.querySelector('[data-exterior-camp-actions]')?.remove();
+ survivorListEl.querySelector('[data-vehicle-card]')?.remove();
  const firstChild=survivorListEl.firstElementChild;
  if(firstChild && !firstChild.classList.contains('survivor-card')) firstChild.remove();
  const extCount=window.getExteriorCampSurvivors().length;
@@ -1266,7 +1274,7 @@
  host.style.setProperty('box-shadow','0 0 0 1px rgba(114,196,78,0.04) inset','important');
  host.innerHTML=`
  <div class="avatar" style="width:100%;height:auto;aspect-ratio:1/1;clip-path:none;border-color:var(--line2);overflow:hidden;background:var(--panel2);">
-   <img src="data/pic/coche.jpg" alt="${escapeHtml(vehicle.name||'Vehículo')}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:42px;color:var(--muted);&quot;>🚗</div>'">
+   <img src="data/pic/coch3.jpg" alt="${escapeHtml(vehicle.name||'Vehículo')}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='data/pic/coche.jpg';}else{this.style.display='none'; this.parentNode.innerHTML='<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:42px;color:var(--muted);&quot;>🚗</div>';}">
  </div>
  <div class="survivor-head-row" style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
    <div class="survivor-name-wrap" style="display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;">
@@ -1290,6 +1298,8 @@
  host.querySelector('#campVehicleStatusBtn')?.addEventListener('click',openExteriorVehicleStatus);
  host.querySelector('#campReturnBaseBtn')?.addEventListener('click',()=>window.openTravelReturnPopup('exterior'));
  }
+
+ window.injectExteriorCampControls=injectExteriorCampControls;
 
  window.renderSurvivors=function(){
  if(typeof legacy.renderSurvivors==='function') legacy.renderSurvivors();
@@ -1329,6 +1339,8 @@
  window.garageReady=garageReady;
  window.vehicleAway=vehicleAway;
  window.hasExteriorExpedition=hasExteriorExpedition;
+ window.isExteriorZoneUnlocked=isExteriorZoneUnlocked;
+ window.getExteriorZoneUnlockReason=getExteriorZoneUnlockReason;
  window.vehicleStatusLabel=vehicleStatusLabel;
  window.vehicleInUseText=vehicleInUseText;
  window.applyVehicleDamage=applyVehicleDamage;

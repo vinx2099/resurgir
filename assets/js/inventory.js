@@ -45,7 +45,28 @@ function normalizeInventoryList(list){
 }
 
 function inventoryUsedSlots(list){
- return (list||[]).reduce((sum,it)=>sum + (materializeItem(it).stackable ? 1 : 1), 0);
+ return (list||[]).reduce((sum,it)=>sum + (materializeItem(it).itemType==='junk' ? 0 : 1), 0);
+}
+function ensureBaseJunkStorage(){
+ if(!Array.isArray(state.junk)) state.junk=[];
+ state.junk=normalizeInventoryList(state.junk);
+ if(Array.isArray(state.inventory)){
+ const keep=[];
+ state.inventory.forEach(raw=>{
+  const item=materializeItem(raw);
+  if(item.itemType==='junk') state.junk.push(item);
+  else keep.push(raw);
+ });
+ if(keep.length!==state.inventory.length) state.inventory=keep;
+ }
+ return state.junk;
+}
+function addJunkToBaseStorage(item, qty=1){
+ const junk=ensureBaseJunkStorage();
+ const mat=materializeItem(item);
+ if(mat.itemType!=='junk') return false;
+ for(let i=0;i<Math.max(1,Number(qty)||1);i++) junk.push(materializeItem(mat));
+ return true;
 }
 
 function getQualityText(item){
@@ -59,6 +80,7 @@ function getItemTypeLabel(item){
  if(it.itemType==='weapon') return 'Arma';
  if(it.itemType==='consumable') return 'Consumible';
  if(it.itemType==='tool') return 'Herramienta';
+ if(it.itemType==='junk') return 'Junk';
  if(it.itemType==='equipment') return 'Equipo';
  return it.itemType || 'Objeto';
 }
@@ -98,6 +120,7 @@ function hasAnotherEquippedTool(survivor, item){
 
 function canEquipItem(survivor, item){
  const it=materializeItem(item);
+ if(it.itemType==='junk') return false;
  if(it.itemType!=='consumable' && it.quality<=0) return false;
  if(it.itemType==='tool' && hasAnotherEquippedTool(survivor, it)) return false;
  return true;
@@ -323,11 +346,13 @@ function getBaseStorageCapacity(){
 }
 
 function canStoreItemInBase(item){
+ if(materializeItem(item).itemType==='junk') return true;
  state.inventory = normalizeInventoryList(state.inventory||[]);
  return inventoryUsedSlots(state.inventory) < getBaseStorageCapacity();
 }
 
 function addItemToBaseStorage(item, options={}){
+ if(materializeItem(item).itemType==='junk') return addJunkToBaseStorage(item, Number(item?.qty||options.qty||1)||1);
  state.inventory = normalizeInventoryList(state.inventory||[]);
  if(!canStoreItemInBase(item)) return false;
  state.inventory.push(materializeItem(item));

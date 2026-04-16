@@ -23,6 +23,130 @@ function getHostileLabel(type, variantId=null){
  return info.label || type;
 }
 
+function getHostileWeaponBonus(typeDef){
+ if(!typeDef || !Array.isArray(typeDef.weapons)) return 0;
+ const breakdown=getHostileWeaponBreakdown(typeDef);
+ return breakdown.melee+breakdown.ranged;
+}
+
+function getHostileWeaponBreakdown(typeDef, variantDef=null){
+ const weapons=[...(Array.isArray(typeDef?.weapons)?typeDef.weapons:[]), ...(Array.isArray(variantDef?.weapons)?variantDef.weapons:[])];
+ const breakdown={melee:0,ranged:0};
+ weapons.forEach(weapon => {
+  if(Math.random() < (weapon.chance || 0)){
+   const itemDef = getItemDef(weapon.itemId);
+   if(itemDef && Array.isArray(itemDef.effects)){
+    itemDef.effects.forEach(effect => {
+     if(normalizeItemEffectKind(effect) === 'ranged'){
+      const dieSize = getItemEffectAmount(effect, 0);
+      if(dieSize > 0){
+       breakdown.ranged += roll(1, dieSize);
+      }
+     } else if(normalizeItemEffectKind(effect) === 'melee'){
+      breakdown.melee += getItemEffectAmount(effect, 0);
+     }
+    });
+   }
+  }
+ });
+ return breakdown;
+}
+
+function getHostileSkillBonus(typeDef, variantDef=null){
+ return Number(variantDef?.skillBonus ?? variantDef?.combatSkillBonus ?? variantDef?.attackSkillBonus ?? typeDef?.skillBonus ?? typeDef?.combatSkillBonus ?? typeDef?.attackSkillBonus ?? 0) || 0;
+}
+
+function getAtalayaLevel(){
+ const atalaya=state.buildings?.atalaya;
+ return atalaya?.built&&atalaya?.active ? Number(atalaya.level||0) : 0;
+}
+
+function canUseAtalayaBinoculars(){
+ return getAtalayaLevel()>=2;
+}
+
+function isThreatHostile(threat){
+ if(!threat) return false;
+ const def=threat.templateId ? getThreatDef(threat.templateId) : threat;
+ const type=String(def?.type||'').toLowerCase();
+ const tags=Array.isArray(def?.tags)?def.tags.map(tag=>String(tag).toLowerCase()):[];
+ return type==='hostile'||tags.includes('hostile');
+}
+
+function getThreatAttackEffect(def){
+ const pools=[def?.onMaxSeverity, def?.effects, def?.randomEffects];
+ const bySeverity=def?.onEscalateBySeverity||{};
+ Object.values(bySeverity).forEach(list=>pools.push(list));
+ const flat=[];
+ const scan=node=>{
+  if(!node) return;
+  if(Array.isArray(node)){ node.forEach(scan); return; }
+  if(typeof node==='object'){
+   flat.push(node);
+   ['effects','success','failure'].forEach(key=>scan(node[key]));
+  }
+ };
+ pools.forEach(scan);
+ return flat.find(effect=>effect&&['trigger_attack','setAttackThreat'].includes(effect.type))||null;
+}
+
+function getAtalayaThreatHostileInfo(mode='attack', instanceId=''){
+ if(mode==='attack'||state.attackThreat&&!instanceId){
+  const info=resolveHostileThreat({hostileType:state.attackHostileType||'raiders', hostileVariant:state.attackHostileVariant||'random'});
+  return {...info, strength:Number(state.attackStrength||info.strength||1), label:state.attackHostileLabel||info.label};
+ }
+ const threat=(state.activeThreats||[]).find(item=>String(item.instanceId)===String(instanceId)&&!item.resolved);
+ if(!threat||!isThreatHostile(threat)) return null;
+ const def=getThreatDef(threat.templateId)||{};
+ const attackEffect=getThreatAttackEffect(def)||{};
+ const info=resolveHostileThreat({
+  hostileType:attackEffect.hostileType||attackEffect.attackType||attackEffect.hostile||def.hostileType||'raiders',
+  hostileVariant:attackEffect.hostileVariant||attackEffect.variant||def.hostileVariant||'random',
+  hostilePool:attackEffect.hostilePool||def.hostilePool||'hostile',
+  hostileNpcId:attackEffect.hostileNpcId||def.hostileNpcId||''
+ });
+ return {...info, strength:Number(attackEffect.strength||def.force||info.strength||threat.severity||1), label:info.label||getThreatDisplayName(threat)};
+}
+
+function describeAtalayaHostileWeapons(info){
+ const weapons=[...(info?.typeDef?.weapons||[]), ...(info?.variantDef?.weapons||[])].filter(Boolean);
+ if(!weapons.length) return {armed:false, names:'Sin armas conocidas'};
+ const names=weapons.map(weapon=>{
+  const item=getItemDef(weapon.itemId);
+  const chance=Number(weapon.chance||0);
+  return `${item?.name||weapon.itemId||'Arma'}${chance>0&&chance<1?` (${Math.round(chance*100)}%)`:''}`;
+ }).join(', ');
+ return {armed:true, names};
+}
+
+function getAtalayaHostileAttackDice(info){
+ return info?.variantDef?.attackDice || info?.variantDef?.attackDie || info?.typeDef?.attackDice || info?.typeDef?.attackDie || '1d6';
+}
+
+function openAtalayaBinoculars(mode='', instanceId=''){
+ if(!canUseAtalayaBinoculars()){
+  addLog('La Atalaya necesita nivel 2 para usar prismáticos.');
+  return;
+ }
+ let info=null;
+ let label='';
+ if(mode==='persistent'&&instanceId){
+  info=getAtalayaThreatHostileInfo('persistent', instanceId);
+ }else if(mode==='attack'||state.attackThreat){
+  info=getAtalayaThreatHostileInfo('attack');
+ }else{
+  const threat=(state.activeThreats||[]).find(th=>th&&!th.resolved&&isThreatHostile(th));
+  if(threat) info=getAtalayaThreatHostileInfo('persistent', threat.instanceId);
+ }
+ if(!info){
+  addLog('No hay amenaza hostil que observar con prismáticos.');
+  return;
+ }
+ const weaponInfo=describeAtalayaHostileWeapons(info);
+ label=info.label||'Amenaza hostil';
+ openLogPopup(`Prismáticos · ${label}\nEstado armado: ${weaponInfo.armed?'Lleva armas':'No se aprecian armas'}\nArmas: ${weaponInfo.names}\nDado de ataque: ${getAtalayaHostileAttackDice(info)}\nFuerza estimada: ${Number(info.strength||1)}`);
+}
+
 function checkAttackArrival(){
  if(!state.attackThreat) return;
  if(state.attackArrivalDay>0&&state.day>state.attackArrivalDay){
@@ -32,10 +156,10 @@ function checkAttackArrival(){
  const b=pick(built);
  b.level=Math.max(0,b.level-1);
  if(b.level===0) b.built=false;
- addLog(`💥 El grupo hostil no fue repelido. ${b.name} ha sido destruida (nivel ${b.level}).`);
+ addLog(`\u{1F4A5} El grupo hostil no fue repelido. ${b.name} ha sido destruida (nivel ${b.level}).`);
  }
  state.stability=Math.max(0,state.stability-2);
- addLog('🏛 -2 estabilidad por no defender el asentamiento.');
+ addLog('\u{1F4A5} -2 estabilidad por no defender el asentamiento.');
  state.attackThreat=false;
  state.attackHostileVariant='random';
  state.attackHostileLabel='Raiders';
@@ -59,7 +183,7 @@ function resolveGroupAttack(){
  const attackers=state.survivors.filter(s=>s.action?.type==='atacar'&&s.status!=='muerto'&&!isExteriorSurvivor(s));
  const isPreemptive=attackers.length>0;
 
- let totalDef, totalAtk, diff, defRoll, atkRoll;
+ let totalDef, totalAtk, diff, defRoll, atkRoll, combatReport=null;
  let ownBreakdown='', enemyBreakdown='';
  const hostileLabel=state.attackHostileLabel || getHostileLabel(state.attackHostileType||'raiders', state.attackHostileVariant||null);
 
@@ -82,17 +206,30 @@ function resolveGroupAttack(){
  const relationshipBonus=getCombatRelationshipModifier(attackers);
  defRoll=roll(1,6);
  atkRoll=roll(1,4);
+ const hostileInfo=resolveHostileThreat({hostileType:state.attackHostileType||'raiders', hostileVariant:state.attackHostileVariant||'random'});
+ const hostileDef = hostileInfo?.typeDef || getHostileTypeDef(state.attackHostileType || 'raiders');
+ const hostileVariant = hostileInfo?.variantDef || null;
+ const hostileSkillBonus=getHostileSkillBonus(hostileDef, hostileVariant);
+ const hostileWeapons=getHostileWeaponBreakdown(hostileDef, hostileVariant);
  totalDef=attackers.length+skillBonus+weaponBonus+rangedDiceBonus+emboscadaBonus+defRoll+relationshipBonus;
- totalAtk=state.attackStrength+atkRoll;
+ totalAtk=state.attackStrength+hostileSkillBonus+hostileWeapons.melee+hostileWeapons.ranged+atkRoll;
  diff=totalAtk-totalDef;
- ownBreakdown=`Atacantes ${attackers.length}, habilidades +${skillBonus}, armas +${weaponBonus}, distancia +${rangedDiceBonus}, emboscada +${emboscadaBonus}${relationshipBonus?`, vínculos ${relationshipBonus>0?'+':''}${relationshipBonus}`:''}, 1d6 (${defRoll}) = ${totalDef}`;
- enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, 1d4 (${atkRoll}) = ${totalAtk}`;
- addLog(`⚔ EMBOSCADA: ${attackers.length} atacantes +${skillBonus} habilidades +${weaponBonus} armas +${rangedDiceBonus} distancia +${emboscadaBonus} emboscada${relationshipBonus?` ${relationshipBonus>0?'+':''}${relationshipBonus} vínculos`:''} +${defRoll}(d6) = ${totalDef}`);
- addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d4) = ${totalAtk}`);
+ ownBreakdown=`Atacantes ${attackers.length}, habilidades +${skillBonus}, armas +${weaponBonus}, distancia +${rangedDiceBonus}, emboscada +${emboscadaBonus}${relationshipBonus?`, vinculos ${relationshipBonus>0?'+':''}${relationshipBonus}`:''}, 1d6 (${defRoll}) = ${totalDef}`;
+ enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, habilidades +${hostileSkillBonus}, melee +${hostileWeapons.melee}, distancia +${hostileWeapons.ranged}, 1d4 (${atkRoll}) = ${totalAtk}`;
+ combatReport={factions:[
+  {label:'ASENTAMIENTO',total:totalDef,accent:'ok',rows:[['Fuerza',attackers.length],['Bonus habilidad',skillBonus],['Arma melee',weaponBonus],['Arma distancia',rangedDiceBonus],['Emboscada',emboscadaBonus],['Vinculos',relationshipBonus],['Dado',`d6 = ${defRoll}`]]},
+  {label:hostileLabel,total:totalAtk,accent:'danger',rows:[['Fuerza',Number(state.attackStrength||0)],['Bonus habilidad',hostileSkillBonus],['Arma melee',hostileWeapons.melee],['Arma distancia',hostileWeapons.ranged],['Emboscada',0],['Dado',`d4 = ${atkRoll}`]]}
+ ]};
+ addLog(`[COMBATE] EMBOSCADA: ${attackers.length} atacantes +${skillBonus} habilidades +${weaponBonus} armas +${rangedDiceBonus} distancia +${emboscadaBonus} emboscada${relationshipBonus?` ${relationshipBonus>0?'+':''}${relationshipBonus} vinculos`:''} +${defRoll}(d6) = ${totalDef}`);
+ addLog(`[COMBATE] RAIDERS: ${state.attackStrength} fuerza +${hostileSkillBonus} habilidades +${hostileWeapons.melee} melee +${hostileWeapons.ranged} distancia +${atkRoll}(d4) = ${totalAtk}`);
  } else {
  // ── DEFENSIVE BATTLE ──
  const defenders=state.survivors.filter(s=>s.action?.type==='defender'&&s.status!=='muerto'&&!isExteriorSurvivor(s));
  const defCount=defenders.length;
+ const skillBonus=defenders.reduce((sum,s)=>{
+ const skills=getSurvivorSkills(s);
+ return sum+(skills.includes('combatiente')?1:0);
+ },0);
  const weaponBonus=defenders.reduce((sum,s)=>{
  const item=(s.inventory||[]).map(materializeItem).find(it=>it.itemId===s.equippedWeapon && it.itemType==='weapon' && it.quality>0 && canEquipItem(s,it));
  return sum + Number(item?.combatBonus||0) + getEquippedEffectTotal(s,'melee');
@@ -101,9 +238,7 @@ function resolveGroupAttack(){
  const die=getEquippedRangedDiceBonus(s);
  return sum + (die>0 ? roll(1,die) : 0);
  },0);
- const atalajaActive=state.buildings.atalaya?.built&&state.buildings.atalaya?.active;
- const hasVigilante=state.survivors.some(s=>s.action?.type==='vigilar'&&s.status!=='muerto');
- const atalajaBonus=(atalajaActive&&hasVigilante)?2:0;
+ const atalayaBonus=getAtalayaLevel()>=1?1:0;
  const murosLevel=state.buildings.muros?.built?state.buildings.muros.level:0;
  const murosBonus=murosLevel>=2?2:murosLevel>=1?1:0;
  const vallaBonus=state.vallaElectrica&&getElectricityFree()>=0?getBaseUpgradeEffectNumber('electric_fence','defenseBonus',1):0;
@@ -111,13 +246,22 @@ function resolveGroupAttack(){
  const relationshipBonus=getCombatRelationshipModifier(defenders);
  defRoll=roll(1,6);
  atkRoll=roll(1,6); // Raiders prepared when attacking — roll 1d6
- totalDef=defCount+weaponBonus+rangedDiceBonus+atalajaBonus+murosBonus+vallaBonus+defRoll+stabilityDefenseBonus+relationshipBonus;
- totalAtk=state.attackStrength+atkRoll;
+ const hostileInfo=resolveHostileThreat({hostileType:state.attackHostileType||'raiders', hostileVariant:state.attackHostileVariant||'random'});
+ const hostileDef = hostileInfo?.typeDef || getHostileTypeDef(state.attackHostileType || 'raiders');
+ const hostileVariant = hostileInfo?.variantDef || null;
+ const hostileSkillBonus=getHostileSkillBonus(hostileDef, hostileVariant);
+ const hostileWeapons=getHostileWeaponBreakdown(hostileDef, hostileVariant);
+ totalDef=defCount+skillBonus+weaponBonus+rangedDiceBonus+atalayaBonus+murosBonus+vallaBonus+defRoll+stabilityDefenseBonus+relationshipBonus;
+ totalAtk=state.attackStrength+hostileSkillBonus+hostileWeapons.melee+hostileWeapons.ranged+atkRoll;
  diff=totalAtk-totalDef;
- ownBreakdown=`Defensores ${defCount}, Armas +${weaponBonus}, Distancia +${rangedDiceBonus}, Muro +${murosBonus}, Atalaya +${atalajaBonus}${vallaBonus?`, Valla +${vallaBonus}`:''}${stabilityDefenseBonus?`, Estabilidad ${stabilityDefenseBonus>0?'+':''}${stabilityDefenseBonus}`:''}${relationshipBonus?`, Vínculos ${relationshipBonus>0?'+':''}${relationshipBonus}`:''}, 1d6 (${defRoll}) = ${totalDef}`;
- enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, 1d6 (${atkRoll}) = ${totalAtk}`;
- addLog(`⚔ DEFENSA: ${defCount} defensores +${weaponBonus} armas +${rangedDiceBonus} distancia +${murosBonus} muros +${atalajaBonus} atalaya${vallaBonus?` +${vallaBonus} valla eléctrica`:''}${stabilityDefenseBonus?` ${stabilityDefenseBonus>0?'+':''}${stabilityDefenseBonus} estabilidad`:''}${relationshipBonus?` ${relationshipBonus>0?'+':''}${relationshipBonus} vínculos`:''} +${defRoll}(d6) = ${totalDef}`);
- addLog(`⚔ RAIDERS: ${state.attackStrength} fuerza +${atkRoll}(d6) = ${totalAtk}`);
+ ownBreakdown=`Defensores ${defCount}, habilidades +${skillBonus}, Armas +${weaponBonus}, Distancia +${rangedDiceBonus}, Muro +${murosBonus}, Atalaya +${atalayaBonus}${vallaBonus?`, Valla +${vallaBonus}`:''}${stabilityDefenseBonus?`, Estabilidad ${stabilityDefenseBonus>0?'+':''}${stabilityDefenseBonus}`:''}${relationshipBonus?`, Vinculos ${relationshipBonus>0?'+':''}${relationshipBonus}`:''}, 1d6 (${defRoll}) = ${totalDef}`;
+ enemyBreakdown=`${hostileLabel}: fuerza ${state.attackStrength}, habilidades +${hostileSkillBonus}, melee +${hostileWeapons.melee}, distancia +${hostileWeapons.ranged}, 1d6 (${atkRoll}) = ${totalAtk}`;
+ combatReport={factions:[
+  {label:'ASENTAMIENTO',total:totalDef,accent:'ok',rows:[['Fuerza',defCount],['Bonus habilidad',skillBonus],['Arma melee',weaponBonus],['Arma distancia',rangedDiceBonus],['Emboscada',0],['Defensas base',murosBonus+atalayaBonus+vallaBonus+stabilityDefenseBonus],['Vinculos',relationshipBonus],['Dado',`d6 = ${defRoll}`]]},
+  {label:hostileLabel,total:totalAtk,accent:'danger',rows:[['Fuerza',Number(state.attackStrength||0)],['Bonus habilidad',hostileSkillBonus],['Arma melee',hostileWeapons.melee],['Arma distancia',hostileWeapons.ranged],['Emboscada',0],['Dado',`d6 = ${atkRoll}`]]}
+ ]};
+ addLog(`[COMBATE] DEFENSA: ${defCount} defensores +${skillBonus} habilidades +${weaponBonus} armas +${rangedDiceBonus} distancia +${murosBonus} muros +${atalayaBonus} atalaya${vallaBonus?` +${vallaBonus} valla electrica`:''}${stabilityDefenseBonus?` ${stabilityDefenseBonus>0?'+':''}${stabilityDefenseBonus} estabilidad`:''}${relationshipBonus?` ${relationshipBonus>0?'+':''}${relationshipBonus} vinculos`:''} +${defRoll}(d6) = ${totalDef}`);
+ addLog(`[COMBATE] RAIDERS: ${state.attackStrength} fuerza +${hostileSkillBonus} habilidades +${hostileWeapons.melee} melee +${hostileWeapons.ranged} distancia +${atkRoll}(d6) = ${totalAtk}`);
  }
 
  const alive=aliveSurvivors().filter(s=>!isExteriorSurvivor(s));
@@ -127,65 +271,72 @@ function resolveGroupAttack(){
  state.attackThreat=false;
  state.stability=Math.min(10,state.stability+1);
  if(isPreemptive){
- const rewardLines=[];
- const loot=[
- {resource:'materials',amount:Math.floor(Math.random()*2)+1},
- {resource:'food',amount:Math.floor(Math.random()*2)+1},
- ...(Math.random()<0.3?[{resource:'meds',amount:1}]:[]),
- ];
- loot.forEach(l=>{
- state[l.resource]=(state[l.resource]||0)+l.amount;
- addLog(`✅ Emboscada exitosa! +${l.amount} ${resourceLabel(l.resource)}.`);
- rewardLines.push(`+${l.amount} ${resourceLabel(l.resource)}`);
- });
- addLog(`✅ Los raiders han sido eliminados antes de llegar. +1 estabilidad.`);
+ addLog(`[OK] Los raiders han sido eliminados antes de llegar. +1 estabilidad.`);
  if(typeof setCombatMusic==='function') setCombatMusic(false);
  // Injury risk even on victory
  attackers.forEach(s=>{
- if(Math.random()<0.35) injureSurvivor(s,`🩸 ${s.name} resulta {injuryLabel} en la emboscada.`,{source:'ambush'});
+ if(Math.random()<0.35) injureSurvivor(s,`[HERIDA] ${s.name} resulta {injuryLabel} en la emboscada.`,{source:'ambush'});
  });
  openCombatResultPopup(attackPopupPayload('victory',{
- title:'✅ Emboscada exitosa',
- icon:'⚔',
+ title:'Emboscada exitosa',
+ icon:'*',
  text:`El grupo elimina a ${getHostileLabel(state.attackHostileType||'raiders')} antes de que lleguen al asentamiento.`,
- summary:[`Resultado: ${totalDef} vs ${totalAtk}`,'+1 estabilidad',...rewardLines],
+ summary:[`Resultado: ${totalDef} vs ${totalAtk}`,'+1 estabilidad'],
  effects:(state.attackEffectVictory||[]).map(combatEffectSummary).filter(Boolean),
+ outcome:'victory',
+ settlementScore:totalDef,
+ hostileScore:totalAtk,
+ settlementLabel:'ASENTAMIENTO',
+ hostileLabel:hostileLabel,
+ combatReport,
  }));
  } else {
- addLog(`✅ ¡Ataque repelido! (${totalDef} vs ${totalAtk}). +1 estabilidad.`);
+ addLog(`[OK] Ataque repelido (${totalDef} vs ${totalAtk}). +1 estabilidad.`);
  openCombatResultPopup(attackPopupPayload('victory',{
- title:'✅ Ataque repelido',
- icon:'🛡',
+ title:'Ataque repelido',
+ icon:'*',
  text:`La defensa del asentamiento resiste el ataque de ${getHostileLabel(state.attackHostileType||'raiders')}.`,
  summary:[`Resultado: ${totalDef} vs ${totalAtk}`,'+1 estabilidad'],
  effects:(state.attackEffectVictory||[]).map(combatEffectSummary).filter(Boolean),
+ outcome:'victory',
+ settlementScore:totalDef,
+ hostileScore:totalAtk,
+ settlementLabel:'ASENTAMIENTO',
+ hostileLabel:hostileLabel,
+ combatReport,
  }));
  }
  applyEffectList(state.attackEffectVictory||[]);
  } else {
  // ── DERROTA ──
  if(isPreemptive){
- addLog(`❌ La emboscada fracasó (${totalDef} vs ${totalAtk}). Los raiders siguen avanzando.`);
+ addLog(`[FALLO] La emboscada fracaso (${totalDef} vs ${totalAtk}). Los raiders siguen avanzando.`);
  attackers.forEach(s=>{
- if(Math.random()<0.6) injureSurvivor(s,`🩸 ${s.name} resulta {injuryLabel} en la emboscada fallida.`,{source:'ambush'});
+ if(Math.random()<0.6) injureSurvivor(s,`[HERIDA] ${s.name} resulta {injuryLabel} en la emboscada fallida.`,{source:'ambush'});
  });
  // Raiders still coming — arrive next day
  state.attackArrivalDay=state.day+1;
  state.stability=Math.max(0,state.stability-1);
- addLog('🏛 -1 estabilidad. Los raiders se reorganizan y atacarán mañana.');
+ addLog('\u{1F4A5} -1 estabilidad. Los raiders se reorganizan y atacaran manana.');
  applyEffectList(state.attackEffectDefeat||[]);
  openCombatResultPopup(attackPopupPayload('defeat',{
- title:'❌ Emboscada fallida',
- icon:'💥',
- text:'El ataque preventivo no logró frenar al enemigo. El asalto llegará al día siguiente.',
- summary:[`Resultado: ${totalDef} vs ${totalAtk}`,'-1 estabilidad','El ataque enemigo continúa'],
+ title:'Emboscada fallida',
+ icon:'*',
+ text:'El ataque preventivo no logro frenar al enemigo. El asalto llegara al dia siguiente.',
+ summary:[`Resultado: ${totalDef} vs ${totalAtk}`,'-1 estabilidad','El ataque enemigo continua'],
  effects:(state.attackEffectDefeat||[]).map(combatEffectSummary).filter(Boolean),
+ outcome:'defeat',
+ settlementScore:totalDef,
+ hostileScore:totalAtk,
+ settlementLabel:'ASENTAMIENTO',
+ hostileLabel:hostileLabel,
+ combatReport,
  }));
  // Don't clear threat, don't reset attack state
  return; // return without resetting state.attackThreat
  }
 
- addLog(`❌ El asentamiento no pudo resistir el ataque (${totalDef} vs ${totalAtk}). Diferencia: ${diff}.`);
+ addLog(`[FALLO] El asentamiento no pudo resistir el ataque (${totalDef} vs ${totalAtk}). Diferencia: ${diff}.`);
  const injureChance=Math.min(0.3+diff*0.12, 0.95);
  const deathChance=diff>=5 ? Math.min((diff-4)*0.12, 0.5) : diff>=3 ? 0.05 : 0;
 
@@ -198,29 +349,35 @@ function resolveGroupAttack(){
  if(s.status==='muerto') continue;
  const r=Math.random();
  if(r<deathChance){
- killSurvivor(s,`💀 ${s.name} muere durante el ataque.`);
+ killSurvivor(s,`[MUERTE] ${s.name} muere durante el ataque.`);
  casualtyCount++;
  } else if(r<injureChance){
- injureSurvivor(s,`🩸 ${s.name} resulta {injuryLabel} durante el ataque.`,{source:'combat'});
+ injureSurvivor(s,`[HERIDA] ${s.name} resulta {injuryLabel} durante el ataque.`,{source:'combat'});
  casualtyCount++;
  }
  }
- if(casualtyCount===0) addLog('El ataque causó daños pero no hubo bajas personales.');
+ if(casualtyCount===0) addLog('El ataque causo danos pero no hubo bajas personales.');
 
  const moralPenalty=Math.min(diff,4);
  state.stability=Math.max(0,state.stability-moralPenalty);
- addLog(`🏛 -${moralPenalty} estabilidad por el ataque.`);
+ addLog(`\u{1F4A5} -${moralPenalty} estabilidad por el ataque.`);
 
  applyEffectList(state.attackEffectDefeat||[]);
  // Apply hostile lootOnDefeat
  const defHostileDef=getHostileDef(state.attackHostileType||'raiders');
  applyLootList(defHostileDef?.lootOnDefeat||[]);
  openCombatResultPopup(attackPopupPayload('defeat',{
- title:'❌ Derrota en combate',
- icon:'☠',
- text:`El asentamiento no resistió el ataque de ${getHostileLabel(state.attackHostileType||'raiders')}.`,
+ title:'Derrota en combate',
+ icon:'*',
+ text:`El asentamiento no resistio el ataque de ${getHostileLabel(state.attackHostileType||'raiders')}.`,
  summary:[`Resultado: ${totalDef} vs ${totalAtk}`,`-${moralPenalty} estabilidad`],
  effects:(state.attackEffectDefeat||[]).map(combatEffectSummary).filter(Boolean),
+ outcome:'defeat',
+ settlementScore:totalDef,
+ hostileScore:totalAtk,
+ settlementLabel:'ASENTAMIENTO',
+ hostileLabel:hostileLabel,
+ combatReport,
  }));
  }
 
@@ -339,7 +496,7 @@ function queueGroupActionAmbush(ctx, actionType, contextLabel, forcedChance=null
  hostileType:hostileInfo.type||'raiders',
  hostileVariant:hostileInfo.variant||'random',
  hostileLabel:hostileInfo.label||'Hostiles',
- hostileIcon:(hostileInfo.icon||'💀').trim()||'💀',
+ hostileIcon:(hostileInfo.icon||'\u{1F480}').trim()||'\u{1F480}',
  hostileImage:hostileInfo.image||'',
  hostileStrength:hostileInfo.strength||3,
  hostileSkillBonus:hostileInfo.skillBonus||0,
@@ -354,7 +511,7 @@ function queueGroupActionAmbush(ctx, actionType, contextLabel, forcedChance=null
  effectOnDefeat: hostileInfo.attackEffect?.effectOnDefeat ? deepClone(hostileInfo.attackEffect.effectOnDefeat) : []
  };
  state._pendingAmbushQueue.push(encounter);
- addLog(`⚠ ${encounter.hostileLabel} sorprenden al grupo durante ${contextLabel}. ¡EMBOSCADA!`);
+ addLog(`[ALERTA] ${encounter.hostileLabel} sorprenden al grupo durante ${contextLabel}. EMBOSCADA!`);
  return true;
 }
 
@@ -384,7 +541,7 @@ function openNextAmbushPopup(){
  if(encounter.hostileImage){
  imageWrap.innerHTML=`<img src="${escapeAttr(encounter.hostileImage)}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(20%) contrast(1.05);">`;
  }else{
- imageWrap.textContent=encounter.hostileIcon||'💀';
+ imageWrap.textContent=encounter.hostileIcon||'*';
  }
  const fallbackText=`<b style="color:var(--danger-bright);">${escapeHtml(encounter.hostileLabel)}</b> ataca directamente a <b>${escapeHtml(participantNames)}</b> durante ${escapeHtml(encounter.contextLabel)}.`;
  textEl.innerHTML=(encounter.eventText||'').trim() ? escapeHtml(replaceDynamicNameTokens(encounter.eventText)).replace(/\n/g,'<br>') : fallbackText;
@@ -425,26 +582,31 @@ function resolvePendingAmbushCombat(){
  const weaponBonus=getAmbushParticipantWeaponBonus(participants);
  const survivorsTotal=participants.length + skillBonus + weaponBonus + survivorRoll;
  const hostileTotal=(encounter.hostileStrength||3) + (encounter.hostileWeaponBonus||0) + (encounter.hostileSkillBonus||0) + hostileRoll;
- addLog(`⚔ ¡EMBOSCADA! ${participants.map(s=>s.name).join(', ')} se enfrentan a ${hostileLabel}.`);
- addLog(`⚔ SUPERVIVIENTES: ${participants.length} participantes +${skillBonus} habilidades +${weaponBonus} armas +${survivorRoll}(d6) = ${survivorsTotal}`);
- addLog(`⚔ HOSTILES: ${encounter.hostileStrength||3} fuerza +${encounter.hostileSkillBonus||0} habilidades +${encounter.hostileWeaponBonus||0} armas +${hostileRoll}(d${encounter.hostileAttackDie||6}) = ${hostileTotal}`);
+ addLog(`[COMBATE] EMBOSCADA: ${participants.map(s=>s.name).join(', ')} se enfrentan a ${hostileLabel}.`);
+ addLog(`[COMBATE] SUPERVIVIENTES: ${participants.length} participantes +${skillBonus} habilidades +${weaponBonus} armas +${survivorRoll}(d6) = ${survivorsTotal}`);
+ addLog(`[COMBATE] HOSTILES: ${encounter.hostileStrength||3} fuerza +${encounter.hostileSkillBonus||0} habilidades +${encounter.hostileWeaponBonus||0} armas +${hostileRoll}(d${encounter.hostileAttackDie||6}) = ${hostileTotal}`);
  const summary=[`Supervivientes: ${survivorsTotal}`,`${hostileLabel}: ${hostileTotal}`];
  const participantNames=participants.map(s=>s.name).join(', ')||'El grupo';
  let popupPayload;
  let postEffects=[];
  if(survivorsTotal>=hostileTotal){
  participants.forEach(s=>{
- if(Math.random()<0.25) injureSurvivor(s, `🩸 ${s.name} resulta {injuryLabel} en la emboscada.`, {source:'ambush'});
+ if(Math.random()<0.25) injureSurvivor(s, `[HERIDA] ${s.name} resulta {injuryLabel} en la emboscada.`, {source:'ambush'});
  });
  const victoryEffects=normaliseEffects(encounter.effectOnVictory||[]);
  if(victoryEffects.length) applyEffectList(victoryEffects, false);
  postEffects=victoryEffects.map(combatEffectSummary).filter(Boolean);
  popupPayload={
- title:'✅ Emboscada superada',
- icon:encounter.hostileIcon||'⚔',
+ title:'Emboscada superada',
+ icon:encounter.hostileIcon||'*',
  text:`${participantNames} logra imponerse a ${hostileLabel}.`,
  summary,
  effects:postEffects,
+ outcome:'victory',
+ settlementScore:survivorsTotal,
+ hostileScore:hostileTotal,
+ settlementLabel:'ASENTAMIENTO',
+ hostileLabel:hostileLabel,
  };
  if(encounter.combatPopupVictory){
  popupPayload={
@@ -458,23 +620,28 @@ function resolvePendingAmbushCombat(){
  let injuredCount=0;
  participants.forEach(s=>{
  if(Math.random()<0.55){
- injureSurvivor(s, `🩸 ${s.name} resulta {injuryLabel} en la emboscada.`, {source:'ambush'});
+ injureSurvivor(s, `[HERIDA] ${s.name} resulta {injuryLabel} en la emboscada.`, {source:'ambush'});
  injuredCount++;
  }
  });
  if(!injuredCount && participants[0]){
- injureSurvivor(participants[0], `🩸 ${participants[0].name} resulta {injuryLabel} en la emboscada.`, {source:'ambush'});
+ injureSurvivor(participants[0], `[HERIDA] ${participants[0].name} resulta {injuryLabel} en la emboscada.`, {source:'ambush'});
  }
  const defeatEffects=normaliseEffects(encounter.effectOnDefeat||[]);
  if(defeatEffects.length) applyEffectList(defeatEffects, false);
  postEffects=defeatEffects.map(combatEffectSummary).filter(Boolean);
  const effectLines=['Varios supervivientes pueden resultar heridos', ...postEffects];
  popupPayload={
- title:'❌ Emboscada sufrida',
- icon:encounter.hostileIcon||'💥',
+ title:'Emboscada sufrida',
+ icon:encounter.hostileIcon||'*',
  text:`${hostileLabel} golpea al grupo de ${participantNames} y logra imponer su ataque.`,
  summary,
  effects:effectLines,
+ outcome:'defeat',
+ settlementScore:survivorsTotal,
+ hostileScore:hostileTotal,
+ settlementLabel:'ASENTAMIENTO',
+ hostileLabel:hostileLabel,
  };
  if(encounter.combatPopupDefeat){
  popupPayload={
@@ -730,7 +897,7 @@ function spawnThreatInstance(threatId, options={}){
  if(!Array.isArray(state.activeThreats)) state.activeThreats=[];
  state.activeThreats.push(instance);
  if(options.silent!==true){
-  addLog(`☣ Nueva amenaza: ${def.name}. ${def.description||''}`.trim());
+  addLog(`\u2623 Nueva amenaza: ${def.name}. ${def.description||''}`.trim());
  }
  return instance;
 }
@@ -942,7 +1109,7 @@ function applyThreatEffect(effect, context={}){
  resolveThreatInstance(threat, {applyResolveEffects:true, log:false});
  }else{
  threat.maxSeverityTriggered = Number(threat.severity||0) >= getThreatMaxSeverity(threat) ? threat.maxSeverityTriggered : false;
- addLog(`☣ ${getThreatDisplayName(threat)} baja a ${getThreatSeverityText(threat)}.`);
+ addLog(`\u2623 ${getThreatDisplayName(threat)} baja a ${getThreatSeverityText(threat)}.`);
  }
  return true;
  }
@@ -995,12 +1162,12 @@ function processActiveThreatsEndOfDay(){
  if(Number(threat.severity||1) < getThreatMaxSeverity(threat)){
  threat.severity=Math.min(getThreatMaxSeverity(threat), Number(threat.severity||1)+1);
  threat.daysUntilEscalation=getThreatDaysToEscalate(threat);
- addLog(`☣ ${getThreatDisplayName(threat)} empeora a ${getThreatSeverityText(threat)}.`);
+ addLog(`\u2623 ${getThreatDisplayName(threat)} empeora a ${getThreatSeverityText(threat)}.`);
  applyThreatEffectList(getThreatEscalationEffects(threat, threat.severity), {threat, delayed:false});
  }
  if(Number(threat.severity||1) >= getThreatMaxSeverity(threat) && !threat.maxSeverityTriggered){
  threat.maxSeverityTriggered=true;
- addLog(`☣ ${getThreatDisplayName(threat)} alcanza su punto crítico.`);
+ addLog(`\u2623 ${getThreatDisplayName(threat)} alcanza su punto crítico.`);
  applyThreatEffectList(getThreatOnMaxSeverityEffects(threat), {threat, delayed:false});
  }
  }
@@ -1103,6 +1270,18 @@ function getThreatActionFacilitatorState(action, actor=null){
  return {totalBonus, applied, available};
 }
 
+function formatThreatFacilitatorsForLog(applied){
+ return (Array.isArray(applied)?applied:[]).map((desc, index)=>{
+  const text=String(desc||'').trim();
+  if(!text) return '';
+  const match=text.match(/^(.*?)(\s+\+\d+%.*)?$/);
+  const label=(match?.[1]||text).trim();
+  const bonus=match?.[2]||'';
+  const prefix=index===0 ? 'Facilitadores: ' : '';
+  return `<span class="log-facilitator">${prefix}${label}</span>${bonus}`;
+ }).filter(Boolean).join(', ');
+}
+
 
 function getThreatActionSummary(action){
  const bits=[];
@@ -1141,7 +1320,7 @@ function describeThreatPassiveEffects(threat){
 function getAttackThreatUrgencyMeta(){
  const daysLeft=Math.max(0, Number(state.attackArrivalDay||state.day)-Number(state.day||1));
  const urgency=daysLeft<=0?'var(--danger-bright)':daysLeft===1?'var(--warn-bright)':'var(--amber-bright)';
- const text=daysLeft<=0?'¡ATAQUE INMINENTE!':`Llega en ${daysLeft} día${daysLeft!==1?'s':''}`;
+ const text=daysLeft<=0?'\u00a1ATAQUE INMINENTE!':`Llega en ${daysLeft} d\u00eda${daysLeft!==1?'s':''}`;
  return {daysLeft, urgency, text};
 }
 
@@ -1156,12 +1335,14 @@ function renderThreats(){
 
  if(state.attackThreat){
  const urgencyMeta=getAttackThreatUrgencyMeta();
+ const hostileIcon=String(state.attackHostileIcon||'\u2694').trim()||'\u2694';
+ const hasAtalayaIntel=typeof canUseAtalayaBinoculars==='function'&&canUseAtalayaBinoculars();
  cards.push(`<button type="button" class="threat-card-preview attack" data-threat-open="attack">
  <div class="threat-preview-top">
- <div class="threat-preview-title attack">⚔ ${escapeHtml(state.attackHostileLabel||'Amenaza de ataque')}</div>
- <div class="threat-preview-badge attack">Fuerza ${Number(state.attackStrength||0)}</div>
+ <div class="threat-preview-title attack">${escapeHtml(hostileIcon)} ${escapeHtml(state.attackHostileLabel||'Amenaza de ataque')}</div>
+ ${hasAtalayaIntel?`<div class="threat-preview-badge attack">Fuerza ${Number(state.attackStrength||0)}</div>`:''}
  </div>
- <div class="threat-preview-desc">Una amenaza hostil está en camino al asentamiento. Haz clic para ver qué debes hacer.</div>
+ <div class="threat-preview-desc">Una amenaza hostil est\u00e1 en camino al asentamiento. Haz clic para ver qu\u00e9 debes hacer.</div>
  <div class="threat-preview-escalation" style="color:${urgencyMeta.urgency};">${escapeHtml(urgencyMeta.text)}</div>
  </button>`);
  }
@@ -1198,13 +1379,13 @@ function executeThreatAction(instanceId, actionId, actorId=''){
  if(!action) return;
  const requirementState=evaluateThreatActionRequirements(threat, action, actorId);
  if(!requirementState.ok){
-  addLog(`☣ No puedes actuar contra ${getThreatDisplayName(threat)}: ${requirementState.blockers.join(', ')}.`);
+  addLog(`\u2623 No puedes actuar contra ${getThreatDisplayName(threat)}: ${requirementState.blockers.join(', ')}.`);
   render();
   return;
  }
  const actor=action?.requirements?.survivorAvailable ? (requirementState.selectedActor || null) : null;
  if(action?.requirements?.survivorAvailable && !actor){
-  addLog(`☣ Debes elegir un superviviente válido para actuar contra ${getThreatDisplayName(threat)}.`);
+  addLog(`\u2623 Debes elegir un superviviente v\u00e1lido para actuar contra ${getThreatDisplayName(threat)}.`);
   render();
   return;
  }
@@ -1219,7 +1400,7 @@ function executeThreatAction(instanceId, actionId, actorId=''){
  const chance=Math.max(0, Math.min(100, baseChance + facilitatorState.totalBonus + resolutivoBonus));
  const success=Math.random()*100 < chance;
  const skillBits=[];
- if(facilitatorState.applied.length) skillBits.push(`Facilitadores: ${facilitatorState.applied.join(', ')}.`);
+ if(facilitatorState.applied.length) skillBits.push(`${formatThreatFacilitatorsForLog(facilitatorState.applied)}.`);
  if(resolutivoBonus>0) skillBits.push(`Resolutivo +${resolutivoBonus}%.`);
  addLog(`${actor?actor.name:'El asentamiento'} intenta ${action.label.toLowerCase()} frente a ${getThreatDisplayName(threat)}.${skillBits.length?` ${skillBits.join(' ')}`:''} (${chance}% de éxito)`);
  if(success){
@@ -1380,7 +1561,7 @@ function resolveHostileThreat(effect={}){
  hostileType=ids.length?pick(ids):'raiders';
  }
  const typeDef=getHostileTypeDef(hostileType) || getHostileTypeDef('raiders') || null;
- if(!typeDef) return {type:'raiders', variant:'random', label:'Raiders', icon:'💀 ', strength:3, isNpc:false, preAttackEventId:null, typeDef:null, variantDef:null};
+ if(!typeDef) return {type:'raiders', variant:'random', label:'Raiders', icon:'\u{1F480} ', strength:3, isNpc:false, preAttackEventId:null, typeDef:null, variantDef:null};
  const picked=resolveHostileVariant(typeDef, forcedVariant);
  const variantDef=picked.variantDef;
  const typeForce=Number(typeDef.force ?? typeDef.strength ?? typeDef.baseForce ?? 3);
@@ -1388,7 +1569,7 @@ function resolveHostileThreat(effect={}){
  const variantBonus=Number(variantDef?.forceBonus ?? variantDef?.variantForce ?? 0);
  const finalStrength = Math.max(1, variantAbsolute ?? (typeForce + variantBonus));
  const label = variantDef?.label || variantDef?.name || typeDef.label || typeDef.name || hostileType;
- const icon = (variantDef?.icon || typeDef.icon || '💀') + ' ';
+ const icon = (variantDef?.icon || typeDef.icon || '\u{1F480}') + ' ';
  const isNpc = String(variantDef?.labelType || variantDef?.label || typeDef.labelType || typeDef.label || '').toLowerCase()==='npc';
  const preAttackEventId = variantDef?.preAttackEventId || typeDef.preAttackEventId || null;
  return {
